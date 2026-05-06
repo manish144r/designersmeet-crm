@@ -1,0 +1,1022 @@
+﻿--- FILE: packages\backend\src\server.ts ---
+import cors from "cors";
+import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import type { Server } from "http";
+import { config } from "./config.js";
+import { container } from "./container.js";
+import { logger } from "./logger.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { authMiddleware } from "./auth/authMiddleware.js";
+import { freelancersRouter } from "./routes/freelancers.js";
+import { ordersRouter } from "./routes/orders.js";
+import { servicesRouter } from "./routes/services.js";
+import { shopifyMappingsRouter } from "./routes/shopifyMappings.js";
+import { queueRouter } from "./routes/queue.js";
+import { socialRouter } from "./routes/social.js";
+import { shopifyWebhookRouter } from "./routes/shopifyWebhook.js";
+import { startWorkers } from "./workers/index.js";
+
+let httpServer: Server | undefined;
+
+async function gracefulShutdown(signal: string) {
+  logger.info({ signal }, "Received shutdown signal, cleaning upâ€¦");
+  try {
+    await container.queue.shutdown();
+  } catch (err) {
+    logger.error({ err }, "Error shutting down queue");
+  }
+  if (httpServer) {
+    httpServer.close(() => {
+      logger.info("HTTP server closed");
+      process.exit(0);
+    });
+    setTimeout(() => {
+      logger.warn("Forced shutdown after timeout");
+      process.exit(1);
+    }, 10_000);
+  } else {
+    process.exit(0);
+  }
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+async function bootstrap() {
+  await container.init();
+
+  const app = express();
+
+  // CSP headers via helmet
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+        },
+      },
+    }),
+  );
+
+  // CORS with allowlist support (comma-separated CORS_ORIGIN)
+  const allowedOrigins = config.CORS_ORIGIN
+    ? config.CORS_ORIGIN.split(",").map((o: string) => o.trim())
+    : [];
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true,
+    }),
+  );
+  app.use(morgan("dev"));
+
+  // Shopify webhook needs raw body for HMAC verification â€” mount BEFORE express.json()
+  app.use("/webhooks/shopify", shopifyWebhookRouter);
+
+  app.use(express.json({ limit: "2mb" }));
+
+  app.get("/health", (_req, res) => {
+    res.json({
+      status: "ok",
+      data_provider: config.DATA_PROVIDER,
+      queue_provider: config.QUEUE_PROVIDER,
+      auth_mode: config.AUTH_MODE,
+      time: new Date().toISOString(),
+    });
+  });
+
+  // All /api routes are auth-gated (dev bypass injects a stub user when AUTH_MODE=dev)
+  app.use("/api", authMiddleware);
+  app.use("/api/freelancers", freelancersRouter);
+  app.use("/api/orders", ordersRouter);
+  app.use("/api/services", servicesRouter);
+  app.use("/api/shopify-mappings", shopifyMappingsRouter);
+  app.use("/api/queue", queueRouter);
+  app.use("/api/social", socialRouter);
+
+  app.use(errorHandler);
+
+  startWorkers();
+
+  httpServer = app.listen(config.BACKEND_PORT, () => {
+    logger.info(
+      { port: config.BACKEND_PORT, data_provider: config.DATA_PROVIDER, queue_provider: config.QUEUE_PROVIDER },
+      "DesignersMeet CRM backend listening",
+    );
+  });
+}
+
+bootstrap().catch((err) => {
+  logger.error({ err }, "Failed to bootstrap server");
+  process.exit(1);
+});
+
+
+--- FILE: packages\backend\src\config.ts ---
+import "dotenv/config";
+import { z } from "zod";
+
+const Env = z.object({
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  BACKEND_PORT: z.coerce.number().int().positive().default(4000),
+  CORS_ORIGIN: z.string().default("http://localhost:5173"),
+
+  DATA_PROVIDER: z.enum(["memory", "dataverse", "sqlserver"]).default("memory"),
+  QUEUE_PROVIDER: z.enum(["memory", "azure-service-bus", "supabase"]).default("memory"),
+  AUTH_MODE: z.enum(["dev", "entra"]).default("dev"),
+
+  DATAVERSE_URL: z.string().optional(),
+  AZURE_TENANT_ID: z.string().optional(),
+  AZURE_CLIENT_ID: z.string().optional(),
+  AZURE_CLIENT_SECRET: z.string().optional(),
+
+  SQLSERVER_HOST: z.string().default("localhost"),
+  SQLSERVER_PORT: z.coerce.number().int().default(1433),
+  SQLSERVER_DATABASE: z.string().default("designersmeet"),
+  SQLSERVER_USER: z.string().default("sa"),
+  SQLSERVER_PASSWORD: z.string().default(""),
+  SQLSERVER_ENCRYPT: z.coerce.boolean().default(false),
+  SQLSERVER_TRUST_SERVER_CERT: z.coerce.boolean().default(true),
+
+  SERVICE_BUS_NAMESPACE: z.string().optional(),
+  SERVICE_BUS_CONNECTION_STRING: z.string().optional(),
+
+  SUPABASE_URL: z.string().optional(),
+  SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_QUEUE_TABLE: z.string().default("order_queue"),
+
+  ENTRA_TENANT_ID: z.string().optional(),
+  ENTRA_CLIENT_ID: z.string().optional(),
+  ENTRA_AUDIENCE: z.string().optional(),
+
+  SHOPIFY_STORE_DOMAIN: z.string().optional(),
+  SHOPIFY_API_SECRET: z.string().optional(),
+  SHOPIFY_WEBHOOK_SECRET: z.string().optional(),
+  SHOPIFY_ADMIN_TOKEN: z.string().optional(),
+
+  LINKEDIN_CLIENT_ID: z.string().optional(),
+  LINKEDIN_CLIENT_SECRET: z.string().optional(),
+  LINKEDIN_REDIRECT_URI: z.string().optional(),
+
+  SEED_FREELANCERS_PATH: z.string().default("../../../dm_launch/freelancer_db.json"),
+  SEED_SHOPIFY_CSV_PATH: z.string().default("../../../dm_launch/shopify_import.csv"),
+});
+
+export const config = Env.parse(process.env);
+export type Config = z.infer<typeof Env>;
+
+// Production safety validation â€” fail fast on dangerous configs
+if (config.NODE_ENV === "production") {
+  if (config.AUTH_MODE === "dev") {
+    throw new Error(
+      "FATAL: AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra and configure ENTRA_* variables.",
+    );
+  }
+  if (config.QUEUE_PROVIDER === "memory" && !config.SUPABASE_URL && !config.SERVICE_BUS_CONNECTION_STRING) {
+    throw new Error(
+      "FATAL: QUEUE_PROVIDER=memory with no persistent fallback is not allowed in production. " +
+        "Set SUPABASE_URL+SUPABASE_ANON_KEY or SERVICE_BUS_CONNECTION_STRING.",
+    );
+  }
+  if (config.AUTH_MODE === "entra" && (!config.ENTRA_TENANT_ID || !config.ENTRA_CLIENT_ID)) {
+    throw new Error(
+      "FATAL: AUTH_MODE=entra requires ENTRA_TENANT_ID and ENTRA_CLIENT_ID in production.",
+    );
+  }
+}
+
+
+--- FILE: packages\backend\src\auth\authMiddleware.ts ---
+// Auth middleware. AUTH_MODE=dev injects a stub user (no token required).
+// AUTH_MODE=entra validates a JWT against Entra ID's JWKS.
+// SECURITY: dev mode is blocked in production (NODE_ENV=production requires AUTH_MODE=entra).
+import type { Request, Response, NextFunction } from "express";
+import { createRemoteJWKSet, jwtVerify } from "jose";
+import { config } from "../config.js";
+import { HttpError } from "../middleware/errorHandler.js";
+import { logger } from "../logger.js";
+
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export type AppRole = "admin" | "designer" | "client";
+
+declare module "express-serve-static-core" {
+  interface Request {
+    user?: { sub: string; email: string; name: string; roles: AppRole[] };
+  }
+}
+
+const DEV_USER = { sub: "dev-user", email: "dev@designersmeet.local", name: "Dev Admin", roles: ["admin"] as AppRole[] };
+
+// â”€â”€â”€ JWKS singleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+function getJwks() {
+  if (!config.ENTRA_TENANT_ID) throw new Error("ENTRA_TENANT_ID required for AUTH_MODE=entra");
+  if (!jwks) {
+    jwks = createRemoteJWKSet(
+      new URL(`https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/discovery/v2.0/keys`),
+    );
+  }
+  return jwks;
+}
+
+// â”€â”€â”€ Auth Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
+  // SECURITY: Block dev mode in production
+  if (config.AUTH_MODE === "dev" && config.NODE_ENV === "production") {
+    logger.error("AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra.");
+    return next(new HttpError(500, "Server misconfiguration"));
+  }
+
+  if (config.AUTH_MODE === "dev") {
+    req.user = DEV_USER;
+    return next();
+  }
+
+  try {
+    const header = req.headers.authorization ?? "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    if (!token) throw new HttpError(401, "Missing bearer token");
+
+    const { payload } = await jwtVerify(token, getJwks(), {
+      audience: config.ENTRA_AUDIENCE ?? config.ENTRA_CLIENT_ID,
+      issuer: `https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/v2.0`,
+    });
+
+    req.user = {
+      sub: String(payload.sub ?? ""),
+      email: String(payload.preferred_username ?? payload.email ?? ""),
+      name: String(payload.name ?? ""),
+      roles: Array.isArray(payload.roles) ? (payload.roles as AppRole[]) : ["client"],
+    };
+    next();
+  } catch (err) {
+    next(new HttpError(401, "Invalid or expired token", err instanceof Error ? err.message : undefined));
+  }
+}
+
+// â”€â”€â”€ RBAC Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/**
+ * Require the authenticated user to have at least one of the specified roles.
+ * Usage: router.delete("/:id", requireRole("admin"), asyncHandler(...))
+ */
+export function requireRole(...roles: AppRole[]) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const userRoles = req.user?.roles ?? [];
+    const hasRole = roles.some((r) => userRoles.includes(r));
+    if (!hasRole) {
+      return next(new HttpError(403, "Forbidden: insufficient permissions"));
+    }
+    next();
+  };
+}
+
+
+--- FILE: packages\backend\src\routes\freelancers.ts ---
+import { Router } from "express";
+import { FreelancerCreate, FreelancerService } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+import { HttpError } from "../middleware/errorHandler.js";
+
+export const freelancersRouter: ReturnType<typeof Router> = Router();
+
+freelancersRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit)) || 50, 1), 200);
+    const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
+    const freelancers = await container.repos.freelancers.list({
+      availability_status:
+        typeof req.query.availability_status === "string" ? req.query.availability_status : undefined,
+      category: typeof req.query.category === "string" ? req.query.category : undefined,
+    });
+    const paginated = freelancers.slice(offset, offset + limit);
+    res.json({ data: paginated, meta: { total: freelancers.length, limit, offset } });
+  }),
+);
+
+freelancersRouter.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const freelancer = await container.repos.freelancers.findById(req.params.id);
+    if (!freelancer) throw new HttpError(404, "Freelancer not found");
+    const services = await container.repos.freelancers.listServices(req.params.id);
+    res.json({ data: { ...freelancer, services } });
+  }),
+);
+
+freelancersRouter.post(
+  "/",
+  asyncHandler(async (req, res) => {
+    const data = FreelancerCreate.parse(req.body);
+    const freelancer = await container.repos.freelancers.create(data);
+    res.status(201).json({ data: freelancer });
+  }),
+);
+
+freelancersRouter.patch(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const data = FreelancerCreate.partial().parse(req.body);
+    const freelancer = await container.repos.freelancers.update(req.params.id, data);
+    res.json({ data: freelancer });
+  }),
+);
+
+freelancersRouter.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    await container.repos.freelancers.delete(req.params.id);
+    res.status(204).end();
+  }),
+);
+
+freelancersRouter.post(
+  "/:id/services",
+  asyncHandler(async (req, res) => {
+    const link = FreelancerService.parse({ ...req.body, freelancer_id: req.params.id });
+    const result = await container.repos.freelancers.attachService(link);
+    res.status(201).json({ data: result });
+  }),
+);
+
+freelancersRouter.delete(
+  "/:id/services/:serviceId",
+  asyncHandler(async (req, res) => {
+    await container.repos.freelancers.detachService(req.params.id, req.params.serviceId);
+    res.status(204).end();
+  }),
+);
+
+
+--- FILE: packages\backend\src\routes\orders.ts ---
+import { Router } from "express";
+import { z } from "zod";
+import { OrderCreate, OrderStatus, OrderUpdate } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+import { HttpError } from "../middleware/errorHandler.js";
+import { requireRole } from "../auth/authMiddleware.js";
+
+export const ordersRouter: ReturnType<typeof Router> = Router();
+
+ordersRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const status = req.query.status ? OrderStatus.parse(req.query.status) : undefined;
+    const assigned =
+      typeof req.query.assigned_freelancer_id === "string"
+        ? req.query.assigned_freelancer_id === "null"
+          ? null
+          : req.query.assigned_freelancer_id
+        : undefined;
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit)) || 50, 1), 200);
+    const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
+    const orders = await container.repos.orders.list({
+      status,
+      assigned_freelancer_id: assigned,
+    });
+    const paginated = orders.slice(offset, offset + limit);
+    res.json({ data: paginated, meta: { total: orders.length, limit, offset } });
+  }),
+);
+
+ordersRouter.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const order = await container.repos.orders.findById(req.params.id);
+    if (!order) throw new HttpError(404, "Order not found");
+    res.json({ data: order });
+  }),
+);
+
+ordersRouter.post(
+  "/",
+  requireRole("admin", "designer"),
+  asyncHandler(async (req, res) => {
+    const data = OrderCreate.parse(req.body);
+    const order = await container.repos.orders.create(data);
+    await container.queue.enqueue("orders.assignment", { order_id: order.order_id }, order.order_id);
+    res.status(201).json({ data: order });
+  }),
+);
+
+ordersRouter.patch(
+  "/:id",
+  requireRole("admin", "designer"),
+  asyncHandler(async (req, res) => {
+    const data = OrderUpdate.parse(req.body);
+    const order = await container.repos.orders.update(req.params.id, data);
+    if (data.status) {
+      await container.queue.enqueue(
+        "orders.notification",
+        { order_id: order.order_id, kind: "status_changed", status: order.status },
+        order.order_id,
+      );
+    }
+    res.json({ data: order });
+  }),
+);
+
+ordersRouter.delete(
+  "/:id",
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
+    await container.repos.orders.delete(req.params.id);
+    res.status(204).end();
+  }),
+);
+
+// Fix #3: Replace unsafe `req.body as {...}` with Zod validation
+const AssignBody = z.object({ freelancer_id: z.string().uuid() });
+
+ordersRouter.post(
+  "/:id/assign",
+  requireRole("admin", "designer"),
+  asyncHandler(async (req, res) => {
+    const { freelancer_id } = AssignBody.parse(req.body);
+    const order = await container.repos.orders.update(req.params.id, {
+      assigned_freelancer_id: freelancer_id,
+      status: "assigned",
+    });
+    await container.queue.enqueue(
+      "orders.notification",
+      { order_id: order.order_id, kind: "freelancer_assigned", freelancer_id },
+      order.order_id,
+    );
+    res.json({ data: order });
+  }),
+);
+
+
+--- FILE: packages\backend\src\routes\services.ts ---
+import { Router } from "express";
+import { ServiceCreate } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+import { HttpError } from "../middleware/errorHandler.js";
+
+export const servicesRouter: ReturnType<typeof Router> = Router();
+
+servicesRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit)) || 50, 1), 200);
+    const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
+    const services = await container.repos.services.list({
+      category: typeof req.query.category === "string" ? req.query.category : undefined,
+      active: req.query.active === "true" ? true : req.query.active === "false" ? false : undefined,
+    });
+    const paginated = services.slice(offset, offset + limit);
+    res.json({ data: paginated, meta: { total: services.length, limit, offset } });
+  }),
+);
+
+servicesRouter.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const service = await container.repos.services.findById(req.params.id);
+    if (!service) throw new HttpError(404, "Service not found");
+    res.json({ data: service });
+  }),
+);
+
+servicesRouter.post(
+  "/",
+  asyncHandler(async (req, res) => {
+    const data = ServiceCreate.parse(req.body);
+    const service = await container.repos.services.create(data);
+    res.status(201).json({ data: service });
+  }),
+);
+
+servicesRouter.patch(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const data = ServiceCreate.partial().parse(req.body);
+    const service = await container.repos.services.update(req.params.id, data);
+    res.json({ data: service });
+  }),
+);
+
+servicesRouter.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    await container.repos.services.delete(req.params.id);
+    res.status(204).end();
+  }),
+);
+
+
+--- FILE: packages\backend\src\routes\shopifyMappings.ts ---
+import { Router } from "express";
+import { ShopifyMappingCreate } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+
+export const shopifyMappingsRouter: ReturnType<typeof Router> = Router();
+
+shopifyMappingsRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit)) || 50, 1), 200);
+    const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
+    const mappings = await container.repos.shopifyMappings.list();
+    const paginated = mappings.slice(offset, offset + limit);
+    res.json({ data: paginated, meta: { total: mappings.length, limit, offset } });
+  }),
+);
+
+shopifyMappingsRouter.post(
+  "/",
+  asyncHandler(async (req, res) => {
+    const data = ShopifyMappingCreate.parse(req.body);
+    const mapping = await container.repos.shopifyMappings.create(data);
+    res.status(201).json({ data: mapping });
+  }),
+);
+
+shopifyMappingsRouter.patch(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const data = ShopifyMappingCreate.partial().parse(req.body);
+    const mapping = await container.repos.shopifyMappings.update(req.params.id, data);
+    res.json({ data: mapping });
+  }),
+);
+
+shopifyMappingsRouter.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    await container.repos.shopifyMappings.delete(req.params.id);
+    res.status(204).end();
+  }),
+);
+
+
+--- FILE: packages\backend\src\middleware\errorHandler.ts ---
+import type { ErrorRequestHandler } from "express";
+import { ZodError } from "zod";
+import { logger } from "../logger.js";
+
+export class HttpError extends Error {
+  constructor(public status: number, message: string, public details?: unknown) {
+    super(message);
+  }
+}
+
+export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  if (err instanceof ZodError) {
+    res.status(400).json({ error: "ValidationError", issues: err.issues });
+    return;
+  }
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ error: err.message, details: err.details });
+    return;
+  }
+  logger.error({ err }, "Unhandled error");
+  // Fix #6: Never expose internal error details in production
+  const isProduction = process.env.NODE_ENV === "production";
+  res.status(500).json({
+    error: "InternalServerError",
+    message: isProduction ? "An unexpected error occurred" : (err?.message ?? "unknown"),
+  });
+};
+
+
+--- FILE: packages\backend\src\integrations\social\ISocialPoster.ts ---
+import type { SocialMediaAccount, SocialPlatform } from "@dm/shared";
+
+export interface SocialPostResult {
+  platform: SocialPlatform;
+  external_post_id: string;
+  posted_at: string;
+  url?: string;
+  success?: boolean;
+  error?: string;
+}
+
+export interface ISocialPoster {
+  readonly platform: SocialPlatform;
+  readonly available: boolean;
+  post(account: SocialMediaAccount, content: string, mediaUrls?: string[]): Promise<SocialPostResult>;
+  refreshToken?(account: SocialMediaAccount): Promise<SocialMediaAccount>;
+}
+
+export class NotImplementedSocialPosterError extends Error {
+  constructor(platform: SocialPlatform) {
+    super(`${platform} poster is not implemented in this build`);
+  }
+}
+
+
+--- FILE: packages\backend\src\integrations\social\facebookPoster.ts ---
+// Stub. Facebook Graph API integration deferred to a future release. Replace this
+// file with a working implementation when `available = true` is needed.
+import type { SocialMediaAccount } from "@dm/shared";
+import { NotImplementedSocialPosterError, type ISocialPoster, type SocialPostResult } from "./ISocialPoster.js";
+
+export class FacebookPoster implements ISocialPoster {
+  readonly platform = "facebook" as const;
+  readonly available = false;
+  async post(_account: SocialMediaAccount, _content: string, _mediaUrls?: string[]): Promise<SocialPostResult> {
+    return {
+      platform: "facebook",
+      external_post_id: "",
+      posted_at: new Date().toISOString(),
+      success: false,
+      error: "Facebook posting is not yet implemented. This integration is planned for a future release.",
+    };
+  }
+}
+
+
+--- FILE: packages\backend\src\integrations\social\instagramPoster.ts ---
+// Stub. Instagram Graph API requires a Business or Creator account linked to
+// a Facebook Page; deferred to a future release.
+import type { SocialMediaAccount } from "@dm/shared";
+import { NotImplementedSocialPosterError, type ISocialPoster, type SocialPostResult } from "./ISocialPoster.js";
+
+export class InstagramPoster implements ISocialPoster {
+  readonly platform = "instagram" as const;
+  readonly available = false;
+  async post(_account: SocialMediaAccount, _content: string, _mediaUrls?: string[]): Promise<SocialPostResult> {
+    return {
+      platform: "instagram",
+      external_post_id: "",
+      posted_at: new Date().toISOString(),
+      success: false,
+      error: "Instagram posting is not yet implemented. This integration is planned for a future release.",
+    };
+  }
+}
+
+
+--- FILE: packages\backend\src\workers\index.ts ---
+// Subscribes worker handlers to the queue at boot. Each worker owns one queue.
+import { container } from "../container.js";
+import { logger } from "../logger.js";
+import { orderAssignmentWorker } from "./orderAssignmentWorker.js";
+import { notificationWorker } from "./notificationWorker.js";
+import { shopifySyncWorker } from "./shopifySyncWorker.js";
+import { socialPostWorker } from "./socialPostWorker.js";
+
+export function startWorkers(): void {
+  const q = container.queue;
+  void q.subscribe("orders.assignment", orderAssignmentWorker);
+  void q.subscribe("orders.notification", notificationWorker);
+  void q.subscribe("shopify.sync", shopifySyncWorker);
+  void q.subscribe("social.post", socialPostWorker);
+  logger.info("Workers subscribed: assignment, notification, shopify.sync, social.post");
+}
+
+
+--- FILE: packages\frontend\src\pages\Freelancers.tsx ---
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { FREELANCER_AVAILABILITY, SERVICE_CATEGORIES } from "@dm/shared";
+import { freelancersApi } from "../api/resources.js";
+
+export function Freelancers() {
+  const [availability, setAvailability] = useState<string>("");
+  const [category, setCategory] = useState<string>("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["freelancers", availability, category],
+    queryFn: () =>
+      freelancersApi.list({
+        availability_status: availability || undefined,
+        category: category || undefined,
+      }),
+  });
+
+  const rows = useMemo(() => data ?? [], [data]);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-lg font-semibold">Freelancers ({rows.length})</h1>
+        <div className="flex gap-2">
+          <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by category">
+            <option value="">All categories</option>
+            {SERVICE_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <select value={availability} onChange={(e) => setAvailability(e.target.value)} aria-label="Filter by availability">
+            <option value="">All availability</option>
+            {FREELANCER_AVAILABILITY.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="card overflow-x-auto">
+        {isLoading ? (
+          <div className="text-textDim">Loadingâ€¦</div>
+        ) : (
+          <table className="w-full text-sm" aria-label="Freelancers list">
+            <thead className="text-textDim text-xs uppercase">
+              <tr>
+                <th className="text-left py-2">Name</th>
+                <th className="text-left py-2">Country</th>
+                <th className="text-right py-2">Rate</th>
+                <th className="text-right py-2">Quality</th>
+                <th className="text-right py-2">Orders</th>
+                <th className="text-left py-2 pl-4">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((f) => (
+                <tr key={f.freelancer_id} className="border-t border-borderc">
+                  <td className="py-2">
+                    <div className="font-semibold">{f.name}</div>
+                    <div className="text-textDim text-xs">{f.email}</div>
+                  </td>
+                  <td className="py-2">{f.country ?? "â€”"}</td>
+                  <td className="py-2 text-right">
+                    ${f.rate_min} â€“ ${f.rate_max}
+                  </td>
+                  <td className="py-2 text-right">{f.quality_rating.toFixed(1)} â˜…</td>
+                  <td className="py-2 text-right">{f.total_orders_completed}</td>
+                  <td className="py-2 pl-4">
+                    <span className="badge">{f.availability_status}</span>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-textDim">
+                    No freelancers match the current filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\pages\Social.tsx ---
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { SOCIAL_PLATFORMS, type SocialPlatform } from "@dm/shared";
+import { socialApi } from "../api/resources.js";
+
+export function Social() {
+  const qc = useQueryClient();
+  const platformsQ = useQuery({ queryKey: ["social", "platforms"], queryFn: () => socialApi.platforms() });
+  const accountsQ = useQuery({ queryKey: ["social", "accounts"], queryFn: () => socialApi.accounts() });
+
+  const [draft, setDraft] = useState<{ platform: SocialPlatform; account_name: string; access_token: string }>({
+    platform: "linkedin",
+    account_name: "",
+    access_token: "",
+  });
+  const [postContent, setPostContent] = useState("");
+  const [postAccountId, setPostAccountId] = useState("");
+
+  const createAccountM = useMutation({
+    mutationFn: () =>
+      socialApi.createAccount({
+        platform: draft.platform,
+        account_name: draft.account_name,
+        access_token: draft.access_token,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["social", "accounts"] });
+      setDraft({ platform: "linkedin", account_name: "", access_token: "" });
+    },
+  });
+
+  const deleteAccountM = useMutation({
+    mutationFn: (id: string) => socialApi.deleteAccount(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["social", "accounts"] }),
+  });
+
+  const postM = useMutation({
+    mutationFn: () => socialApi.post({ account_id: postAccountId, content: postContent }),
+    onSuccess: () => {
+      setPostContent("");
+      qc.invalidateQueries({ queryKey: ["queue"] });
+    },
+  });
+
+  const platforms = platformsQ.data ?? [];
+  const accounts = accountsQ.data ?? [];
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-lg font-semibold">Social Pipeline</h1>
+
+      <div className="card">
+        <h2 className="text-sm uppercase tracking-widest text-ice mb-3">Channels</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {SOCIAL_PLATFORMS.map((p) => {
+            const meta = platforms.find((x) => x.platform === p);
+            return (
+              <div key={p} className="bg-bg border border-borderc rounded-md p-3">
+                <div className="flex items-center justify-between">
+                  <span className="capitalize font-semibold text-textc">{p}</span>
+                  <span className={`badge ${meta?.available ? "" : "opacity-50"}`}>
+                    {meta?.available ? "live" : "stub"}
+                  </span>
+                </div>
+                <div className="text-xs text-textDim mt-2">
+                  {meta?.available ? "Wired up â€” ready to post." : "Coming soon â€” interface ready, implementation pending."}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="card">
+        <h2 className="text-sm uppercase tracking-widest text-ice mb-3">Connected accounts</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+          <select
+            value={draft.platform}
+            onChange={(e) => setDraft((d) => ({ ...d, platform: e.target.value as SocialPlatform }))}
+            aria-label="Select social platform"
+          >
+            {SOCIAL_PLATFORMS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <input
+            aria-label="Account name"
+            placeholder="Account name (LinkedIn URN or handle)"
+            value={draft.account_name}
+            onChange={(e) => setDraft((d) => ({ ...d, account_name: e.target.value }))}
+          />
+          <input
+            aria-label="Access token"
+            placeholder="Access token"
+            type="password"
+            value={draft.access_token}
+            onChange={(e) => setDraft((d) => ({ ...d, access_token: e.target.value }))}
+          />
+        </div>
+        <button
+          className="btn-primary"
+          disabled={!draft.account_name || !draft.access_token || createAccountM.isPending}
+          onClick={() => createAccountM.mutate()}
+          aria-label="Add social media account"
+        >
+          Add account
+        </button>
+
+        <table className="w-full text-sm mt-4">
+          <thead className="text-textDim text-xs uppercase">
+            <tr>
+              <th className="text-left py-2">Platform</th>
+              <th className="text-left py-2">Account</th>
+              <th className="text-left py-2">Token</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.map((a) => (
+              <tr key={a.account_id} className="border-t border-borderc">
+                <td className="py-2 capitalize text-gold">{a.platform}</td>
+                <td className="py-2">{a.account_name}</td>
+                <td className="py-2 text-textDim">{a.has_access_token ? "stored" : "missing"}</td>
+                <td className="py-2 text-right">
+                  <button className="btn-danger btn-sm" onClick={() => deleteAccountM.mutate(a.account_id)} aria-label={`Remove ${a.platform} account ${a.account_name}`}>
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {accounts.length === 0 && (
+              <tr>
+                <td colSpan={4} className="py-6 text-center text-textDim">
+                  No accounts connected.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="card">
+        <h2 className="text-sm uppercase tracking-widest text-ice mb-3">Compose post</h2>
+        <select className="mb-2" value={postAccountId} onChange={(e) => setPostAccountId(e.target.value)} aria-label="Select account to post from">
+          <option value="">Select accountâ€¦</option>
+          {accounts.map((a) => (
+            <option key={a.account_id} value={a.account_id}>
+              {a.platform} â€” {a.account_name}
+            </option>
+          ))}
+        </select>
+        <textarea
+          rows={5}
+          aria-label="Post content"
+          placeholder="What's on your mind?"
+          value={postContent}
+          onChange={(e) => setPostContent(e.target.value)}
+        />
+        <button
+          className="btn-primary mt-2"
+          disabled={!postAccountId || !postContent || postM.isPending}
+          onClick={() => postM.mutate()}
+          aria-label="Queue social media post"
+        >
+          Queue post
+        </button>
+        {postM.isSuccess && <div className="text-statusGreen text-xs mt-2">Queued â€” check the Queue tab.</div>}
+        {postM.isError && <div className="text-statusRed text-xs mt-2">{(postM.error as Error).message}</div>}
+      </div>
+    </div>
+  );
+}
+
+
+--- FILE: .github\workflows\ci.yml ---
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+
+--- FILE: packages\backend\Dockerfile ---
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json* ./
+COPY packages/shared/package.json packages/shared/
+COPY packages/backend/package.json packages/backend/
+RUN npm install --workspaces --include-workspace-root
+
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=deps /app/packages/backend/node_modules ./packages/backend/node_modules
+COPY tsconfig.base.json ./
+COPY packages/shared ./packages/shared
+COPY packages/backend ./packages/backend
+RUN npm run build -w @dm/shared && npm run build -w @dm/backend
+
+FROM node:20-alpine AS run
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/packages ./packages
+EXPOSE 4000
+CMD ["node", "packages/backend/dist/server.js"]
+
+
+

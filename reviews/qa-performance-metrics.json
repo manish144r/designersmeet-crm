@@ -1,0 +1,40 @@
+{
+  "product": "designersmeet-crm",
+  "pipeline_date": "2026-05-06",
+  "pipeline_version": "365-qa-methodology-v1",
+  "initial_pass3": {
+    "approves": 1,
+    "rejects": 4,
+    "models": ["sambanova-llama-3.3-70b", "mistral-small", "sambanova-llama-3.3-70b-2", "mistral-small-2", "mistral-small-3"]
+  },
+  "inner_loop_1": {
+    "fixes_applied": 9,
+    "fix_categories": ["pagination", "csp", "cors", "graceful-shutdown", "config-validation", "error-handling", "aria", "cicd", "tests"],
+    "tests_before": 8,
+    "tests_after": 25,
+    "pass3_rerun": {
+      "approves": 5,
+      "rejects": 0,
+      "models": ["deepseek-r1:8b", "mistral-small-latest", "Meta-Llama-3.3-70B", "qwen3:8b", "phi4"]
+    }
+  },
+  "pass4_final_gate": {
+    "model": "claude-sonnet-4-6",
+    "verdict": "APPROVE_FOR_MVP"
+  },
+  "totals": {
+    "inner_loops": 1,
+    "codex_loops": 1,
+    "total_reviews": 20,
+    "total_cost_usd": 0.05,
+    "pipeline_duration_minutes": 20,
+    "final_verdict": "SHIP_AS_MVP"
+  },
+  "llm_effectiveness": {
+    "deepseek-r1:8b": { "initial_verdict": null, "rerun_verdict": "APPROVE", "unique_issues": 0, "false_positives": 0 },
+    "mistral-small-latest": { "initial_verdict": "REJECT", "rerun_verdict": "APPROVE", "unique_issues": 3, "false_positives": 1 },
+    "Meta-Llama-3.3-70B": { "initial_verdict": "REJECT", "rerun_verdict": "APPROVE", "unique_issues": 2, "false_positives": 2 },
+    "qwen3:8b": { "initial_verdict": null, "rerun_verdict": "APPROVE", "unique_issues": 0, "false_positives": 0 },
+    "phi4": { "initial_verdict": null, "rerun_verdict": "APPROVE", "unique_issues": 0, "false_positives": 0 }
+  }
+}

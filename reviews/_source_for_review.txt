@@ -1,0 +1,5362 @@
+﻿--- FILE: packages\backend\src\__tests__\config.test.ts ---
+import { describe, it, expect } from "vitest";
+
+describe("config production validation", () => {
+  it("should export config object with expected defaults", async () => {
+    // Dynamic import so test env vars don't clash
+    const { config } = await import("../config.js");
+    expect(config.NODE_ENV).toBeDefined();
+    expect(config.BACKEND_PORT).toBe(4000);
+    expect(config.DATA_PROVIDER).toBe("memory");
+    expect(config.QUEUE_PROVIDER).toBe("memory");
+    expect(config.AUTH_MODE).toBe("dev");
+  });
+
+  it("should have valid CORS_ORIGIN default", async () => {
+    const { config } = await import("../config.js");
+    expect(config.CORS_ORIGIN).toBeTruthy();
+    expect(typeof config.CORS_ORIGIN).toBe("string");
+  });
+
+  it("should default to development environment", async () => {
+    const { config } = await import("../config.js");
+    // In test env, NODE_ENV should be 'test' or 'development'
+    expect(["development", "test"]).toContain(config.NODE_ENV);
+  });
+});
+
+
+--- FILE: packages\backend\src\__tests__\middleware.test.ts ---
+import { describe, it, expect, vi } from "vitest";
+import { HttpError } from "../middleware/errorHandler.js";
+
+describe("HttpError", () => {
+  it("creates error with status and message", () => {
+    const err = new HttpError(404, "Not found");
+    expect(err.status).toBe(404);
+    expect(err.message).toBe("Not found");
+    expect(err).toBeInstanceOf(Error);
+  });
+
+  it("creates error with details", () => {
+    const err = new HttpError(400, "Validation failed", { field: "email" });
+    expect(err.status).toBe(400);
+    expect(err.details).toEqual({ field: "email" });
+  });
+});
+
+describe("asyncHandler", () => {
+  it("should be importable", async () => {
+    const mod = await import("../middleware/asyncHandler.js");
+    expect(mod.asyncHandler).toBeDefined();
+    expect(typeof mod.asyncHandler).toBe("function");
+  });
+});
+
+
+--- FILE: packages\backend\src\__tests__\pagination.test.ts ---
+import { describe, it, expect } from "vitest";
+
+describe("pagination utility logic", () => {
+  const paginate = (items: number[], limit: number, offset: number) => {
+    const safeLimit = Math.min(Math.max(limit, 1), 200);
+    const safeOffset = Math.max(offset, 0);
+    return items.slice(safeOffset, safeOffset + safeLimit);
+  };
+
+  it("returns first page with default params", () => {
+    const items = Array.from({ length: 100 }, (_, i) => i);
+    const result = paginate(items, 50, 0);
+    expect(result.length).toBe(50);
+    expect(result[0]).toBe(0);
+    expect(result[49]).toBe(49);
+  });
+
+  it("returns second page with offset", () => {
+    const items = Array.from({ length: 100 }, (_, i) => i);
+    const result = paginate(items, 50, 50);
+    expect(result.length).toBe(50);
+    expect(result[0]).toBe(50);
+  });
+
+  it("caps limit at 200", () => {
+    const items = Array.from({ length: 500 }, (_, i) => i);
+    const result = paginate(items, 999, 0);
+    expect(result.length).toBe(200);
+  });
+
+  it("floors limit at 1", () => {
+    const items = Array.from({ length: 10 }, (_, i) => i);
+    const result = paginate(items, -5, 0);
+    expect(result.length).toBe(1);
+  });
+
+  it("handles offset beyond array length", () => {
+    const items = [1, 2, 3];
+    const result = paginate(items, 50, 100);
+    expect(result.length).toBe(0);
+  });
+
+  it("handles negative offset", () => {
+    const items = [1, 2, 3, 4, 5];
+    const result = paginate(items, 3, -10);
+    expect(result.length).toBe(3);
+    expect(result[0]).toBe(1);
+  });
+
+  it("returns empty for empty array", () => {
+    expect(paginate([], 50, 0).length).toBe(0);
+  });
+});
+
+
+--- FILE: packages\backend\src\__tests__\socialPosters.test.ts ---
+import { describe, it, expect } from "vitest";
+import { FacebookPoster } from "../integrations/social/facebookPoster.js";
+import { InstagramPoster } from "../integrations/social/instagramPoster.js";
+import type { SocialMediaAccount } from "@dm/shared";
+
+const mockAccount: SocialMediaAccount = {
+  account_id: "test-123",
+  platform: "facebook",
+  account_name: "test-account",
+  access_token: "tok",
+  refresh_token: null,
+  token_expires_at: null,
+  active: true,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+describe("FacebookPoster", () => {
+  it("should be marked as unavailable", () => {
+    const poster = new FacebookPoster();
+    expect(poster.available).toBe(false);
+    expect(poster.platform).toBe("facebook");
+  });
+
+  it("should return error result instead of throwing", async () => {
+    const poster = new FacebookPoster();
+    const result = await poster.post(mockAccount, "test content");
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("not yet implemented");
+    expect(result.platform).toBe("facebook");
+  });
+});
+
+describe("InstagramPoster", () => {
+  it("should be marked as unavailable", () => {
+    const poster = new InstagramPoster();
+    expect(poster.available).toBe(false);
+    expect(poster.platform).toBe("instagram");
+  });
+
+  it("should return error result instead of throwing", async () => {
+    const poster = new InstagramPoster();
+    const result = await poster.post({ ...mockAccount, platform: "instagram" }, "test content");
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("not yet implemented");
+    expect(result.platform).toBe("instagram");
+  });
+});
+
+
+--- FILE: packages\backend\src\auth\authMiddleware.ts ---
+// Auth middleware. AUTH_MODE=dev injects a stub user (no token required).
+// AUTH_MODE=entra validates a JWT against Entra ID's JWKS.
+// SECURITY: dev mode is blocked in production (NODE_ENV=production requires AUTH_MODE=entra).
+import type { Request, Response, NextFunction } from "express";
+import { createRemoteJWKSet, jwtVerify } from "jose";
+import { config } from "../config.js";
+import { HttpError } from "../middleware/errorHandler.js";
+import { logger } from "../logger.js";
+
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export type AppRole = "admin" | "designer" | "client";
+
+declare module "express-serve-static-core" {
+  interface Request {
+    user?: { sub: string; email: string; name: string; roles: AppRole[] };
+  }
+}
+
+const DEV_USER = { sub: "dev-user", email: "dev@designersmeet.local", name: "Dev Admin", roles: ["admin"] as AppRole[] };
+
+// â”€â”€â”€ JWKS singleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+function getJwks() {
+  if (!config.ENTRA_TENANT_ID) throw new Error("ENTRA_TENANT_ID required for AUTH_MODE=entra");
+  if (!jwks) {
+    jwks = createRemoteJWKSet(
+      new URL(`https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/discovery/v2.0/keys`),
+    );
+  }
+  return jwks;
+}
+
+// â”€â”€â”€ Auth Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
+  // SECURITY: Block dev mode in production
+  if (config.AUTH_MODE === "dev" && config.NODE_ENV === "production") {
+    logger.error("AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra.");
+    return next(new HttpError(500, "Server misconfiguration"));
+  }
+
+  if (config.AUTH_MODE === "dev") {
+    req.user = DEV_USER;
+    return next();
+  }
+
+  try {
+    const header = req.headers.authorization ?? "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    if (!token) throw new HttpError(401, "Missing bearer token");
+
+    const { payload } = await jwtVerify(token, getJwks(), {
+      audience: config.ENTRA_AUDIENCE ?? config.ENTRA_CLIENT_ID,
+      issuer: `https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/v2.0`,
+    });
+
+    req.user = {
+      sub: String(payload.sub ?? ""),
+      email: String(payload.preferred_username ?? payload.email ?? ""),
+      name: String(payload.name ?? ""),
+      roles: Array.isArray(payload.roles) ? (payload.roles as AppRole[]) : ["client"],
+    };
+    next();
+  } catch (err) {
+    next(new HttpError(401, "Invalid or expired token", err instanceof Error ? err.message : undefined));
+  }
+}
+
+// â”€â”€â”€ RBAC Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/**
+ * Require the authenticated user to have at least one of the specified roles.
+ * Usage: router.delete("/:id", requireRole("admin"), asyncHandler(...))
+ */
+export function requireRole(...roles: AppRole[]) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const userRoles = req.user?.roles ?? [];
+    const hasRole = roles.some((r) => userRoles.includes(r));
+    if (!hasRole) {
+      return next(new HttpError(403, "Forbidden: insufficient permissions"));
+    }
+    next();
+  };
+}
+
+
+--- FILE: packages\backend\src\config.ts ---
+import "dotenv/config";
+import { z } from "zod";
+
+const Env = z.object({
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  BACKEND_PORT: z.coerce.number().int().positive().default(4000),
+  CORS_ORIGIN: z.string().default("http://localhost:5173"),
+
+  DATA_PROVIDER: z.enum(["memory", "dataverse", "sqlserver"]).default("memory"),
+  QUEUE_PROVIDER: z.enum(["memory", "azure-service-bus", "supabase"]).default("memory"),
+  AUTH_MODE: z.enum(["dev", "entra"]).default("dev"),
+
+  DATAVERSE_URL: z.string().optional(),
+  AZURE_TENANT_ID: z.string().optional(),
+  AZURE_CLIENT_ID: z.string().optional(),
+  AZURE_CLIENT_SECRET: z.string().optional(),
+
+  SQLSERVER_HOST: z.string().default("localhost"),
+  SQLSERVER_PORT: z.coerce.number().int().default(1433),
+  SQLSERVER_DATABASE: z.string().default("designersmeet"),
+  SQLSERVER_USER: z.string().default("sa"),
+  SQLSERVER_PASSWORD: z.string().default(""),
+  SQLSERVER_ENCRYPT: z.coerce.boolean().default(false),
+  SQLSERVER_TRUST_SERVER_CERT: z.coerce.boolean().default(true),
+
+  SERVICE_BUS_NAMESPACE: z.string().optional(),
+  SERVICE_BUS_CONNECTION_STRING: z.string().optional(),
+
+  SUPABASE_URL: z.string().optional(),
+  SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_QUEUE_TABLE: z.string().default("order_queue"),
+
+  ENTRA_TENANT_ID: z.string().optional(),
+  ENTRA_CLIENT_ID: z.string().optional(),
+  ENTRA_AUDIENCE: z.string().optional(),
+
+  SHOPIFY_STORE_DOMAIN: z.string().optional(),
+  SHOPIFY_API_SECRET: z.string().optional(),
+  SHOPIFY_WEBHOOK_SECRET: z.string().optional(),
+  SHOPIFY_ADMIN_TOKEN: z.string().optional(),
+
+  LINKEDIN_CLIENT_ID: z.string().optional(),
+  LINKEDIN_CLIENT_SECRET: z.string().optional(),
+  LINKEDIN_REDIRECT_URI: z.string().optional(),
+
+  SEED_FREELANCERS_PATH: z.string().default("../../../dm_launch/freelancer_db.json"),
+  SEED_SHOPIFY_CSV_PATH: z.string().default("../../../dm_launch/shopify_import.csv"),
+});
+
+export const config = Env.parse(process.env);
+export type Config = z.infer<typeof Env>;
+
+// Production safety validation â€” fail fast on dangerous configs
+if (config.NODE_ENV === "production") {
+  if (config.AUTH_MODE === "dev") {
+    throw new Error(
+      "FATAL: AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra and configure ENTRA_* variables.",
+    );
+  }
+  if (config.QUEUE_PROVIDER === "memory" && !config.SUPABASE_URL && !config.SERVICE_BUS_CONNECTION_STRING) {
+    throw new Error(
+      "FATAL: QUEUE_PROVIDER=memory with no persistent fallback is not allowed in production. " +
+        "Set SUPABASE_URL+SUPABASE_ANON_KEY or SERVICE_BUS_CONNECTION_STRING.",
+    );
+  }
+  if (config.AUTH_MODE === "entra" && (!config.ENTRA_TENANT_ID || !config.ENTRA_CLIENT_ID)) {
+    throw new Error(
+      "FATAL: AUTH_MODE=entra requires ENTRA_TENANT_ID and ENTRA_CLIENT_ID in production.",
+    );
+  }
+}
+
+
+--- FILE: packages\backend\src\container.ts ---
+// Composition root. Reads DATA_PROVIDER + QUEUE_PROVIDER from env and wires up
+// the appropriate concrete implementations.
+import { config } from "./config.js";
+import { logger } from "./logger.js";
+import { buildDataverseRepos } from "./repositories/dataverse/index.js";
+import { buildInMemoryRepos } from "./repositories/memory/index.js";
+import { ensureSchema } from "./repositories/sqlserver/db.js";
+import { buildSqlServerRepos } from "./repositories/sqlserver/index.js";
+import type { Repositories } from "./repositories/interfaces.js";
+import { seedInMemory } from "./seed.js";
+import { seedComprehensive } from "./seedComprehensive.js";
+import { AzureServiceBusQueueService } from "./queue/azureServiceBusQueue.js";
+import { InMemoryQueueService } from "./queue/inMemoryQueue.js";
+import { SupabaseQueueService } from "./queue/supabaseQueue.js";
+import type { IQueueService } from "./queue/IQueueService.js";
+import { LinkedInPoster } from "./integrations/social/linkedInPoster.js";
+import { FacebookPoster } from "./integrations/social/facebookPoster.js";
+import { InstagramPoster } from "./integrations/social/instagramPoster.js";
+import type { ISocialPoster } from "./integrations/social/ISocialPoster.js";
+import type { SocialPlatform } from "@dm/shared";
+
+class Container {
+  private _repos: Repositories | null = null;
+  private _queue: IQueueService | null = null;
+  private _social: Map<SocialPlatform, ISocialPoster> = new Map();
+
+  async init(): Promise<void> {
+    // 1. Repositories
+    switch (config.DATA_PROVIDER) {
+      case "dataverse":
+        this._repos = buildDataverseRepos();
+        break;
+      case "sqlserver":
+        await ensureSchema();
+        this._repos = buildSqlServerRepos();
+        break;
+      case "memory":
+      default:
+        this._repos = buildInMemoryRepos();
+        seedInMemory();
+        seedComprehensive();
+        break;
+    }
+    logger.info({ provider: config.DATA_PROVIDER }, "Repositories wired");
+
+    // 2. Queue
+    // Fix #5: Warn about in-memory queue data loss risk in production.
+    let effectiveQueueProvider = config.QUEUE_PROVIDER;
+    if (effectiveQueueProvider === "memory" && config.NODE_ENV === "production") {
+      if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY) {
+        logger.warn("QUEUE_PROVIDER=memory in production. Auto-upgrading to Supabase queue to prevent data loss.");
+        effectiveQueueProvider = "supabase";
+      } else {
+        logger.warn(
+          "QUEUE_PROVIDER=memory in production â€” pending messages WILL BE LOST on restart. " +
+          "Set QUEUE_PROVIDER=supabase or azure-service-bus for persistence.",
+        );
+      }
+    }
+
+    switch (effectiveQueueProvider) {
+      case "azure-service-bus":
+        this._queue = new AzureServiceBusQueueService(this._repos.queueLog);
+        break;
+      case "supabase":
+        this._queue = new SupabaseQueueService(this._repos.queueLog);
+        break;
+      case "memory":
+      default:
+        this._queue = new InMemoryQueueService(this._repos.queueLog);
+        break;
+    }
+    logger.info({ provider: effectiveQueueProvider }, "Queue wired");
+
+    // 3. Social posters
+    this._social.set("linkedin", new LinkedInPoster());
+    this._social.set("facebook", new FacebookPoster());
+    this._social.set("instagram", new InstagramPoster());
+  }
+
+  get repos(): Repositories {
+    if (!this._repos) throw new Error("Container not initialised");
+    return this._repos;
+  }
+
+  get queue(): IQueueService {
+    if (!this._queue) throw new Error("Container not initialised");
+    return this._queue;
+  }
+
+  socialPoster(platform: SocialPlatform): ISocialPoster {
+    const poster = this._social.get(platform);
+    if (!poster) throw new Error(`No poster registered for platform ${platform}`);
+    return poster;
+  }
+}
+
+export const container = new Container();
+
+
+--- FILE: packages\backend\src\integrations\social\facebookPoster.ts ---
+// Stub. Facebook Graph API integration deferred to a future release. Replace this
+// file with a working implementation when `available = true` is needed.
+import type { SocialMediaAccount } from "@dm/shared";
+import { NotImplementedSocialPosterError, type ISocialPoster, type SocialPostResult } from "./ISocialPoster.js";
+
+export class FacebookPoster implements ISocialPoster {
+  readonly platform = "facebook" as const;
+  readonly available = false;
+  async post(_account: SocialMediaAccount, _content: string, _mediaUrls?: string[]): Promise<SocialPostResult> {
+    return {
+      platform: "facebook",
+      external_post_id: "",
+      posted_at: new Date().toISOString(),
+      success: false,
+      error: "Facebook posting is not yet implemented. This integration is planned for a future release.",
+    };
+  }
+}
+
+
+--- FILE: packages\backend\src\integrations\social\instagramPoster.ts ---
+// Stub. Instagram Graph API requires a Business or Creator account linked to
+// a Facebook Page; deferred to a future release.
+import type { SocialMediaAccount } from "@dm/shared";
+import { NotImplementedSocialPosterError, type ISocialPoster, type SocialPostResult } from "./ISocialPoster.js";
+
+export class InstagramPoster implements ISocialPoster {
+  readonly platform = "instagram" as const;
+  readonly available = false;
+  async post(_account: SocialMediaAccount, _content: string, _mediaUrls?: string[]): Promise<SocialPostResult> {
+    return {
+      platform: "instagram",
+      external_post_id: "",
+      posted_at: new Date().toISOString(),
+      success: false,
+      error: "Instagram posting is not yet implemented. This integration is planned for a future release.",
+    };
+  }
+}
+
+
+--- FILE: packages\backend\src\integrations\social\ISocialPoster.ts ---
+import type { SocialMediaAccount, SocialPlatform } from "@dm/shared";
+
+export interface SocialPostResult {
+  platform: SocialPlatform;
+  external_post_id: string;
+  posted_at: string;
+  url?: string;
+  success?: boolean;
+  error?: string;
+}
+
+export interface ISocialPoster {
+  readonly platform: SocialPlatform;
+  readonly available: boolean;
+  post(account: SocialMediaAccount, content: string, mediaUrls?: string[]): Promise<SocialPostResult>;
+  refreshToken?(account: SocialMediaAccount): Promise<SocialMediaAccount>;
+}
+
+export class NotImplementedSocialPosterError extends Error {
+  constructor(platform: SocialPlatform) {
+    super(`${platform} poster is not implemented in this build`);
+  }
+}
+
+
+--- FILE: packages\backend\src\integrations\social\linkedInPoster.ts ---
+// LinkedIn UGC Posts API. Requires an OAuth2 access token with `w_member_social`
+// scope, stored in the SocialMediaAccount.access_token field.
+// Reference: https://learn.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api
+import type { SocialMediaAccount } from "@dm/shared";
+import type { ISocialPoster, SocialPostResult } from "./ISocialPoster.js";
+
+export class LinkedInPoster implements ISocialPoster {
+  readonly platform = "linkedin" as const;
+  readonly available = true;
+
+  async post(account: SocialMediaAccount, content: string, mediaUrls: string[] = []): Promise<SocialPostResult> {
+    if (!account.access_token) throw new Error("LinkedIn account is missing access_token");
+
+    // account.account_name is expected to be the LinkedIn person URN, e.g. urn:li:person:abc123
+    const author = account.account_name.startsWith("urn:li:") ? account.account_name : `urn:li:person:${account.account_name}`;
+
+    const body = {
+      author,
+      lifecycleState: "PUBLISHED",
+      specificContent: {
+        "com.linkedin.ugc.ShareContent": {
+          shareCommentary: { text: content },
+          shareMediaCategory: mediaUrls.length > 0 ? "ARTICLE" : "NONE",
+          ...(mediaUrls.length > 0 && {
+            media: mediaUrls.map((url) => ({
+              status: "READY",
+              originalUrl: url,
+            })),
+          }),
+        },
+      },
+      visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" },
+    };
+
+    const res = await fetch("https://api.linkedin.com/v2/ugcPosts", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${account.access_token}`,
+        "Content-Type": "application/json",
+        "X-Restli-Protocol-Version": "2.0.0",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`LinkedIn UGC post failed: ${res.status} ${text}`);
+    }
+
+    const externalPostId = res.headers.get("x-restli-id") ?? "";
+    return {
+      platform: "linkedin",
+      external_post_id: externalPostId,
+      posted_at: new Date().toISOString(),
+      url: externalPostId ? `https://www.linkedin.com/feed/update/${externalPostId}` : undefined,
+    };
+  }
+}
+
+
+--- FILE: packages\backend\src\logger.ts ---
+import pino from "pino";
+import { config } from "./config.js";
+
+export const logger = pino({
+  level: config.NODE_ENV === "production" ? "info" : "debug",
+  transport:
+    config.NODE_ENV === "development"
+      ? { target: "pino-pretty", options: { colorize: true, translateTime: "HH:MM:ss" } }
+      : undefined,
+});
+
+
+--- FILE: packages\backend\src\middleware\asyncHandler.ts ---
+import type { Request, Response, NextFunction, RequestHandler } from "express";
+
+export const asyncHandler =
+  <Req extends Request = Request, Res extends Response = Response>(
+    fn: (req: Req, res: Res, next: NextFunction) => Promise<unknown>,
+  ): RequestHandler =>
+  (req, res, next) => {
+    Promise.resolve(fn(req as Req, res as Res, next)).catch(next);
+  };
+
+
+--- FILE: packages\backend\src\middleware\errorHandler.ts ---
+import type { ErrorRequestHandler } from "express";
+import { ZodError } from "zod";
+import { logger } from "../logger.js";
+
+export class HttpError extends Error {
+  constructor(public status: number, message: string, public details?: unknown) {
+    super(message);
+  }
+}
+
+export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  if (err instanceof ZodError) {
+    res.status(400).json({ error: "ValidationError", issues: err.issues });
+    return;
+  }
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ error: err.message, details: err.details });
+    return;
+  }
+  logger.error({ err }, "Unhandled error");
+  // Fix #6: Never expose internal error details in production
+  const isProduction = process.env.NODE_ENV === "production";
+  res.status(500).json({
+    error: "InternalServerError",
+    message: isProduction ? "An unexpected error occurred" : (err?.message ?? "unknown"),
+  });
+};
+
+
+--- FILE: packages\backend\src\queue\azureServiceBusQueue.ts ---
+// Azure Service Bus implementation of IQueueService.
+// Uses connection-string when SERVICE_BUS_CONNECTION_STRING is set, otherwise falls
+// back to AAD via DefaultAzureCredential against SERVICE_BUS_NAMESPACE.
+import {
+  ServiceBusClient,
+  ServiceBusAdministrationClient,
+  type ServiceBusReceivedMessage,
+  type ServiceBusSender,
+  type ServiceBusReceiver,
+} from "@azure/service-bus";
+import { DefaultAzureCredential } from "@azure/identity";
+import { v4 as uuid } from "uuid";
+import { QUEUE_NAMES, type QueueName, type OrderQueueItem, type QueueStats } from "@dm/shared";
+import { config } from "../config.js";
+import { logger } from "../logger.js";
+import type { IQueueLogRepository } from "../repositories/interfaces.js";
+import type { IQueueService, QueueHandler } from "./IQueueService.js";
+
+export class AzureServiceBusQueueService implements IQueueService {
+  private client: ServiceBusClient;
+  private adminClient: ServiceBusAdministrationClient | null = null;
+  private senders = new Map<QueueName, ServiceBusSender>();
+  private receivers: ServiceBusReceiver[] = [];
+
+  constructor(private queueLog: IQueueLogRepository) {
+    if (config.SERVICE_BUS_CONNECTION_STRING) {
+      this.client = new ServiceBusClient(config.SERVICE_BUS_CONNECTION_STRING);
+      this.adminClient = new ServiceBusAdministrationClient(config.SERVICE_BUS_CONNECTION_STRING);
+    } else if (config.SERVICE_BUS_NAMESPACE) {
+      const cred = new DefaultAzureCredential();
+      this.client = new ServiceBusClient(config.SERVICE_BUS_NAMESPACE, cred);
+      this.adminClient = new ServiceBusAdministrationClient(config.SERVICE_BUS_NAMESPACE, cred);
+    } else {
+      throw new Error(
+        "Either SERVICE_BUS_CONNECTION_STRING or SERVICE_BUS_NAMESPACE is required when QUEUE_PROVIDER=azure-service-bus",
+      );
+    }
+  }
+
+  private getSender(queueName: QueueName): ServiceBusSender {
+    let sender = this.senders.get(queueName);
+    if (!sender) {
+      sender = this.client.createSender(queueName);
+      this.senders.set(queueName, sender);
+    }
+    return sender;
+  }
+
+  async enqueue(queueName: QueueName, payload: Record<string, unknown>, orderId?: string) {
+    const ts = new Date().toISOString();
+    const item: OrderQueueItem = {
+      queue_id: uuid(),
+      order_id: orderId ?? null,
+      queue_type: queueName,
+      payload,
+      status: "pending",
+      retry_count: 0,
+      last_error: null,
+      created_at: ts,
+      updated_at: ts,
+    };
+    await this.queueLog.record(item);
+    await this.getSender(queueName).sendMessages({
+      messageId: item.queue_id,
+      body: payload,
+      applicationProperties: { order_id: orderId ?? null },
+    });
+    return item;
+  }
+
+  async subscribe<T = Record<string, unknown>>(queueName: QueueName, handler: QueueHandler<T>) {
+    const receiver = this.client.createReceiver(queueName, { receiveMode: "peekLock" });
+    this.receivers.push(receiver);
+    receiver.subscribe(
+      {
+        processMessage: async (msg: ServiceBusReceivedMessage) => {
+          const queueId = msg.messageId?.toString() ?? uuid();
+          await this.queueLog.updateStatus(queueId, "processing");
+          try {
+            await handler({
+              queue_id: queueId,
+              queue_name: queueName,
+              payload: (msg.body ?? {}) as T,
+              retry_count: msg.deliveryCount ?? 0,
+            });
+            await receiver.completeMessage(msg);
+            await this.queueLog.updateStatus(queueId, "completed");
+          } catch (err) {
+            const reason = err instanceof Error ? err.message : String(err);
+            if ((msg.deliveryCount ?? 0) >= 5) {
+              await receiver.deadLetterMessage(msg, {
+                deadLetterReason: "MaxRetriesExceeded",
+                deadLetterErrorDescription: reason,
+              });
+              await this.queueLog.updateStatus(queueId, "dlq", reason);
+            } else {
+              await receiver.abandonMessage(msg);
+              await this.queueLog.updateStatus(queueId, "failed", reason);
+            }
+          }
+        },
+        processError: async ({ error }) => {
+          logger.error({ err: error, queueName }, "Service Bus receiver error");
+        },
+      },
+      { autoCompleteMessages: false },
+    );
+  }
+
+  async stats(): Promise<QueueStats[]> {
+    if (!this.adminClient) {
+      // Fall back to queueLog-derived stats when no admin client is available.
+      return this.statsFromLog();
+    }
+    const out: QueueStats[] = [];
+    for (const queueName of QUEUE_NAMES) {
+      try {
+        const props = await this.adminClient.getQueueRuntimeProperties(queueName);
+        out.push({
+          queue_name: queueName,
+          pending: props.activeMessageCount ?? 0,
+          processing: 0,
+          completed: 0,
+          failed: 0,
+          dlq: props.deadLetterMessageCount ?? 0,
+        });
+      } catch {
+        out.push({ queue_name: queueName, pending: 0, processing: 0, completed: 0, failed: 0, dlq: 0 });
+      }
+    }
+    return out;
+  }
+
+  private async statsFromLog(): Promise<QueueStats[]> {
+    const out: QueueStats[] = [];
+    for (const queueName of QUEUE_NAMES) {
+      const rows = await this.queueLog.list({ queue_type: queueName });
+      out.push({
+        queue_name: queueName,
+        pending: rows.filter((r) => r.status === "pending").length,
+        processing: rows.filter((r) => r.status === "processing").length,
+        completed: rows.filter((r) => r.status === "completed").length,
+        failed: rows.filter((r) => r.status === "failed").length,
+        dlq: rows.filter((r) => r.status === "dlq").length,
+      });
+    }
+    return out;
+  }
+
+  async shutdown() {
+    await Promise.all(this.receivers.map((r) => r.close().catch(() => undefined)));
+    await Promise.all(Array.from(this.senders.values()).map((s) => s.close().catch(() => undefined)));
+    await this.client.close();
+  }
+}
+
+
+--- FILE: packages\backend\src\queue\inMemoryQueue.ts ---
+// Simple async in-memory queue with a per-queue worker loop, exponential backoff,
+// and a DLQ. Persists each message to the queueLog repository so the dashboard
+// can introspect â€” same surface as the cloud queue impls.
+import { v4 as uuid } from "uuid";
+import { QUEUE_NAMES, type QueueName, type OrderQueueItem, type QueueStats } from "@dm/shared";
+import { logger } from "../logger.js";
+import type { IQueueLogRepository } from "../repositories/interfaces.js";
+import type { IQueueService, QueueHandler, QueueMessage } from "./IQueueService.js";
+
+const MAX_RETRIES = 3;
+
+export class InMemoryQueueService implements IQueueService {
+  private buckets = new Map<QueueName, QueueMessage[]>();
+  private handlers = new Map<QueueName, QueueHandler>();
+  private workerHandle: NodeJS.Timeout | null = null;
+
+  constructor(private queueLog: IQueueLogRepository) {
+    for (const name of QUEUE_NAMES) this.buckets.set(name, []);
+    this.workerHandle = setInterval(() => this.tick().catch((e) => logger.error({ e }, "queue tick failed")), 250);
+  }
+
+  async enqueue(queueName: QueueName, payload: Record<string, unknown>, orderId?: string) {
+    const ts = new Date().toISOString();
+    const item: OrderQueueItem = {
+      queue_id: uuid(),
+      order_id: orderId ?? null,
+      queue_type: queueName,
+      payload,
+      status: "pending",
+      retry_count: 0,
+      last_error: null,
+      created_at: ts,
+      updated_at: ts,
+    };
+    await this.queueLog.record(item);
+    this.buckets.get(queueName)?.push({
+      queue_id: item.queue_id,
+      queue_name: queueName,
+      payload,
+      retry_count: 0,
+    });
+    return item;
+  }
+
+  async subscribe<T = Record<string, unknown>>(queueName: QueueName, handler: QueueHandler<T>) {
+    this.handlers.set(queueName, handler as unknown as QueueHandler);
+    logger.debug({ queueName }, "Subscribed handler");
+  }
+
+  async stats(): Promise<QueueStats[]> {
+    const out: QueueStats[] = [];
+    for (const queueName of QUEUE_NAMES) {
+      const rows = await this.queueLog.list({ queue_type: queueName });
+      out.push({
+        queue_name: queueName,
+        pending: rows.filter((r) => r.status === "pending").length,
+        processing: rows.filter((r) => r.status === "processing").length,
+        completed: rows.filter((r) => r.status === "completed").length,
+        failed: rows.filter((r) => r.status === "failed").length,
+        dlq: rows.filter((r) => r.status === "dlq").length,
+      });
+    }
+    return out;
+  }
+
+  async shutdown() {
+    if (this.workerHandle) clearInterval(this.workerHandle);
+    this.workerHandle = null;
+  }
+
+  private async tick() {
+    for (const [queueName, bucket] of this.buckets) {
+      const handler = this.handlers.get(queueName);
+      if (!handler) continue;
+      const next = bucket.shift();
+      if (!next) continue;
+      await this.queueLog.updateStatus(next.queue_id, "processing");
+      try {
+        await handler(next);
+        await this.queueLog.updateStatus(next.queue_id, "completed");
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        if (next.retry_count + 1 >= MAX_RETRIES) {
+          await this.queueLog.updateStatus(next.queue_id, "dlq", reason);
+          logger.warn({ queueName, queue_id: next.queue_id, reason }, "Queue message moved to DLQ");
+        } else {
+          next.retry_count += 1;
+          await this.queueLog.updateStatus(next.queue_id, "failed", reason);
+          // Exponential backoff: 0.5s, 1s, 2s
+          const delay = 500 * Math.pow(2, next.retry_count - 1);
+          setTimeout(() => bucket.push(next), delay);
+        }
+      }
+    }
+  }
+}
+
+
+--- FILE: packages\backend\src\queue\IQueueService.ts ---
+import type { OrderQueueItem, QueueName, QueueStats } from "@dm/shared";
+
+export interface QueueMessage<T = Record<string, unknown>> {
+  queue_id: string;
+  queue_name: QueueName;
+  payload: T;
+  retry_count: number;
+}
+
+export type QueueHandler<T = Record<string, unknown>> = (message: QueueMessage<T>) => Promise<void>;
+
+export interface IQueueService {
+  enqueue(queueName: QueueName, payload: Record<string, unknown>, orderId?: string): Promise<OrderQueueItem>;
+  // Accepts a typed handler â€” internally treated as opaque since the queue layer
+  // doesn't know the worker's payload shape. Workers narrow at the use site.
+  subscribe<T = Record<string, unknown>>(queueName: QueueName, handler: QueueHandler<T>): Promise<void>;
+  stats(): Promise<QueueStats[]>;
+  shutdown(): Promise<void>;
+}
+
+
+--- FILE: packages\backend\src\queue\supabaseQueue.ts ---
+// Supabase-backed queue. Polls a `order_queue` table for pending rows and dispatches
+// to subscribed handlers. Useful when the rest of the platform already runs on
+// Supabase (matches NightFactory's heartbeat/Supabase backend).
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { v4 as uuid } from "uuid";
+import { QUEUE_NAMES, type QueueName, type OrderQueueItem, type QueueStats } from "@dm/shared";
+import { config } from "../config.js";
+import { logger } from "../logger.js";
+import type { IQueueLogRepository } from "../repositories/interfaces.js";
+import type { IQueueService, QueueHandler } from "./IQueueService.js";
+
+const POLL_INTERVAL_MS = 2_000;
+const MAX_RETRIES = 5;
+
+export class SupabaseQueueService implements IQueueService {
+  private supabase: SupabaseClient;
+  private handlers = new Map<QueueName, QueueHandler>();
+  private polling: NodeJS.Timeout | null = null;
+
+  constructor(private queueLog: IQueueLogRepository) {
+    if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
+      throw new Error("SUPABASE_URL and SUPABASE_ANON_KEY are required when QUEUE_PROVIDER=supabase");
+    }
+    this.supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+    this.polling = setInterval(() => this.poll().catch((e) => logger.error({ e }, "supabase queue poll failed")), POLL_INTERVAL_MS);
+  }
+
+  async enqueue(queueName: QueueName, payload: Record<string, unknown>, orderId?: string) {
+    const ts = new Date().toISOString();
+    const item: OrderQueueItem = {
+      queue_id: uuid(),
+      order_id: orderId ?? null,
+      queue_type: queueName,
+      payload,
+      status: "pending",
+      retry_count: 0,
+      last_error: null,
+      created_at: ts,
+      updated_at: ts,
+    };
+    await this.queueLog.record(item);
+    const { error } = await this.supabase.from(config.SUPABASE_QUEUE_TABLE).insert({
+      queue_id: item.queue_id,
+      order_id: item.order_id,
+      queue_type: queueName,
+      payload,
+      status: "pending",
+      retry_count: 0,
+      created_at: ts,
+      updated_at: ts,
+    });
+    if (error) throw new Error(`Supabase queue insert failed: ${error.message}`);
+    return item;
+  }
+
+  async subscribe<T = Record<string, unknown>>(queueName: QueueName, handler: QueueHandler<T>) {
+    this.handlers.set(queueName, handler as unknown as QueueHandler);
+  }
+
+  async stats(): Promise<QueueStats[]> {
+    const out: QueueStats[] = [];
+    for (const queueName of QUEUE_NAMES) {
+      const { data, error } = await this.supabase
+        .from(config.SUPABASE_QUEUE_TABLE)
+        .select("status")
+        .eq("queue_type", queueName);
+      if (error || !data) {
+        out.push({ queue_name: queueName, pending: 0, processing: 0, completed: 0, failed: 0, dlq: 0 });
+        continue;
+      }
+      const counts = { pending: 0, processing: 0, completed: 0, failed: 0, dlq: 0 };
+      for (const row of data) counts[row.status as keyof typeof counts] = (counts[row.status as keyof typeof counts] ?? 0) + 1;
+      out.push({ queue_name: queueName, ...counts });
+    }
+    return out;
+  }
+
+  async shutdown() {
+    if (this.polling) clearInterval(this.polling);
+    this.polling = null;
+  }
+
+  private async poll() {
+    for (const [queueName, handler] of this.handlers) {
+      const { data, error } = await this.supabase
+        .from(config.SUPABASE_QUEUE_TABLE)
+        .update({ status: "processing", updated_at: new Date().toISOString() })
+        .eq("status", "pending")
+        .eq("queue_type", queueName)
+        .select()
+        .limit(5);
+      if (error || !data) continue;
+
+      for (const row of data) {
+        try {
+          await handler({
+            queue_id: row.queue_id,
+            queue_name: queueName,
+            payload: row.payload ?? {},
+            retry_count: row.retry_count ?? 0,
+          });
+          await this.supabase
+            .from(config.SUPABASE_QUEUE_TABLE)
+            .update({ status: "completed", updated_at: new Date().toISOString() })
+            .eq("queue_id", row.queue_id);
+          await this.queueLog.updateStatus(row.queue_id, "completed");
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : String(err);
+          const next = (row.retry_count ?? 0) + 1;
+          const status = next >= MAX_RETRIES ? "dlq" : "pending";
+          await this.supabase
+            .from(config.SUPABASE_QUEUE_TABLE)
+            .update({
+              status,
+              retry_count: next,
+              last_error: reason,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("queue_id", row.queue_id);
+          await this.queueLog.updateStatus(row.queue_id, status, reason);
+        }
+      }
+    }
+  }
+}
+
+
+--- FILE: packages\backend\src\repositories\dataverse\__tests__\cache.test.ts ---
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { withCache, invalidate, cacheStats } from "../cache.js";
+
+describe("withCache", () => {
+  beforeEach(() => {
+    invalidate("test_ns");
+  });
+
+  it("returns fetched value on first call", async () => {
+    const fetcher = vi.fn().mockResolvedValue("fresh-value");
+    const result = await withCache("test_ns", "key1", 1000, fetcher);
+    expect(result).toBe("fresh-value");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns cached value within TTL", async () => {
+    const fetcher = vi.fn().mockResolvedValue("v1").mockResolvedValueOnce("v1");
+    const r1 = await withCache("test_ns", "key1", 1000, fetcher);
+    const r2 = await withCache("test_ns", "key1", 1000, fetcher);
+    expect(r1).toBe("v1");
+    expect(r2).toBe("v1");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-fetches after TTL expiry", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce("v1").mockResolvedValueOnce("v2");
+    const r1 = await withCache("test_ns", "key1", 10, fetcher);
+    await new Promise((res) => setTimeout(res, 20));
+    const r2 = await withCache("test_ns", "key1", 10, fetcher);
+    expect(r1).toBe("v1");
+    expect(r2).toBe("v2");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("invalidate clears the namespace", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce("v1").mockResolvedValueOnce("v2");
+    await withCache("test_ns", "key1", 60_000, fetcher);
+    invalidate("test_ns");
+    const r2 = await withCache("test_ns", "key1", 60_000, fetcher);
+    expect(r2).toBe("v2");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("different keys are isolated within namespace", async () => {
+    const fetcher = vi.fn().mockImplementation((seed: string) => Promise.resolve(`v-${seed}`));
+    const r1 = await withCache("test_ns", "k1", 1000, () => fetcher("a"));
+    const r2 = await withCache("test_ns", "k2", 1000, () => fetcher("b"));
+    expect(r1).toBe("v-a");
+    expect(r2).toBe("v-b");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("cacheStats reports namespaces", async () => {
+    await withCache("test_ns", "k1", 1000, () => Promise.resolve(1));
+    const stats = cacheStats();
+    expect(stats.test_ns).toBeDefined();
+    expect(stats.test_ns.size).toBeGreaterThan(0);
+  });
+});
+
+
+--- FILE: packages\backend\src\repositories\dataverse\cache.ts ---
+// Tiny in-process LRU cache for hot Dataverse reads.
+// Use sparingly â€” only for entities that change rarely (service catalog, freelancer roster).
+// Cache keys must be stable strings that include the query/filter so different shapes get separate slots.
+import QuickLRU from "quick-lru";
+
+interface Entry<T> {
+  value: T;
+  expiresAt: number;
+}
+
+const stores = new Map<string, QuickLRU<string, Entry<unknown>>>();
+
+function getStore(namespace: string, maxSize: number): QuickLRU<string, Entry<unknown>> {
+  let store = stores.get(namespace);
+  if (!store) {
+    store = new QuickLRU<string, Entry<unknown>>({ maxSize });
+    stores.set(namespace, store);
+  }
+  return store;
+}
+
+/**
+ * Cache wrapper for async fetch fns. Returns cached value if not expired,
+ * otherwise calls `fetcher`, caches the result, and returns it.
+ *
+ * @param namespace - Logical bucket (e.g. "services", "freelancers")
+ * @param key - Stable cache key (include filter/select args)
+ * @param ttlMs - Time-to-live in milliseconds
+ * @param fetcher - Async function that returns the value to cache
+ * @param maxSize - LRU cap per namespace (default 200)
+ */
+export async function withCache<T>(
+  namespace: string,
+  key: string,
+  ttlMs: number,
+  fetcher: () => Promise<T>,
+  maxSize = 200,
+): Promise<T> {
+  const store = getStore(namespace, maxSize);
+  const now = Date.now();
+  const hit = store.get(key) as Entry<T> | undefined;
+  if (hit && hit.expiresAt > now) {
+    return hit.value;
+  }
+  const fresh = await fetcher();
+  store.set(key, { value: fresh, expiresAt: now + ttlMs });
+  return fresh;
+}
+
+/** Invalidate a specific key inside a namespace. Call after writes. */
+export function invalidate(namespace: string, key?: string): void {
+  const store = stores.get(namespace);
+  if (!store) return;
+  if (key) {
+    store.delete(key);
+  } else {
+    store.clear();
+  }
+}
+
+/** Stats for /health or admin endpoints. */
+export function cacheStats(): Record<string, { size: number; maxSize: number }> {
+  const out: Record<string, { size: number; maxSize: number }> = {};
+  for (const [ns, store] of stores) {
+    out[ns] = { size: store.size, maxSize: store.maxSize };
+  }
+  return out;
+}
+
+
+--- FILE: packages\backend\src\repositories\dataverse\client.ts ---
+// Lazy-instantiated Dataverse Web API client. Uses MSAL client-credentials flow
+// (DefaultAzureCredential when running in Azure with managed identity).
+import { ClientSecretCredential, DefaultAzureCredential } from "@azure/identity";
+import { config } from "../../config.js";
+
+export interface DataverseClient {
+  retrieveMultiple<T>(entitySet: string, query?: string): Promise<T[]>;
+  retrieve<T>(entitySet: string, id: string, select?: string[]): Promise<T | null>;
+  create<T>(entitySet: string, payload: Record<string, unknown>): Promise<T>;
+  update(entitySet: string, id: string, payload: Record<string, unknown>): Promise<void>;
+  delete(entitySet: string, id: string): Promise<void>;
+}
+
+let cached: DataverseClient | null = null;
+
+export function getDataverseClient(): DataverseClient {
+  if (cached) return cached;
+
+  if (!config.DATAVERSE_URL) {
+    throw new Error("DATAVERSE_URL is required when DATA_PROVIDER=dataverse");
+  }
+
+  const baseUrl = config.DATAVERSE_URL.replace(/\/$/, "") + "/api/data/v9.2";
+  const scope = `${config.DATAVERSE_URL.replace(/\/$/, "")}/.default`;
+
+  const credential =
+    config.AZURE_TENANT_ID && config.AZURE_CLIENT_ID && config.AZURE_CLIENT_SECRET
+      ? new ClientSecretCredential(config.AZURE_TENANT_ID, config.AZURE_CLIENT_ID, config.AZURE_CLIENT_SECRET)
+      : new DefaultAzureCredential();
+
+  async function getToken(): Promise<string> {
+    const token = await credential.getToken(scope);
+    if (!token) throw new Error("Failed to acquire Dataverse access token");
+    return token.token;
+  }
+
+  async function request<T>(
+    method: "GET" | "POST" | "PATCH" | "DELETE",
+    path: string,
+    body?: unknown,
+    extraHeaders?: Record<string, string>,
+  ): Promise<T | null> {
+    const token = await getToken();
+    const res = await fetch(`${baseUrl}/${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "OData-MaxVersion": "4.0",
+        "OData-Version": "4.0",
+        Accept: "application/json",
+        "Content-Type": "application/json; charset=utf-8",
+        Prefer: "return=representation",
+        ...extraHeaders,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (res.status === 204 || res.status === 404) return null;
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Dataverse ${method} ${path} failed: ${res.status} ${text}`);
+    }
+    return (await res.json()) as T;
+  }
+
+  cached = {
+    async retrieveMultiple<T>(entitySet: string, query?: string): Promise<T[]> {
+      const path = query ? `${entitySet}?${query}` : entitySet;
+      const result = await request<{ value: T[] }>("GET", path);
+      return result?.value ?? [];
+    },
+    async retrieve<T>(entitySet: string, id: string, select?: string[]): Promise<T | null> {
+      const q = select?.length ? `?$select=${select.join(",")}` : "";
+      return request<T>("GET", `${entitySet}(${id})${q}`);
+    },
+    async create<T>(entitySet: string, payload: Record<string, unknown>): Promise<T> {
+      const created = await request<T>("POST", entitySet, payload);
+      if (!created) throw new Error(`Dataverse create returned no entity for ${entitySet}`);
+      return created;
+    },
+    async update(entitySet: string, id: string, payload: Record<string, unknown>) {
+      await request("PATCH", `${entitySet}(${id})`, payload);
+    },
+    async delete(entitySet: string, id: string) {
+      await request("DELETE", `${entitySet}(${id})`);
+    },
+  };
+
+  return cached;
+}
+
+
+--- FILE: packages\backend\src\repositories\dataverse\index.ts ---
+// Dataverse adapter â€” thin pass-through over the Web API client.
+// NOTE: Dataverse table & column names below assume a `dm_*` solution prefix
+// and were chosen to match the entity names in @dm/shared. Adjust the
+// `entitySet` and column maps below to match your actual Dataverse environment.
+import { v4 as uuid } from "uuid";
+import {
+  Freelancer,
+  type FreelancerCreate,
+  type FreelancerService,
+  Order,
+  type OrderCreate,
+  type OrderStatus,
+  type OrderUpdate,
+  type OrderQueueItem,
+  Service,
+  type ServiceCreate,
+  ShopifyMapping,
+  type ShopifyMappingCreate,
+  SocialMediaAccount,
+  type SocialMediaAccountCreate,
+} from "@dm/shared";
+import type {
+  IFreelancerRepository,
+  IOrderRepository,
+  IQueueLogRepository,
+  IServiceRepository,
+  IShopifyMappingRepository,
+  ISocialAccountRepository,
+  Repositories,
+} from "../interfaces.js";
+import { getDataverseClient } from "./client.js";
+
+const now = () => new Date().toISOString();
+
+// Generic helpers â€” Dataverse returns column-prefixed records; our schemas use the
+// same field names, so we trust the row shape but force a Zod parse for safety.
+function id(): string {
+  return uuid();
+}
+
+class DataverseOrderRepository implements IOrderRepository {
+  private c = getDataverseClient();
+  private table = "dm_orders";
+  async list(filter?: { status?: OrderStatus; assigned_freelancer_id?: string | null }) {
+    const filters: string[] = [];
+    if (filter?.status) filters.push(`status eq '${filter.status}'`);
+    if (filter?.assigned_freelancer_id !== undefined) {
+      filters.push(
+        filter.assigned_freelancer_id === null
+          ? "assigned_freelancer_id eq null"
+          : `assigned_freelancer_id eq '${filter.assigned_freelancer_id}'`,
+      );
+    }
+    const q = filters.length ? `$filter=${filters.join(" and ")}` : "";
+    const rows = await this.c.retrieveMultiple<Order>(this.table, q);
+    return rows.map((r) => Order.parse(r));
+  }
+  async findById(orderId: string) {
+    const row = await this.c.retrieve<Order>(this.table, orderId);
+    return row ? Order.parse(row) : null;
+  }
+  async findByShopifyId(shopifyOrderId: string) {
+    const rows = await this.c.retrieveMultiple<Order>(
+      this.table,
+      `$filter=shopify_order_id eq '${shopifyOrderId}'&$top=1`,
+    );
+    return rows[0] ? Order.parse(rows[0]) : null;
+  }
+  async create(data: OrderCreate) {
+    const ts = now();
+    const payload = Order.parse({ ...data, order_id: id(), created_at: ts, updated_at: ts });
+    const created = await this.c.create<Order>(this.table, payload as unknown as Record<string, unknown>);
+    return Order.parse(created);
+  }
+  async update(orderId: string, data: OrderUpdate) {
+    await this.c.update(this.table, orderId, { ...data, updated_at: now() });
+    const row = await this.findById(orderId);
+    if (!row) throw new Error(`Order ${orderId} not found after update`);
+    return row;
+  }
+  async delete(orderId: string) {
+    await this.c.delete(this.table, orderId);
+  }
+}
+
+class DataverseFreelancerRepository implements IFreelancerRepository {
+  private c = getDataverseClient();
+  private table = "dm_freelancers";
+  private junctionTable = "dm_freelancerservices";
+  async list(filter?: { availability_status?: string; category?: string }) {
+    const filters: string[] = [];
+    if (filter?.availability_status) filters.push(`availability_status eq '${filter.availability_status}'`);
+    const q = filters.length ? `$filter=${filters.join(" and ")}` : "";
+    const rows = await this.c.retrieveMultiple<Freelancer>(this.table, q);
+    return rows.map((r) => Freelancer.parse(r));
+  }
+  async findById(freelancerId: string) {
+    const row = await this.c.retrieve<Freelancer>(this.table, freelancerId);
+    return row ? Freelancer.parse(row) : null;
+  }
+  async create(data: FreelancerCreate) {
+    const ts = now();
+    const payload = Freelancer.parse({
+      ...data,
+      freelancer_id: id(),
+      created_at: ts,
+      updated_at: ts,
+    });
+    const created = await this.c.create<Freelancer>(this.table, payload as unknown as Record<string, unknown>);
+    return Freelancer.parse(created);
+  }
+  async update(freelancerId: string, data: Partial<FreelancerCreate>) {
+    await this.c.update(this.table, freelancerId, { ...data, updated_at: now() });
+    const row = await this.findById(freelancerId);
+    if (!row) throw new Error(`Freelancer ${freelancerId} not found after update`);
+    return row;
+  }
+  async delete(freelancerId: string) {
+    await this.c.delete(this.table, freelancerId);
+  }
+  async listServices(freelancerId: string) {
+    return this.c.retrieveMultiple<FreelancerService>(
+      this.junctionTable,
+      `$filter=freelancer_id eq '${freelancerId}'`,
+    );
+  }
+  async attachService(link: FreelancerService) {
+    await this.c.create<FreelancerService>(this.junctionTable, link as unknown as Record<string, unknown>);
+    return link;
+  }
+  async detachService(freelancerId: string, serviceId: string) {
+    const rows = await this.c.retrieveMultiple<{ freelancerservice_id?: string }>(
+      this.junctionTable,
+      `$filter=freelancer_id eq '${freelancerId}' and service_id eq '${serviceId}'`,
+    );
+    for (const r of rows) {
+      if (r.freelancerservice_id) await this.c.delete(this.junctionTable, r.freelancerservice_id);
+    }
+  }
+}
+
+class DataverseServiceRepository implements IServiceRepository {
+  private c = getDataverseClient();
+  private table = "dm_services";
+  async list(filter?: { category?: string; active?: boolean }) {
+    const filters: string[] = [];
+    if (filter?.category) filters.push(`category eq '${filter.category}'`);
+    if (filter?.active !== undefined) filters.push(`active eq ${filter.active}`);
+    const q = filters.length ? `$filter=${filters.join(" and ")}` : "";
+    const rows = await this.c.retrieveMultiple<Service>(this.table, q);
+    return rows.map((r) => Service.parse(r));
+  }
+  async findById(serviceId: string) {
+    const row = await this.c.retrieve<Service>(this.table, serviceId);
+    return row ? Service.parse(row) : null;
+  }
+  async create(data: ServiceCreate) {
+    const ts = now();
+    const payload = Service.parse({ ...data, service_id: id(), created_at: ts, updated_at: ts });
+    const created = await this.c.create<Service>(this.table, payload as unknown as Record<string, unknown>);
+    return Service.parse(created);
+  }
+  async update(serviceId: string, data: Partial<ServiceCreate>) {
+    await this.c.update(this.table, serviceId, { ...data, updated_at: now() });
+    const row = await this.findById(serviceId);
+    if (!row) throw new Error(`Service ${serviceId} not found after update`);
+    return row;
+  }
+  async delete(serviceId: string) {
+    await this.c.delete(this.table, serviceId);
+  }
+}
+
+class DataverseShopifyMappingRepository implements IShopifyMappingRepository {
+  private c = getDataverseClient();
+  private table = "dm_shopifymappings";
+  async list() {
+    const rows = await this.c.retrieveMultiple<ShopifyMapping>(this.table);
+    return rows.map((r) => ShopifyMapping.parse(r));
+  }
+  async findByShopifyProductId(shopifyProductId: string) {
+    const rows = await this.c.retrieveMultiple<ShopifyMapping>(
+      this.table,
+      `$filter=shopify_product_id eq '${shopifyProductId}'&$top=1`,
+    );
+    return rows[0] ? ShopifyMapping.parse(rows[0]) : null;
+  }
+  async create(data: ShopifyMappingCreate) {
+    const ts = now();
+    const payload = ShopifyMapping.parse({
+      ...data,
+      mapping_id: id(),
+      created_at: ts,
+      updated_at: ts,
+    });
+    const created = await this.c.create<ShopifyMapping>(this.table, payload as unknown as Record<string, unknown>);
+    return ShopifyMapping.parse(created);
+  }
+  async update(mappingId: string, data: Partial<ShopifyMappingCreate>) {
+    await this.c.update(this.table, mappingId, { ...data, updated_at: now() });
+    const rows = await this.c.retrieveMultiple<ShopifyMapping>(
+      this.table,
+      `$filter=mapping_id eq '${mappingId}'&$top=1`,
+    );
+    if (!rows[0]) throw new Error(`Mapping ${mappingId} not found after update`);
+    return ShopifyMapping.parse(rows[0]);
+  }
+  async delete(mappingId: string) {
+    await this.c.delete(this.table, mappingId);
+  }
+}
+
+class DataverseSocialAccountRepository implements ISocialAccountRepository {
+  private c = getDataverseClient();
+  private table = "dm_socialmediaaccounts";
+  async list(filter?: { platform?: string }) {
+    const q = filter?.platform ? `$filter=platform eq '${filter.platform}'` : "";
+    const rows = await this.c.retrieveMultiple<SocialMediaAccount>(this.table, q);
+    return rows.map((r) => SocialMediaAccount.parse(r));
+  }
+  async findById(accountId: string) {
+    const row = await this.c.retrieve<SocialMediaAccount>(this.table, accountId);
+    return row ? SocialMediaAccount.parse(row) : null;
+  }
+  async create(data: SocialMediaAccountCreate) {
+    const ts = now();
+    const payload = SocialMediaAccount.parse({
+      ...data,
+      account_id: id(),
+      created_at: ts,
+      updated_at: ts,
+    });
+    const created = await this.c.create<SocialMediaAccount>(this.table, payload as unknown as Record<string, unknown>);
+    return SocialMediaAccount.parse(created);
+  }
+  async update(accountId: string, data: Partial<SocialMediaAccountCreate>) {
+    await this.c.update(this.table, accountId, { ...data, updated_at: now() });
+    const row = await this.findById(accountId);
+    if (!row) throw new Error(`Social account ${accountId} not found after update`);
+    return row;
+  }
+  async delete(accountId: string) {
+    await this.c.delete(this.table, accountId);
+  }
+}
+
+class DataverseQueueLogRepository implements IQueueLogRepository {
+  private c = getDataverseClient();
+  private table = "dm_orderqueue";
+  async list(filter?: { queue_type?: string; status?: string }) {
+    const filters: string[] = [];
+    if (filter?.queue_type) filters.push(`queue_type eq '${filter.queue_type}'`);
+    if (filter?.status) filters.push(`status eq '${filter.status}'`);
+    const q = filters.length ? `$filter=${filters.join(" and ")}` : "";
+    return this.c.retrieveMultiple<OrderQueueItem>(this.table, q);
+  }
+  async record(item: OrderQueueItem) {
+    const created = await this.c.create<OrderQueueItem>(this.table, item as unknown as Record<string, unknown>);
+    return created ?? item;
+  }
+  async updateStatus(queueId: string, status: OrderQueueItem["status"], lastError?: string | null) {
+    await this.c.update(this.table, queueId, { status, last_error: lastError ?? null, updated_at: now() });
+  }
+}
+
+export function buildDataverseRepos(): Repositories {
+  return {
+    orders: new DataverseOrderRepository(),
+    freelancers: new DataverseFreelancerRepository(),
+    services: new DataverseServiceRepository(),
+    shopifyMappings: new DataverseShopifyMappingRepository(),
+    socialAccounts: new DataverseSocialAccountRepository(),
+    queueLog: new DataverseQueueLogRepository(),
+  };
+}
+
+
+--- FILE: packages\backend\src\repositories\dataverse\systemTables.ts ---
+// System Dataverse table adapters: account, contact, lead.
+// These wrap the standard Dataverse entities with our domain-specific helpers.
+//
+// Naming note: Dataverse's REST entity sets use plural lowercase names
+// without the publisher prefix for system tables: "accounts", "contacts", "leads".
+//
+// Fields that we add to these tables via the DMCRM solution:
+//   - contact: dm_freelancer_role (string), dm_skills (string), dm_availability_status (choice)
+//
+// These fields are added by the Codex deployment task, not by this file.
+
+import { getDataverseClient } from "./client.js";
+import { withCache, invalidate } from "./cache.js";
+
+// ---------- Type definitions (minimal â€” extend as needed) ----------
+
+export interface DataverseAccount {
+  accountid?: string;
+  name: string;
+  emailaddress1?: string | null;
+  telephone1?: string | null;
+  websiteurl?: string | null;
+  shopify_customer_id?: string | null; // alternate key for Shopify integration
+  createdon?: string;
+  modifiedon?: string;
+}
+
+export interface DataverseContact {
+  contactid?: string;
+  firstname?: string | null;
+  lastname: string;
+  emailaddress1?: string | null;
+  telephone1?: string | null;
+  parentcustomerid_account?: string | null; // lookup to account
+  // Custom freelancer extensions
+  dm_freelancer_role?: string | null;
+  dm_skills?: string | null;
+  dm_availability_status?: "available" | "busy" | "unavailable" | null;
+  createdon?: string;
+  modifiedon?: string;
+}
+
+export interface DataverseLead {
+  leadid?: string;
+  firstname?: string | null;
+  lastname?: string | null;
+  emailaddress1?: string | null;
+  telephone1?: string | null;
+  subject?: string | null;
+  companyname?: string | null;
+  leadsourcecode?: number | null; // 1=Advertisement, 2=Employee Referral, ... 10=Other
+  shopify_order_id?: string | null; // captures the Shopify order that generated this lead
+  createdon?: string;
+  modifiedon?: string;
+}
+
+// ---------- Account repository ----------
+
+export class AccountRepository {
+  private c = getDataverseClient();
+  private table = "accounts";
+
+  /** Find an account by Shopify customer ID â€” used by webhook handler. */
+  async findByShopifyCustomerId(shopifyCustomerId: string): Promise<DataverseAccount | null> {
+    const rows = await this.c.retrieveMultiple<DataverseAccount>(
+      this.table,
+      `$filter=shopify_customer_id eq '${shopifyCustomerId}'&$top=1&$select=accountid,name,emailaddress1,shopify_customer_id`,
+    );
+    return rows[0] ?? null;
+  }
+
+  /** Idempotent upsert by Shopify customer ID. */
+  async upsertByShopifyCustomerId(data: DataverseAccount): Promise<DataverseAccount> {
+    if (!data.shopify_customer_id) {
+      throw new Error("upsertByShopifyCustomerId requires shopify_customer_id");
+    }
+    const existing = await this.findByShopifyCustomerId(data.shopify_customer_id);
+    if (existing?.accountid) {
+      await this.c.update(this.table, existing.accountid, {
+        name: data.name,
+        emailaddress1: data.emailaddress1,
+        telephone1: data.telephone1,
+      });
+      return { ...existing, ...data };
+    }
+    return this.c.create<DataverseAccount>(this.table, data as unknown as Record<string, unknown>);
+  }
+
+  async findById(accountId: string): Promise<DataverseAccount | null> {
+    return this.c.retrieve<DataverseAccount>(this.table, accountId, [
+      "accountid",
+      "name",
+      "emailaddress1",
+      "telephone1",
+      "shopify_customer_id",
+    ]);
+  }
+}
+
+// ---------- Contact repository ----------
+
+export class ContactRepository {
+  private c = getDataverseClient();
+  private table = "contacts";
+
+  /** Active freelancer roster â€” cached 30s because it's a hot read. */
+  async listFreelancers(): Promise<DataverseContact[]> {
+    return withCache(
+      "freelancers",
+      "all_active",
+      30_000,
+      () =>
+        this.c.retrieveMultiple<DataverseContact>(
+          this.table,
+          "$filter=dm_freelancer_role ne null and dm_availability_status ne 'unavailable'" +
+            "&$select=contactid,firstname,lastname,emailaddress1,dm_freelancer_role,dm_skills,dm_availability_status",
+        ),
+    );
+  }
+
+  /** Look up freelancers by skill â€” used by order matching. Cached 30s. */
+  async findFreelancersBySkill(skill: string): Promise<DataverseContact[]> {
+    const all = await this.listFreelancers();
+    return all.filter((c) => c.dm_skills?.toLowerCase().includes(skill.toLowerCase()));
+  }
+
+  async findByEmail(email: string): Promise<DataverseContact | null> {
+    const rows = await this.c.retrieveMultiple<DataverseContact>(
+      this.table,
+      `$filter=emailaddress1 eq '${email}'&$top=1&$select=contactid,firstname,lastname,emailaddress1,parentcustomerid_account`,
+    );
+    return rows[0] ?? null;
+  }
+
+  /** Idempotent upsert by email. */
+  async upsertByEmail(data: DataverseContact & { emailaddress1: string }): Promise<DataverseContact> {
+    const existing = await this.findByEmail(data.emailaddress1);
+    if (existing?.contactid) {
+      await this.c.update(this.table, existing.contactid, data as unknown as Record<string, unknown>);
+      return { ...existing, ...data };
+    }
+    return this.c.create<DataverseContact>(this.table, data as unknown as Record<string, unknown>);
+  }
+
+  async updateAvailability(
+    contactId: string,
+    status: "available" | "busy" | "unavailable",
+  ): Promise<void> {
+    await this.c.update(this.table, contactId, { dm_availability_status: status });
+    invalidate("freelancers"); // bust cache so next read sees fresh data
+  }
+}
+
+// ---------- Lead repository ----------
+
+export class LeadRepository {
+  private c = getDataverseClient();
+  private table = "leads";
+
+  async findByShopifyOrderId(shopifyOrderId: string): Promise<DataverseLead | null> {
+    const rows = await this.c.retrieveMultiple<DataverseLead>(
+      this.table,
+      `$filter=shopify_order_id eq '${shopifyOrderId}'&$top=1&$select=leadid,subject,emailaddress1,shopify_order_id`,
+    );
+    return rows[0] ?? null;
+  }
+
+  /** Create a lead from a Shopify order webhook â€” idempotent by shopify_order_id. */
+  async createFromShopifyOrder(data: DataverseLead & { shopify_order_id: string }): Promise<DataverseLead> {
+    const existing = await this.findByShopifyOrderId(data.shopify_order_id);
+    if (existing) return existing;
+    return this.c.create<DataverseLead>(this.table, {
+      ...data,
+      leadsourcecode: 8, // 8 = Web (closest match for Shopify)
+    } as unknown as Record<string, unknown>);
+  }
+}
+
+// ---------- Composite ----------
+
+export class SystemTableRepositories {
+  accounts = new AccountRepository();
+  contacts = new ContactRepository();
+  leads = new LeadRepository();
+}
+
+export const systemTables = new SystemTableRepositories();
+
+
+--- FILE: packages\backend\src\repositories\interfaces.ts ---
+import type {
+  Freelancer,
+  FreelancerCreate,
+  FreelancerService,
+  Order,
+  OrderCreate,
+  OrderQueueItem,
+  OrderStatus,
+  OrderUpdate,
+  Service,
+  ServiceCreate,
+  ShopifyMapping,
+  ShopifyMappingCreate,
+  SocialMediaAccount,
+  SocialMediaAccountCreate,
+} from "@dm/shared";
+
+export interface IOrderRepository {
+  list(filter?: { status?: OrderStatus; assigned_freelancer_id?: string | null }): Promise<Order[]>;
+  findById(id: string): Promise<Order | null>;
+  findByShopifyId(shopifyOrderId: string): Promise<Order | null>;
+  create(data: OrderCreate): Promise<Order>;
+  update(id: string, data: OrderUpdate): Promise<Order>;
+  delete(id: string): Promise<void>;
+}
+
+export interface IFreelancerRepository {
+  list(filter?: { availability_status?: string; category?: string }): Promise<Freelancer[]>;
+  findById(id: string): Promise<Freelancer | null>;
+  create(data: FreelancerCreate): Promise<Freelancer>;
+  update(id: string, data: Partial<FreelancerCreate>): Promise<Freelancer>;
+  delete(id: string): Promise<void>;
+  // junction
+  listServices(freelancerId: string): Promise<FreelancerService[]>;
+  attachService(link: FreelancerService): Promise<FreelancerService>;
+  detachService(freelancerId: string, serviceId: string): Promise<void>;
+}
+
+export interface IServiceRepository {
+  list(filter?: { category?: string; active?: boolean }): Promise<Service[]>;
+  findById(id: string): Promise<Service | null>;
+  create(data: ServiceCreate): Promise<Service>;
+  update(id: string, data: Partial<ServiceCreate>): Promise<Service>;
+  delete(id: string): Promise<void>;
+}
+
+export interface IShopifyMappingRepository {
+  list(): Promise<ShopifyMapping[]>;
+  findByShopifyProductId(shopifyProductId: string): Promise<ShopifyMapping | null>;
+  create(data: ShopifyMappingCreate): Promise<ShopifyMapping>;
+  update(id: string, data: Partial<ShopifyMappingCreate>): Promise<ShopifyMapping>;
+  delete(id: string): Promise<void>;
+}
+
+export interface ISocialAccountRepository {
+  list(filter?: { platform?: string }): Promise<SocialMediaAccount[]>;
+  findById(id: string): Promise<SocialMediaAccount | null>;
+  create(data: SocialMediaAccountCreate): Promise<SocialMediaAccount>;
+  update(id: string, data: Partial<SocialMediaAccountCreate>): Promise<SocialMediaAccount>;
+  delete(id: string): Promise<void>;
+}
+
+// Optional persistence for queue inspection (used by /api/queue routes when the queue
+// implementation supports introspection â€” in-memory does, Service Bus does via mgmt API).
+export interface IQueueLogRepository {
+  list(filter?: { queue_type?: string; status?: string }): Promise<OrderQueueItem[]>;
+  record(item: OrderQueueItem): Promise<OrderQueueItem>;
+  updateStatus(queueId: string, status: OrderQueueItem["status"], lastError?: string | null): Promise<void>;
+}
+
+export interface Repositories {
+  orders: IOrderRepository;
+  freelancers: IFreelancerRepository;
+  services: IServiceRepository;
+  shopifyMappings: IShopifyMappingRepository;
+  socialAccounts: ISocialAccountRepository;
+  queueLog: IQueueLogRepository;
+}
+
+
+--- FILE: packages\backend\src\repositories\memory\freelancerRepository.ts ---
+import { v4 as uuid } from "uuid";
+import { Freelancer, type FreelancerCreate, type FreelancerService } from "@dm/shared";
+import type { IFreelancerRepository } from "../interfaces.js";
+import { now, store } from "./store.js";
+
+export class InMemoryFreelancerRepository implements IFreelancerRepository {
+  async list(filter?: { availability_status?: string; category?: string }) {
+    let rows = Array.from(store.freelancers.values());
+    if (filter?.availability_status)
+      rows = rows.filter((r) => r.availability_status === filter.availability_status);
+    if (filter?.category) {
+      const ids = new Set(
+        store.freelancerServices
+          .filter((fs) => {
+            const svc = store.services.get(fs.service_id);
+            return svc?.category === filter.category;
+          })
+          .map((fs) => fs.freelancer_id),
+      );
+      rows = rows.filter((r) => ids.has(r.freelancer_id));
+    }
+    return rows.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async findById(id: string) {
+    return store.freelancers.get(id) ?? null;
+  }
+
+  async create(data: FreelancerCreate) {
+    const ts = now();
+    const freelancer = Freelancer.parse({
+      ...data,
+      freelancer_id: uuid(),
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.freelancers.set(freelancer.freelancer_id, freelancer);
+    return freelancer;
+  }
+
+  async update(id: string, data: Partial<FreelancerCreate>) {
+    const existing = store.freelancers.get(id);
+    if (!existing) throw new Error(`Freelancer ${id} not found`);
+    const updated = Freelancer.parse({ ...existing, ...data, freelancer_id: id, updated_at: now() });
+    store.freelancers.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: string) {
+    store.freelancers.delete(id);
+    store.freelancerServices = store.freelancerServices.filter((fs) => fs.freelancer_id !== id);
+  }
+
+  async listServices(freelancerId: string) {
+    return store.freelancerServices.filter((fs) => fs.freelancer_id === freelancerId);
+  }
+
+  async attachService(link: FreelancerService) {
+    store.freelancerServices = store.freelancerServices.filter(
+      (fs) => !(fs.freelancer_id === link.freelancer_id && fs.service_id === link.service_id),
+    );
+    store.freelancerServices.push(link);
+    return link;
+  }
+
+  async detachService(freelancerId: string, serviceId: string) {
+    store.freelancerServices = store.freelancerServices.filter(
+      (fs) => !(fs.freelancer_id === freelancerId && fs.service_id === serviceId),
+    );
+  }
+}
+
+
+--- FILE: packages\backend\src\repositories\memory\index.ts ---
+import type { Repositories } from "../interfaces.js";
+import { InMemoryFreelancerRepository } from "./freelancerRepository.js";
+import { InMemoryOrderRepository } from "./orderRepository.js";
+import { InMemoryQueueLogRepository } from "./queueLogRepository.js";
+import { InMemoryServiceRepository } from "./serviceRepository.js";
+import { InMemoryShopifyMappingRepository } from "./shopifyMappingRepository.js";
+import { InMemorySocialAccountRepository } from "./socialAccountRepository.js";
+
+export function buildInMemoryRepos(): Repositories {
+  return {
+    orders: new InMemoryOrderRepository(),
+    freelancers: new InMemoryFreelancerRepository(),
+    services: new InMemoryServiceRepository(),
+    shopifyMappings: new InMemoryShopifyMappingRepository(),
+    socialAccounts: new InMemorySocialAccountRepository(),
+    queueLog: new InMemoryQueueLogRepository(),
+  };
+}
+
+
+--- FILE: packages\backend\src\repositories\memory\orderRepository.ts ---
+import { v4 as uuid } from "uuid";
+import { Order, type OrderCreate, type OrderStatus, type OrderUpdate } from "@dm/shared";
+import type { IOrderRepository } from "../interfaces.js";
+import { now, store } from "./store.js";
+
+export class InMemoryOrderRepository implements IOrderRepository {
+  async list(filter?: { status?: OrderStatus; assigned_freelancer_id?: string | null }) {
+    let rows = Array.from(store.orders.values());
+    if (filter?.status) rows = rows.filter((r) => r.status === filter.status);
+    if (filter?.assigned_freelancer_id !== undefined)
+      rows = rows.filter((r) => r.assigned_freelancer_id === filter.assigned_freelancer_id);
+    return rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }
+
+  async findById(id: string) {
+    return store.orders.get(id) ?? null;
+  }
+
+  async findByShopifyId(shopifyOrderId: string) {
+    return Array.from(store.orders.values()).find((o) => o.shopify_order_id === shopifyOrderId) ?? null;
+  }
+
+  async create(data: OrderCreate) {
+    const ts = now();
+    const order = Order.parse({
+      ...data,
+      order_id: uuid(),
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.orders.set(order.order_id, order);
+    return order;
+  }
+
+  async update(id: string, data: OrderUpdate) {
+    const existing = store.orders.get(id);
+    if (!existing) throw new Error(`Order ${id} not found`);
+    const updated = Order.parse({ ...existing, ...data, order_id: id, updated_at: now() });
+    store.orders.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: string) {
+    store.orders.delete(id);
+  }
+}
+
+
+--- FILE: packages\backend\src\repositories\memory\queueLogRepository.ts ---
+import type { OrderQueueItem } from "@dm/shared";
+import type { IQueueLogRepository } from "../interfaces.js";
+import { now, store } from "./store.js";
+
+export class InMemoryQueueLogRepository implements IQueueLogRepository {
+  async list(filter?: { queue_type?: string; status?: string }) {
+    let rows = Array.from(store.queueLog.values());
+    if (filter?.queue_type) rows = rows.filter((r) => r.queue_type === filter.queue_type);
+    if (filter?.status) rows = rows.filter((r) => r.status === filter.status);
+    return rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }
+
+  async record(item: OrderQueueItem) {
+    store.queueLog.set(item.queue_id, item);
+    return item;
+  }
+
+  async updateStatus(queueId: string, status: OrderQueueItem["status"], lastError?: string | null) {
+    const existing = store.queueLog.get(queueId);
+    if (!existing) return;
+    store.queueLog.set(queueId, {
+      ...existing,
+      status,
+      last_error: lastError ?? existing.last_error,
+      updated_at: now(),
+    });
+  }
+}
+
+
+--- FILE: packages\backend\src\repositories\memory\serviceRepository.ts ---
+import { v4 as uuid } from "uuid";
+import { Service, type ServiceCreate } from "@dm/shared";
+import type { IServiceRepository } from "../interfaces.js";
+import { now, store } from "./store.js";
+
+export class InMemoryServiceRepository implements IServiceRepository {
+  async list(filter?: { category?: string; active?: boolean }) {
+    let rows = Array.from(store.services.values());
+    if (filter?.category) rows = rows.filter((r) => r.category === filter.category);
+    if (filter?.active !== undefined) rows = rows.filter((r) => r.active === filter.active);
+    return rows.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async findById(id: string) {
+    return store.services.get(id) ?? null;
+  }
+
+  async create(data: ServiceCreate) {
+    const ts = now();
+    const service = Service.parse({
+      ...data,
+      service_id: uuid(),
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.services.set(service.service_id, service);
+    return service;
+  }
+
+  async update(id: string, data: Partial<ServiceCreate>) {
+    const existing = store.services.get(id);
+    if (!existing) throw new Error(`Service ${id} not found`);
+    const updated = Service.parse({ ...existing, ...data, service_id: id, updated_at: now() });
+    store.services.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: string) {
+    store.services.delete(id);
+  }
+}
+
+
+--- FILE: packages\backend\src\repositories\memory\shopifyMappingRepository.ts ---
+import { v4 as uuid } from "uuid";
+import { ShopifyMapping, type ShopifyMappingCreate } from "@dm/shared";
+import type { IShopifyMappingRepository } from "../interfaces.js";
+import { now, store } from "./store.js";
+
+export class InMemoryShopifyMappingRepository implements IShopifyMappingRepository {
+  async list() {
+    return Array.from(store.shopifyMappings.values());
+  }
+
+  async findByShopifyProductId(shopifyProductId: string) {
+    return (
+      Array.from(store.shopifyMappings.values()).find((m) => m.shopify_product_id === shopifyProductId) ?? null
+    );
+  }
+
+  async create(data: ShopifyMappingCreate) {
+    const ts = now();
+    const mapping = ShopifyMapping.parse({
+      ...data,
+      mapping_id: uuid(),
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.shopifyMappings.set(mapping.mapping_id, mapping);
+    return mapping;
+  }
+
+  async update(id: string, data: Partial<ShopifyMappingCreate>) {
+    const existing = store.shopifyMappings.get(id);
+    if (!existing) throw new Error(`Mapping ${id} not found`);
+    const updated = ShopifyMapping.parse({ ...existing, ...data, mapping_id: id, updated_at: now() });
+    store.shopifyMappings.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: string) {
+    store.shopifyMappings.delete(id);
+  }
+}
+
+
+--- FILE: packages\backend\src\repositories\memory\socialAccountRepository.ts ---
+import { v4 as uuid } from "uuid";
+import { SocialMediaAccount, type SocialMediaAccountCreate } from "@dm/shared";
+import type { ISocialAccountRepository } from "../interfaces.js";
+import { now, store } from "./store.js";
+
+export class InMemorySocialAccountRepository implements ISocialAccountRepository {
+  async list(filter?: { platform?: string }) {
+    let rows = Array.from(store.socialAccounts.values());
+    if (filter?.platform) rows = rows.filter((r) => r.platform === filter.platform);
+    return rows;
+  }
+
+  async findById(id: string) {
+    return store.socialAccounts.get(id) ?? null;
+  }
+
+  async create(data: SocialMediaAccountCreate) {
+    const ts = now();
+    const account = SocialMediaAccount.parse({
+      ...data,
+      account_id: uuid(),
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.socialAccounts.set(account.account_id, account);
+    return account;
+  }
+
+  async update(id: string, data: Partial<SocialMediaAccountCreate>) {
+    const existing = store.socialAccounts.get(id);
+    if (!existing) throw new Error(`Social account ${id} not found`);
+    const updated = SocialMediaAccount.parse({ ...existing, ...data, account_id: id, updated_at: now() });
+    store.socialAccounts.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: string) {
+    store.socialAccounts.delete(id);
+  }
+}
+
+
+--- FILE: packages\backend\src\repositories\memory\store.ts ---
+// Shared in-memory store used by every memory repository.
+// Lives at module scope so all repositories see the same state across the process.
+import type {
+  Freelancer,
+  FreelancerService,
+  Order,
+  OrderQueueItem,
+  Service,
+  ShopifyMapping,
+  SocialMediaAccount,
+} from "@dm/shared";
+
+export interface MemoryStore {
+  orders: Map<string, Order>;
+  freelancers: Map<string, Freelancer>;
+  services: Map<string, Service>;
+  freelancerServices: FreelancerService[];
+  shopifyMappings: Map<string, ShopifyMapping>;
+  socialAccounts: Map<string, SocialMediaAccount>;
+  queueLog: Map<string, OrderQueueItem>;
+}
+
+export const store: MemoryStore = {
+  orders: new Map(),
+  freelancers: new Map(),
+  services: new Map(),
+  freelancerServices: [],
+  shopifyMappings: new Map(),
+  socialAccounts: new Map(),
+  queueLog: new Map(),
+};
+
+export const now = () => new Date().toISOString();
+
+
+--- FILE: packages\backend\src\repositories\sqlserver\db.ts ---
+// Lazy Knex connection for SQL Server. Schema is created on first init() so the
+// app boots clean against an empty database (no separate migration step required
+// for this v1 â€” call createSchema() from container.init when DATA_PROVIDER=sqlserver).
+import Knex, { type Knex as KnexType } from "knex";
+import { config } from "../../config.js";
+
+let cached: KnexType | null = null;
+
+export function getDb(): KnexType {
+  if (cached) return cached;
+  cached = Knex({
+    client: "mssql",
+    connection: {
+      host: config.SQLSERVER_HOST,
+      port: config.SQLSERVER_PORT,
+      user: config.SQLSERVER_USER,
+      password: config.SQLSERVER_PASSWORD,
+      database: config.SQLSERVER_DATABASE,
+      options: {
+        encrypt: config.SQLSERVER_ENCRYPT,
+        trustServerCertificate: config.SQLSERVER_TRUST_SERVER_CERT,
+      },
+    },
+    pool: { min: 0, max: 10 },
+  });
+  return cached;
+}
+
+export async function ensureSchema(): Promise<void> {
+  const db = getDb();
+
+  if (!(await db.schema.hasTable("freelancers"))) {
+    await db.schema.createTable("freelancers", (t) => {
+      t.uuid("freelancer_id").primary();
+      t.string("name").notNullable();
+      t.string("email").notNullable();
+      t.string("phone").nullable();
+      t.string("portfolio_url", 500).nullable();
+      t.decimal("rate_min", 10, 2).notNullable().defaultTo(0);
+      t.decimal("rate_max", 10, 2).notNullable().defaultTo(0);
+      t.decimal("quality_rating", 3, 2).notNullable().defaultTo(0);
+      t.string("availability_status").notNullable().defaultTo("available");
+      t.text("ai_tools_used_json").notNullable().defaultTo("[]");
+      t.string("country").nullable();
+      t.string("timezone").nullable();
+      t.integer("total_orders_completed").notNullable().defaultTo(0);
+      t.decimal("avg_delivery_time_hours", 10, 2).notNullable().defaultTo(0);
+      t.string("created_at").notNullable();
+      t.string("updated_at").notNullable();
+    });
+  }
+
+  if (!(await db.schema.hasTable("services"))) {
+    await db.schema.createTable("services", (t) => {
+      t.uuid("service_id").primary();
+      t.string("name").notNullable();
+      t.string("category").notNullable();
+      t.decimal("base_price", 10, 2).notNullable().defaultTo(0);
+      t.decimal("estimated_hours", 10, 2).notNullable().defaultTo(0);
+      t.text("shopify_product_ids_json").notNullable().defaultTo("[]");
+      t.text("description").notNullable().defaultTo("");
+      t.boolean("active").notNullable().defaultTo(true);
+      t.string("created_at").notNullable();
+      t.string("updated_at").notNullable();
+    });
+  }
+
+  if (!(await db.schema.hasTable("freelancer_services"))) {
+    await db.schema.createTable("freelancer_services", (t) => {
+      t.uuid("freelancer_id").notNullable();
+      t.uuid("service_id").notNullable();
+      t.decimal("custom_rate", 10, 2).nullable();
+      t.string("skill_level").notNullable().defaultTo("intermediate");
+      t.primary(["freelancer_id", "service_id"]);
+    });
+  }
+
+  if (!(await db.schema.hasTable("orders"))) {
+    await db.schema.createTable("orders", (t) => {
+      t.uuid("order_id").primary();
+      t.string("shopify_order_id").nullable();
+      t.string("customer_name").notNullable();
+      t.string("customer_email").notNullable();
+      t.uuid("service_id").nullable();
+      t.string("service_type").notNullable();
+      t.uuid("assigned_freelancer_id").nullable();
+      t.string("status").notNullable().defaultTo("new");
+      t.string("priority").notNullable().defaultTo("normal");
+      t.string("due_date").nullable();
+      t.decimal("total_amount", 10, 2).notNullable().defaultTo(0);
+      t.string("currency", 3).notNullable().defaultTo("USD");
+      t.text("notes").notNullable().defaultTo("");
+      t.string("created_at").notNullable();
+      t.string("updated_at").notNullable();
+    });
+  }
+
+  if (!(await db.schema.hasTable("shopify_mappings"))) {
+    await db.schema.createTable("shopify_mappings", (t) => {
+      t.uuid("mapping_id").primary();
+      t.string("shopify_product_id").notNullable();
+      t.string("shopify_product_title").notNullable().defaultTo("");
+      t.uuid("service_id").notNullable();
+      t.boolean("auto_assign_enabled").notNullable().defaultTo(false);
+      t.uuid("default_freelancer_id").nullable();
+      t.string("created_at").notNullable();
+      t.string("updated_at").notNullable();
+    });
+  }
+
+  if (!(await db.schema.hasTable("social_accounts"))) {
+    await db.schema.createTable("social_accounts", (t) => {
+      t.uuid("account_id").primary();
+      t.string("platform").notNullable();
+      t.string("account_name").notNullable();
+      t.text("access_token").notNullable();
+      t.text("refresh_token").nullable();
+      t.string("token_expires_at").nullable();
+      t.boolean("active").notNullable().defaultTo(true);
+      t.string("created_at").notNullable();
+      t.string("updated_at").notNullable();
+    });
+  }
+
+  if (!(await db.schema.hasTable("order_queue"))) {
+    await db.schema.createTable("order_queue", (t) => {
+      t.uuid("queue_id").primary();
+      t.uuid("order_id").nullable();
+      t.string("queue_type").notNullable();
+      t.text("payload_json").notNullable().defaultTo("{}");
+      t.string("status").notNullable().defaultTo("pending");
+      t.integer("retry_count").notNullable().defaultTo(0);
+      t.text("last_error").nullable();
+      t.string("created_at").notNullable();
+      t.string("updated_at").notNullable();
+    });
+  }
+}
+
+
+--- FILE: packages\backend\src\repositories\sqlserver\index.ts ---
+// SQL Server adapter â€” same surface as the in-memory and Dataverse adapters.
+// Knex handles parameterization. JSON-typed columns (ai_tools_used, shopify_product_ids,
+// queue payload) are stored as text and (de)serialized at the boundary.
+import { v4 as uuid } from "uuid";
+import {
+  Freelancer,
+  type FreelancerCreate,
+  type FreelancerService,
+  Order,
+  type OrderCreate,
+  type OrderStatus,
+  type OrderUpdate,
+  type OrderQueueItem,
+  Service,
+  type ServiceCreate,
+  ShopifyMapping,
+  type ShopifyMappingCreate,
+  SocialMediaAccount,
+  type SocialMediaAccountCreate,
+} from "@dm/shared";
+import type {
+  IFreelancerRepository,
+  IOrderRepository,
+  IQueueLogRepository,
+  IServiceRepository,
+  IShopifyMappingRepository,
+  ISocialAccountRepository,
+  Repositories,
+} from "../interfaces.js";
+import { getDb } from "./db.js";
+
+const now = () => new Date().toISOString();
+
+interface FreelancerRow extends Omit<Freelancer, "ai_tools_used"> {
+  ai_tools_used_json: string;
+}
+interface ServiceRow extends Omit<Service, "shopify_product_ids"> {
+  shopify_product_ids_json: string;
+}
+interface QueueRow extends Omit<OrderQueueItem, "payload"> {
+  payload_json: string;
+}
+
+const fromFreelancerRow = (r: FreelancerRow): Freelancer =>
+  Freelancer.parse({ ...r, ai_tools_used: JSON.parse(r.ai_tools_used_json || "[]") });
+const toFreelancerRow = (f: Freelancer): FreelancerRow => {
+  const { ai_tools_used, ...rest } = f;
+  return { ...rest, ai_tools_used_json: JSON.stringify(ai_tools_used ?? []) };
+};
+const fromServiceRow = (r: ServiceRow): Service =>
+  Service.parse({ ...r, shopify_product_ids: JSON.parse(r.shopify_product_ids_json || "[]") });
+const toServiceRow = (s: Service): ServiceRow => {
+  const { shopify_product_ids, ...rest } = s;
+  return { ...rest, shopify_product_ids_json: JSON.stringify(shopify_product_ids ?? []) };
+};
+const fromQueueRow = (r: QueueRow): OrderQueueItem => ({
+  queue_id: r.queue_id,
+  order_id: r.order_id,
+  queue_type: r.queue_type,
+  payload: JSON.parse(r.payload_json || "{}"),
+  status: r.status,
+  retry_count: r.retry_count,
+  last_error: r.last_error,
+  created_at: r.created_at,
+  updated_at: r.updated_at,
+});
+
+class SqlOrderRepository implements IOrderRepository {
+  private db = getDb();
+  async list(filter?: { status?: OrderStatus; assigned_freelancer_id?: string | null }) {
+    let q = this.db<Order>("orders").orderBy("created_at", "desc");
+    if (filter?.status) q = q.where({ status: filter.status });
+    if (filter?.assigned_freelancer_id !== undefined) {
+      q = filter.assigned_freelancer_id === null
+        ? q.whereNull("assigned_freelancer_id")
+        : q.where({ assigned_freelancer_id: filter.assigned_freelancer_id });
+    }
+    return (await q).map((r) => Order.parse(r));
+  }
+  async findById(id: string) {
+    const row = await this.db<Order>("orders").where({ order_id: id }).first();
+    return row ? Order.parse(row) : null;
+  }
+  async findByShopifyId(shopifyOrderId: string) {
+    const row = await this.db<Order>("orders").where({ shopify_order_id: shopifyOrderId }).first();
+    return row ? Order.parse(row) : null;
+  }
+  async create(data: OrderCreate) {
+    const ts = now();
+    const order = Order.parse({ ...data, order_id: uuid(), created_at: ts, updated_at: ts });
+    await this.db("orders").insert(order);
+    return order;
+  }
+  async update(id: string, data: OrderUpdate) {
+    await this.db("orders").where({ order_id: id }).update({ ...data, updated_at: now() });
+    const row = await this.findById(id);
+    if (!row) throw new Error(`Order ${id} not found after update`);
+    return row;
+  }
+  async delete(id: string) {
+    await this.db("orders").where({ order_id: id }).del();
+  }
+}
+
+class SqlFreelancerRepository implements IFreelancerRepository {
+  private db = getDb();
+  async list(filter?: { availability_status?: string; category?: string }) {
+    let q = this.db<FreelancerRow>("freelancers").orderBy("name", "asc");
+    if (filter?.availability_status) q = q.where({ availability_status: filter.availability_status });
+    if (filter?.category) {
+      const sub = this.db("freelancer_services as fs")
+        .join("services as s", "fs.service_id", "s.service_id")
+        .where("s.category", filter.category)
+        .select("fs.freelancer_id");
+      q = q.whereIn("freelancer_id", sub);
+    }
+    return (await q).map(fromFreelancerRow);
+  }
+  async findById(id: string) {
+    const row = await this.db<FreelancerRow>("freelancers").where({ freelancer_id: id }).first();
+    return row ? fromFreelancerRow(row) : null;
+  }
+  async create(data: FreelancerCreate) {
+    const ts = now();
+    const f = Freelancer.parse({ ...data, freelancer_id: uuid(), created_at: ts, updated_at: ts });
+    await this.db("freelancers").insert(toFreelancerRow(f));
+    return f;
+  }
+  async update(id: string, data: Partial<FreelancerCreate>) {
+    const existing = await this.findById(id);
+    if (!existing) throw new Error(`Freelancer ${id} not found`);
+    const updated = Freelancer.parse({ ...existing, ...data, freelancer_id: id, updated_at: now() });
+    await this.db("freelancers").where({ freelancer_id: id }).update(toFreelancerRow(updated));
+    return updated;
+  }
+  async delete(id: string) {
+    await this.db("freelancers").where({ freelancer_id: id }).del();
+    await this.db("freelancer_services").where({ freelancer_id: id }).del();
+  }
+  async listServices(freelancerId: string) {
+    const rows = await this.db<FreelancerService>("freelancer_services").where({ freelancer_id: freelancerId });
+    return rows;
+  }
+  async attachService(link: FreelancerService) {
+    await this.db("freelancer_services")
+      .where({ freelancer_id: link.freelancer_id, service_id: link.service_id })
+      .del();
+    await this.db("freelancer_services").insert(link);
+    return link;
+  }
+  async detachService(freelancerId: string, serviceId: string) {
+    await this.db("freelancer_services").where({ freelancer_id: freelancerId, service_id: serviceId }).del();
+  }
+}
+
+class SqlServiceRepository implements IServiceRepository {
+  private db = getDb();
+  async list(filter?: { category?: string; active?: boolean }) {
+    let q = this.db<ServiceRow>("services").orderBy("name", "asc");
+    if (filter?.category) q = q.where({ category: filter.category });
+    if (filter?.active !== undefined) q = q.where({ active: filter.active });
+    return (await q).map(fromServiceRow);
+  }
+  async findById(id: string) {
+    const row = await this.db<ServiceRow>("services").where({ service_id: id }).first();
+    return row ? fromServiceRow(row) : null;
+  }
+  async create(data: ServiceCreate) {
+    const ts = now();
+    const s = Service.parse({ ...data, service_id: uuid(), created_at: ts, updated_at: ts });
+    await this.db("services").insert(toServiceRow(s));
+    return s;
+  }
+  async update(id: string, data: Partial<ServiceCreate>) {
+    const existing = await this.findById(id);
+    if (!existing) throw new Error(`Service ${id} not found`);
+    const updated = Service.parse({ ...existing, ...data, service_id: id, updated_at: now() });
+    await this.db("services").where({ service_id: id }).update(toServiceRow(updated));
+    return updated;
+  }
+  async delete(id: string) {
+    await this.db("services").where({ service_id: id }).del();
+  }
+}
+
+class SqlShopifyMappingRepository implements IShopifyMappingRepository {
+  private db = getDb();
+  async list() {
+    const rows = await this.db<ShopifyMapping>("shopify_mappings");
+    return rows.map((r) => ShopifyMapping.parse(r));
+  }
+  async findByShopifyProductId(shopifyProductId: string) {
+    const row = await this.db<ShopifyMapping>("shopify_mappings")
+      .where({ shopify_product_id: shopifyProductId })
+      .first();
+    return row ? ShopifyMapping.parse(row) : null;
+  }
+  async create(data: ShopifyMappingCreate) {
+    const ts = now();
+    const m = ShopifyMapping.parse({ ...data, mapping_id: uuid(), created_at: ts, updated_at: ts });
+    await this.db("shopify_mappings").insert(m);
+    return m;
+  }
+  async update(id: string, data: Partial<ShopifyMappingCreate>) {
+    await this.db("shopify_mappings").where({ mapping_id: id }).update({ ...data, updated_at: now() });
+    const row = await this.db<ShopifyMapping>("shopify_mappings").where({ mapping_id: id }).first();
+    if (!row) throw new Error(`Mapping ${id} not found`);
+    return ShopifyMapping.parse(row);
+  }
+  async delete(id: string) {
+    await this.db("shopify_mappings").where({ mapping_id: id }).del();
+  }
+}
+
+class SqlSocialAccountRepository implements ISocialAccountRepository {
+  private db = getDb();
+  async list(filter?: { platform?: string }) {
+    let q = this.db<SocialMediaAccount>("social_accounts");
+    if (filter?.platform) q = q.where({ platform: filter.platform });
+    return (await q).map((r) => SocialMediaAccount.parse(r));
+  }
+  async findById(id: string) {
+    const row = await this.db<SocialMediaAccount>("social_accounts").where({ account_id: id }).first();
+    return row ? SocialMediaAccount.parse(row) : null;
+  }
+  async create(data: SocialMediaAccountCreate) {
+    const ts = now();
+    const a = SocialMediaAccount.parse({ ...data, account_id: uuid(), created_at: ts, updated_at: ts });
+    await this.db("social_accounts").insert(a);
+    return a;
+  }
+  async update(id: string, data: Partial<SocialMediaAccountCreate>) {
+    await this.db("social_accounts").where({ account_id: id }).update({ ...data, updated_at: now() });
+    const row = await this.findById(id);
+    if (!row) throw new Error(`Social account ${id} not found after update`);
+    return row;
+  }
+  async delete(id: string) {
+    await this.db("social_accounts").where({ account_id: id }).del();
+  }
+}
+
+class SqlQueueLogRepository implements IQueueLogRepository {
+  private db = getDb();
+  async list(filter?: { queue_type?: string; status?: string }) {
+    let q = this.db<QueueRow>("order_queue").orderBy("created_at", "desc");
+    if (filter?.queue_type) q = q.where({ queue_type: filter.queue_type });
+    if (filter?.status) q = q.where({ status: filter.status });
+    return (await q).map(fromQueueRow);
+  }
+  async record(item: OrderQueueItem) {
+    await this.db("order_queue").insert({
+      queue_id: item.queue_id,
+      order_id: item.order_id,
+      queue_type: item.queue_type,
+      payload_json: JSON.stringify(item.payload),
+      status: item.status,
+      retry_count: item.retry_count,
+      last_error: item.last_error,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+    });
+    return item;
+  }
+  async updateStatus(queueId: string, status: OrderQueueItem["status"], lastError?: string | null) {
+    await this.db("order_queue").where({ queue_id: queueId }).update({
+      status,
+      last_error: lastError ?? null,
+      updated_at: now(),
+    });
+  }
+}
+
+export function buildSqlServerRepos(): Repositories {
+  return {
+    orders: new SqlOrderRepository(),
+    freelancers: new SqlFreelancerRepository(),
+    services: new SqlServiceRepository(),
+    shopifyMappings: new SqlShopifyMappingRepository(),
+    socialAccounts: new SqlSocialAccountRepository(),
+    queueLog: new SqlQueueLogRepository(),
+  };
+}
+
+
+--- FILE: packages\backend\src\routes\freelancers.ts ---
+import { Router } from "express";
+import { FreelancerCreate, FreelancerService } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+import { HttpError } from "../middleware/errorHandler.js";
+
+export const freelancersRouter: ReturnType<typeof Router> = Router();
+
+freelancersRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit)) || 50, 1), 200);
+    const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
+    const freelancers = await container.repos.freelancers.list({
+      availability_status:
+        typeof req.query.availability_status === "string" ? req.query.availability_status : undefined,
+      category: typeof req.query.category === "string" ? req.query.category : undefined,
+    });
+    const paginated = freelancers.slice(offset, offset + limit);
+    res.json({ data: paginated, meta: { total: freelancers.length, limit, offset } });
+  }),
+);
+
+freelancersRouter.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const freelancer = await container.repos.freelancers.findById(req.params.id);
+    if (!freelancer) throw new HttpError(404, "Freelancer not found");
+    const services = await container.repos.freelancers.listServices(req.params.id);
+    res.json({ data: { ...freelancer, services } });
+  }),
+);
+
+freelancersRouter.post(
+  "/",
+  asyncHandler(async (req, res) => {
+    const data = FreelancerCreate.parse(req.body);
+    const freelancer = await container.repos.freelancers.create(data);
+    res.status(201).json({ data: freelancer });
+  }),
+);
+
+freelancersRouter.patch(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const data = FreelancerCreate.partial().parse(req.body);
+    const freelancer = await container.repos.freelancers.update(req.params.id, data);
+    res.json({ data: freelancer });
+  }),
+);
+
+freelancersRouter.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    await container.repos.freelancers.delete(req.params.id);
+    res.status(204).end();
+  }),
+);
+
+freelancersRouter.post(
+  "/:id/services",
+  asyncHandler(async (req, res) => {
+    const link = FreelancerService.parse({ ...req.body, freelancer_id: req.params.id });
+    const result = await container.repos.freelancers.attachService(link);
+    res.status(201).json({ data: result });
+  }),
+);
+
+freelancersRouter.delete(
+  "/:id/services/:serviceId",
+  asyncHandler(async (req, res) => {
+    await container.repos.freelancers.detachService(req.params.id, req.params.serviceId);
+    res.status(204).end();
+  }),
+);
+
+
+--- FILE: packages\backend\src\routes\orders.ts ---
+import { Router } from "express";
+import { z } from "zod";
+import { OrderCreate, OrderStatus, OrderUpdate } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+import { HttpError } from "../middleware/errorHandler.js";
+import { requireRole } from "../auth/authMiddleware.js";
+
+export const ordersRouter: ReturnType<typeof Router> = Router();
+
+ordersRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const status = req.query.status ? OrderStatus.parse(req.query.status) : undefined;
+    const assigned =
+      typeof req.query.assigned_freelancer_id === "string"
+        ? req.query.assigned_freelancer_id === "null"
+          ? null
+          : req.query.assigned_freelancer_id
+        : undefined;
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit)) || 50, 1), 200);
+    const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
+    const orders = await container.repos.orders.list({
+      status,
+      assigned_freelancer_id: assigned,
+    });
+    const paginated = orders.slice(offset, offset + limit);
+    res.json({ data: paginated, meta: { total: orders.length, limit, offset } });
+  }),
+);
+
+ordersRouter.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const order = await container.repos.orders.findById(req.params.id);
+    if (!order) throw new HttpError(404, "Order not found");
+    res.json({ data: order });
+  }),
+);
+
+ordersRouter.post(
+  "/",
+  requireRole("admin", "designer"),
+  asyncHandler(async (req, res) => {
+    const data = OrderCreate.parse(req.body);
+    const order = await container.repos.orders.create(data);
+    await container.queue.enqueue("orders.assignment", { order_id: order.order_id }, order.order_id);
+    res.status(201).json({ data: order });
+  }),
+);
+
+ordersRouter.patch(
+  "/:id",
+  requireRole("admin", "designer"),
+  asyncHandler(async (req, res) => {
+    const data = OrderUpdate.parse(req.body);
+    const order = await container.repos.orders.update(req.params.id, data);
+    if (data.status) {
+      await container.queue.enqueue(
+        "orders.notification",
+        { order_id: order.order_id, kind: "status_changed", status: order.status },
+        order.order_id,
+      );
+    }
+    res.json({ data: order });
+  }),
+);
+
+ordersRouter.delete(
+  "/:id",
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
+    await container.repos.orders.delete(req.params.id);
+    res.status(204).end();
+  }),
+);
+
+// Fix #3: Replace unsafe `req.body as {...}` with Zod validation
+const AssignBody = z.object({ freelancer_id: z.string().uuid() });
+
+ordersRouter.post(
+  "/:id/assign",
+  requireRole("admin", "designer"),
+  asyncHandler(async (req, res) => {
+    const { freelancer_id } = AssignBody.parse(req.body);
+    const order = await container.repos.orders.update(req.params.id, {
+      assigned_freelancer_id: freelancer_id,
+      status: "assigned",
+    });
+    await container.queue.enqueue(
+      "orders.notification",
+      { order_id: order.order_id, kind: "freelancer_assigned", freelancer_id },
+      order.order_id,
+    );
+    res.json({ data: order });
+  }),
+);
+
+
+--- FILE: packages\backend\src\routes\queue.ts ---
+import { Router } from "express";
+import { QueueName, QueueStatus } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+
+export const queueRouter: ReturnType<typeof Router> = Router();
+
+queueRouter.get(
+  "/stats",
+  asyncHandler(async (_req, res) => {
+    const stats = await container.queue.stats();
+    res.json({ data: stats });
+  }),
+);
+
+queueRouter.get(
+  "/items",
+  asyncHandler(async (req, res) => {
+    const queue_type = req.query.queue_type ? QueueName.parse(req.query.queue_type) : undefined;
+    const status = req.query.status ? QueueStatus.parse(req.query.status) : undefined;
+    const items = await container.repos.queueLog.list({ queue_type, status });
+    res.json({ data: items });
+  }),
+);
+
+queueRouter.post(
+  "/test-message",
+  asyncHandler(async (req, res) => {
+    const queue_name = QueueName.parse(req.body?.queue_name ?? "orders.notification");
+    const payload = (req.body?.payload as Record<string, unknown>) ?? { kind: "test" };
+    const item = await container.queue.enqueue(queue_name, payload);
+    res.status(201).json({ data: item });
+  }),
+);
+
+
+--- FILE: packages\backend\src\routes\services.ts ---
+import { Router } from "express";
+import { ServiceCreate } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+import { HttpError } from "../middleware/errorHandler.js";
+
+export const servicesRouter: ReturnType<typeof Router> = Router();
+
+servicesRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit)) || 50, 1), 200);
+    const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
+    const services = await container.repos.services.list({
+      category: typeof req.query.category === "string" ? req.query.category : undefined,
+      active: req.query.active === "true" ? true : req.query.active === "false" ? false : undefined,
+    });
+    const paginated = services.slice(offset, offset + limit);
+    res.json({ data: paginated, meta: { total: services.length, limit, offset } });
+  }),
+);
+
+servicesRouter.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const service = await container.repos.services.findById(req.params.id);
+    if (!service) throw new HttpError(404, "Service not found");
+    res.json({ data: service });
+  }),
+);
+
+servicesRouter.post(
+  "/",
+  asyncHandler(async (req, res) => {
+    const data = ServiceCreate.parse(req.body);
+    const service = await container.repos.services.create(data);
+    res.status(201).json({ data: service });
+  }),
+);
+
+servicesRouter.patch(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const data = ServiceCreate.partial().parse(req.body);
+    const service = await container.repos.services.update(req.params.id, data);
+    res.json({ data: service });
+  }),
+);
+
+servicesRouter.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    await container.repos.services.delete(req.params.id);
+    res.status(204).end();
+  }),
+);
+
+
+--- FILE: packages\backend\src\routes\shopifyMappings.ts ---
+import { Router } from "express";
+import { ShopifyMappingCreate } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+
+export const shopifyMappingsRouter: ReturnType<typeof Router> = Router();
+
+shopifyMappingsRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit)) || 50, 1), 200);
+    const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
+    const mappings = await container.repos.shopifyMappings.list();
+    const paginated = mappings.slice(offset, offset + limit);
+    res.json({ data: paginated, meta: { total: mappings.length, limit, offset } });
+  }),
+);
+
+shopifyMappingsRouter.post(
+  "/",
+  asyncHandler(async (req, res) => {
+    const data = ShopifyMappingCreate.parse(req.body);
+    const mapping = await container.repos.shopifyMappings.create(data);
+    res.status(201).json({ data: mapping });
+  }),
+);
+
+shopifyMappingsRouter.patch(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const data = ShopifyMappingCreate.partial().parse(req.body);
+    const mapping = await container.repos.shopifyMappings.update(req.params.id, data);
+    res.json({ data: mapping });
+  }),
+);
+
+shopifyMappingsRouter.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    await container.repos.shopifyMappings.delete(req.params.id);
+    res.status(204).end();
+  }),
+);
+
+
+--- FILE: packages\backend\src\routes\shopifyWebhook.ts ---
+// Shopify webhook receiver. Mounted before express.json() so we can verify the
+// HMAC against the raw body. In dev mode (no SHOPIFY_WEBHOOK_SECRET configured)
+// HMAC verification is skipped and a debug-friendly 200 is returned.
+import crypto from "node:crypto";
+import { Router, raw } from "express";
+import { container } from "../container.js";
+import { config } from "../config.js";
+import { logger } from "../logger.js";
+
+export const shopifyWebhookRouter: ReturnType<typeof Router> = Router();
+
+function verifyHmac(rawBody: Buffer, signature: string | undefined): boolean {
+  if (!config.SHOPIFY_WEBHOOK_SECRET) return true; // dev mode â€” accept everything
+  if (!signature) return false;
+  const expected = crypto
+    .createHmac("sha256", config.SHOPIFY_WEBHOOK_SECRET)
+    .update(rawBody)
+    .digest("base64");
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  } catch {
+    return false;
+  }
+}
+
+shopifyWebhookRouter.post(
+  "/orders/create",
+  raw({ type: "*/*", limit: "5mb" }),
+  async (req, res, next) => {
+    try {
+      const sig = req.header("X-Shopify-Hmac-SHA256") ?? undefined;
+      if (!verifyHmac(req.body as Buffer, sig)) {
+        logger.warn({ sig }, "Shopify webhook HMAC verification failed");
+        res.status(401).json({ error: "Invalid HMAC" });
+        return;
+      }
+
+      const order = JSON.parse(req.body.toString("utf8"));
+      const item = await container.queue.enqueue("shopify.sync", { order });
+      logger.info({ shopifyOrderId: order?.id, queue_id: item.queue_id }, "Shopify order/create webhook accepted");
+      res.status(202).json({ ok: true, queued: item.queue_id });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+shopifyWebhookRouter.post(
+  "/orders/updated",
+  raw({ type: "*/*", limit: "5mb" }),
+  async (req, res, next) => {
+    try {
+      const sig = req.header("X-Shopify-Hmac-SHA256") ?? undefined;
+      if (!verifyHmac(req.body as Buffer, sig)) {
+        res.status(401).json({ error: "Invalid HMAC" });
+        return;
+      }
+      const order = JSON.parse(req.body.toString("utf8"));
+      const existing = await container.repos.orders.findByShopifyId(String(order.id));
+      if (existing) {
+        await container.repos.orders.update(existing.order_id, {
+          total_amount: Number(order.total_price ?? existing.total_amount),
+          notes: existing.notes,
+        });
+      }
+      res.status(202).json({ ok: true });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+
+--- FILE: packages\backend\src\routes\social.ts ---
+import { Router } from "express";
+import { SOCIAL_PLATFORMS, SocialMediaAccountCreate, SocialPostRequest } from "@dm/shared";
+import { container } from "../container.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
+import { HttpError } from "../middleware/errorHandler.js";
+
+export const socialRouter: ReturnType<typeof Router> = Router();
+
+// Lists platforms and which ones are live vs. stubbed.
+socialRouter.get(
+  "/platforms",
+  asyncHandler(async (_req, res) => {
+    res.json({
+      data: SOCIAL_PLATFORMS.map((platform) => ({
+        platform,
+        available: container.socialPoster(platform).available,
+      })),
+    });
+  }),
+);
+
+socialRouter.get(
+  "/accounts",
+  asyncHandler(async (req, res) => {
+    const platform = typeof req.query.platform === "string" ? req.query.platform : undefined;
+    const accounts = await container.repos.socialAccounts.list({ platform });
+    // Strip secrets from the wire response â€” keep tokens server-side only.
+    res.json({
+      data: accounts.map(({ access_token, refresh_token, ...rest }) => ({
+        ...rest,
+        has_access_token: Boolean(access_token),
+        has_refresh_token: Boolean(refresh_token),
+      })),
+    });
+  }),
+);
+
+socialRouter.post(
+  "/accounts",
+  asyncHandler(async (req, res) => {
+    const data = SocialMediaAccountCreate.parse(req.body);
+    const account = await container.repos.socialAccounts.create(data);
+    res.status(201).json({
+      data: { ...account, access_token: undefined, refresh_token: undefined },
+    });
+  }),
+);
+
+socialRouter.delete(
+  "/accounts/:id",
+  asyncHandler(async (req, res) => {
+    await container.repos.socialAccounts.delete(req.params.id);
+    res.status(204).end();
+  }),
+);
+
+socialRouter.post(
+  "/post",
+  asyncHandler(async (req, res) => {
+    const data = SocialPostRequest.parse(req.body);
+    const account = await container.repos.socialAccounts.findById(data.account_id);
+    if (!account) throw new HttpError(404, "Social account not found");
+    const poster = container.socialPoster(account.platform);
+    if (!poster.available) throw new HttpError(501, `${account.platform} poster not implemented yet`);
+
+    const item = await container.queue.enqueue("social.post", {
+      account_id: data.account_id,
+      content: data.content,
+      media_urls: data.media_urls,
+    });
+    res.status(202).json({ data: { queued: item } });
+  }),
+);
+
+
+--- FILE: packages\backend\src\seed.ts ---
+// Seeds the in-memory store with the curated freelancer DB + Shopify product catalog
+// from C:\Users\smani\CompanyWorkspaces\dm_launch\. Skipped silently when the source
+// files don't exist â€” the app still boots clean.
+import { readFileSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { v4 as uuid } from "uuid";
+import {
+  Freelancer,
+  type FreelancerService,
+  Service,
+  ShopifyMapping,
+  Order,
+} from "@dm/shared";
+import { config } from "./config.js";
+import { logger } from "./logger.js";
+import { store, now } from "./repositories/memory/store.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+interface SeedFreelancerRow {
+  name: string;
+  category: string;
+  rate: number;
+  ourPrice: number;
+  platform: string;
+  reviews: number;
+  margin: number;
+  stars: number;
+  fit: number;
+  tier: string;
+  country: string;
+}
+
+interface SeedFile {
+  categories: { name: string; basic: number; pro: number; premium: number }[];
+  freelancers: SeedFreelancerRow[];
+}
+
+function slugifyEmail(name: string): string {
+  return `${name.toLowerCase().replace(/[^a-z0-9]+/g, ".")}@designersmeet.app`;
+}
+
+function resolveSeedPath(): string | null {
+  // Try the configured path resolved from a few likely roots, plus an absolute
+  // fallback to the known dm_launch location described in CLAUDE.md.
+  const candidates = [
+    resolve(__dirname, "..", config.SEED_FREELANCERS_PATH),
+    resolve(__dirname, "..", "..", config.SEED_FREELANCERS_PATH),
+    resolve(process.cwd(), config.SEED_FREELANCERS_PATH),
+    resolve(__dirname, "..", "..", "..", "..", "..", "dm_launch", "freelancer_db.json"),
+  ];
+  return candidates.find((p) => existsSync(p)) ?? null;
+}
+
+export function seedInMemory(): void {
+  const seedPath = resolveSeedPath();
+  if (!seedPath) {
+    logger.warn(
+      { configured: config.SEED_FREELANCERS_PATH },
+      "Seed file not found â€” starting with empty store. Set SEED_FREELANCERS_PATH to a valid freelancer_db.json.",
+    );
+    return;
+  }
+
+  let raw: SeedFile;
+  try {
+    // Strip a UTF-8 BOM if present (PowerShell-generated JSON often has one)
+    const text = readFileSync(seedPath, "utf8").replace(/^ï»¿/, "");
+    raw = JSON.parse(text) as SeedFile;
+  } catch (err) {
+    logger.error({ err, seedPath }, "Failed to parse seed file");
+    return;
+  }
+
+  const ts = now();
+  const categoryToServiceId = new Map<string, string>();
+
+  // 1. Services â€” one row per category with Pro pricing as base_price
+  for (const cat of raw.categories ?? []) {
+    const service = Service.parse({
+      service_id: uuid(),
+      name: cat.name,
+      category: cat.name,
+      base_price: cat.pro,
+      estimated_hours: 0,
+      shopify_product_ids: [],
+      description: `${cat.name} â€” Basic $${cat.basic} / Pro $${cat.pro} / Premium $${cat.premium}`,
+      active: true,
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.services.set(service.service_id, service);
+    categoryToServiceId.set(cat.name, service.service_id);
+  }
+
+  // 2. Freelancers + junction
+  for (const row of raw.freelancers ?? []) {
+    const freelancer = Freelancer.parse({
+      freelancer_id: uuid(),
+      name: row.name,
+      email: slugifyEmail(row.name),
+      phone: null,
+      portfolio_url: null,
+      rate_min: row.rate,
+      rate_max: row.ourPrice,
+      quality_rating: row.stars ?? 0,
+      availability_status: "available",
+      ai_tools_used: [],
+      country: row.country ?? null,
+      timezone: null,
+      total_orders_completed: row.reviews ?? 0,
+      avg_delivery_time_hours: 0,
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.freelancers.set(freelancer.freelancer_id, freelancer);
+
+    const serviceId = categoryToServiceId.get(row.category);
+    if (serviceId) {
+      const link: FreelancerService = {
+        freelancer_id: freelancer.freelancer_id,
+        service_id: serviceId,
+        custom_rate: row.rate,
+        skill_level: row.tier?.toLowerCase().includes("premium")
+          ? "lead"
+          : row.tier?.toLowerCase().includes("pro")
+            ? "senior"
+            : "intermediate",
+      };
+      store.freelancerServices.push(link);
+    }
+  }
+
+  // 3. A handful of demo Shopify mappings + sample orders for the Kanban demo
+  const services = Array.from(store.services.values());
+  const freelancers = Array.from(store.freelancers.values());
+  for (let i = 0; i < Math.min(3, services.length); i++) {
+    const svc = services[i]!;
+    const fl = freelancers[i] ?? null;
+    const mapping = ShopifyMapping.parse({
+      mapping_id: uuid(),
+      shopify_product_id: `demo-product-${i + 1}`,
+      shopify_product_title: svc.name,
+      service_id: svc.service_id,
+      auto_assign_enabled: i === 0,
+      default_freelancer_id: fl?.freelancer_id ?? null,
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.shopifyMappings.set(mapping.mapping_id, mapping);
+  }
+
+  const sampleStatuses = ["new", "assigned", "in_progress", "review"] as const;
+  for (let i = 0; i < 4 && i < services.length; i++) {
+    const svc = services[i]!;
+    const fl = i === 0 ? null : freelancers[i % freelancers.length]!;
+    const order = Order.parse({
+      order_id: uuid(),
+      shopify_order_id: `SHOP-${1000 + i}`,
+      customer_name: `Demo Customer ${i + 1}`,
+      customer_email: `customer${i + 1}@example.com`,
+      service_id: svc.service_id,
+      service_type: svc.name,
+      assigned_freelancer_id: fl?.freelancer_id ?? null,
+      status: sampleStatuses[i % sampleStatuses.length]!,
+      priority: "normal",
+      due_date: null,
+      total_amount: svc.base_price,
+      currency: "USD",
+      notes: "Seeded demo order",
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.orders.set(order.order_id, order);
+  }
+
+  logger.info(
+    {
+      services: store.services.size,
+      freelancers: store.freelancers.size,
+      mappings: store.shopifyMappings.size,
+      orders: store.orders.size,
+    },
+    "Seed data loaded",
+  );
+}
+
+// Allow running standalone via `npm run seed`
+const isMainModule = import.meta.url === `file://${process.argv[1]?.replace(/\\/g, "/")}`;
+if (isMainModule) {
+  seedInMemory();
+  console.log(`Seeded ${store.freelancers.size} freelancers, ${store.services.size} services.`);
+}
+
+
+--- FILE: packages\backend\src\seedComprehensive.ts ---
+// Comprehensive seed â€” loads seed_data.json with 20 designers, 15 clients,
+// 10 projects, 5 invoices, 30 interactions into the in-memory store.
+// Falls back gracefully if the JSON doesn't exist.
+import { readFileSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { v4 as uuid } from "uuid";
+import { Freelancer, Service, Order } from "@dm/shared";
+import type { FreelancerService } from "@dm/shared";
+import { logger } from "./logger.js";
+import { store, now } from "./repositories/memory/store.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+interface SeedDesigner {
+  name: string;
+  email: string;
+  category: string;
+  rate_min: number;
+  rate_max: number;
+  quality_rating: number;
+  country: string;
+  ai_tools_used: string[];
+  total_orders_completed: number;
+}
+
+interface SeedClient {
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  industry: string;
+  location: string;
+}
+
+interface SeedProject {
+  client_idx: number;
+  designer_idx: number;
+  service_type: string;
+  status: string;
+  priority: string;
+  total_amount: number;
+  notes: string;
+}
+
+interface SeedData {
+  designers: SeedDesigner[];
+  clients: SeedClient[];
+  projects: SeedProject[];
+  invoices: unknown[];
+  interactions: unknown[];
+}
+
+export function seedComprehensive(): void {
+  const seedPath = resolve(__dirname, "seed_data.json");
+  if (!existsSync(seedPath)) {
+    logger.debug("seed_data.json not found â€” skipping comprehensive seed");
+    return;
+  }
+
+  let data: SeedData;
+  try {
+    data = JSON.parse(readFileSync(seedPath, "utf8")) as SeedData;
+  } catch (err) {
+    logger.error({ err }, "Failed to parse seed_data.json");
+    return;
+  }
+
+  const ts = now();
+  const categoryServiceMap = new Map<string, string>();
+
+  // 1. Create services from unique categories
+  const categories = [...new Set(data.designers.map((d) => d.category))];
+  for (const cat of categories) {
+    const serviceId = uuid();
+    const service = Service.parse({
+      service_id: serviceId,
+      name: cat,
+      category: cat,
+      base_price: 150,
+      estimated_hours: 20,
+      shopify_product_ids: [],
+      description: `Professional ${cat} services`,
+      active: true,
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.services.set(serviceId, service);
+    categoryServiceMap.set(cat, serviceId);
+  }
+
+  // 2. Create freelancers (designers)
+  const designerIds: string[] = [];
+  for (const d of data.designers) {
+    const id = uuid();
+    designerIds.push(id);
+    const freelancer = Freelancer.parse({
+      freelancer_id: id,
+      name: d.name,
+      email: d.email,
+      phone: null,
+      portfolio_url: null,
+      rate_min: d.rate_min,
+      rate_max: d.rate_max,
+      quality_rating: d.quality_rating,
+      availability_status: "available",
+      ai_tools_used: d.ai_tools_used,
+      country: d.country,
+      timezone: null,
+      total_orders_completed: d.total_orders_completed,
+      avg_delivery_time_hours: Math.floor(Math.random() * 48) + 24,
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.freelancers.set(id, freelancer);
+
+    // Link designer to their service category
+    const serviceId = categoryServiceMap.get(d.category);
+    if (serviceId) {
+      const link: FreelancerService = {
+        freelancer_id: id,
+        service_id: serviceId,
+        custom_rate: d.rate_min,
+        skill_level: d.quality_rating >= 4.8 ? "lead" : d.quality_rating >= 4.5 ? "senior" : "intermediate",
+      };
+      store.freelancerServices.push(link);
+    }
+  }
+
+  // 3. Create orders (projects)
+  for (const proj of data.projects) {
+    const client = data.clients[proj.client_idx];
+    const designerId = designerIds[proj.designer_idx] ?? null;
+    const serviceId = categoryServiceMap.get(proj.service_type) ?? null;
+    const order = Order.parse({
+      order_id: uuid(),
+      shopify_order_id: `DM-${2000 + data.projects.indexOf(proj)}`,
+      customer_name: client?.name ?? "Unknown Client",
+      customer_email: client?.email ?? "unknown@example.com",
+      service_id: serviceId,
+      service_type: proj.service_type,
+      assigned_freelancer_id: proj.status === "new" ? null : designerId,
+      status: proj.status === "delivered" ? "delivered" : proj.status as any,
+      priority: proj.priority as any,
+      due_date: null,
+      total_amount: proj.total_amount,
+      currency: "AUD",
+      notes: proj.notes,
+      created_at: ts,
+      updated_at: ts,
+    });
+    store.orders.set(order.order_id, order);
+  }
+
+  logger.info(
+    {
+      designers: store.freelancers.size,
+      services: store.services.size,
+      projects: store.orders.size,
+      clients: data.clients.length,
+      interactions: data.interactions.length,
+    },
+    "Comprehensive seed data loaded",
+  );
+}
+
+
+--- FILE: packages\backend\src\server.ts ---
+import cors from "cors";
+import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import type { Server } from "http";
+import { config } from "./config.js";
+import { container } from "./container.js";
+import { logger } from "./logger.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { authMiddleware } from "./auth/authMiddleware.js";
+import { freelancersRouter } from "./routes/freelancers.js";
+import { ordersRouter } from "./routes/orders.js";
+import { servicesRouter } from "./routes/services.js";
+import { shopifyMappingsRouter } from "./routes/shopifyMappings.js";
+import { queueRouter } from "./routes/queue.js";
+import { socialRouter } from "./routes/social.js";
+import { shopifyWebhookRouter } from "./routes/shopifyWebhook.js";
+import { startWorkers } from "./workers/index.js";
+
+let httpServer: Server | undefined;
+
+async function gracefulShutdown(signal: string) {
+  logger.info({ signal }, "Received shutdown signal, cleaning upâ€¦");
+  try {
+    await container.queue.shutdown();
+  } catch (err) {
+    logger.error({ err }, "Error shutting down queue");
+  }
+  if (httpServer) {
+    httpServer.close(() => {
+      logger.info("HTTP server closed");
+      process.exit(0);
+    });
+    setTimeout(() => {
+      logger.warn("Forced shutdown after timeout");
+      process.exit(1);
+    }, 10_000);
+  } else {
+    process.exit(0);
+  }
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+async function bootstrap() {
+  await container.init();
+
+  const app = express();
+
+  // CSP headers via helmet
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+        },
+      },
+    }),
+  );
+
+  // CORS with allowlist support (comma-separated CORS_ORIGIN)
+  const allowedOrigins = config.CORS_ORIGIN
+    ? config.CORS_ORIGIN.split(",").map((o: string) => o.trim())
+    : [];
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true,
+    }),
+  );
+  app.use(morgan("dev"));
+
+  // Shopify webhook needs raw body for HMAC verification â€” mount BEFORE express.json()
+  app.use("/webhooks/shopify", shopifyWebhookRouter);
+
+  app.use(express.json({ limit: "2mb" }));
+
+  app.get("/health", (_req, res) => {
+    res.json({
+      status: "ok",
+      data_provider: config.DATA_PROVIDER,
+      queue_provider: config.QUEUE_PROVIDER,
+      auth_mode: config.AUTH_MODE,
+      time: new Date().toISOString(),
+    });
+  });
+
+  // All /api routes are auth-gated (dev bypass injects a stub user when AUTH_MODE=dev)
+  app.use("/api", authMiddleware);
+  app.use("/api/freelancers", freelancersRouter);
+  app.use("/api/orders", ordersRouter);
+  app.use("/api/services", servicesRouter);
+  app.use("/api/shopify-mappings", shopifyMappingsRouter);
+  app.use("/api/queue", queueRouter);
+  app.use("/api/social", socialRouter);
+
+  app.use(errorHandler);
+
+  startWorkers();
+
+  httpServer = app.listen(config.BACKEND_PORT, () => {
+    logger.info(
+      { port: config.BACKEND_PORT, data_provider: config.DATA_PROVIDER, queue_provider: config.QUEUE_PROVIDER },
+      "DesignersMeet CRM backend listening",
+    );
+  });
+}
+
+bootstrap().catch((err) => {
+  logger.error({ err }, "Failed to bootstrap server");
+  process.exit(1);
+});
+
+
+--- FILE: packages\backend\src\workers\index.ts ---
+// Subscribes worker handlers to the queue at boot. Each worker owns one queue.
+import { container } from "../container.js";
+import { logger } from "../logger.js";
+import { orderAssignmentWorker } from "./orderAssignmentWorker.js";
+import { notificationWorker } from "./notificationWorker.js";
+import { shopifySyncWorker } from "./shopifySyncWorker.js";
+import { socialPostWorker } from "./socialPostWorker.js";
+
+export function startWorkers(): void {
+  const q = container.queue;
+  void q.subscribe("orders.assignment", orderAssignmentWorker);
+  void q.subscribe("orders.notification", notificationWorker);
+  void q.subscribe("shopify.sync", shopifySyncWorker);
+  void q.subscribe("social.post", socialPostWorker);
+  logger.info("Workers subscribed: assignment, notification, shopify.sync, social.post");
+}
+
+
+--- FILE: packages\backend\src\workers\notificationWorker.ts ---
+// Logs notification events. Real email/SMS/Teams delivery is added later by
+// swapping this function â€” the queue contract stays the same.
+import { logger } from "../logger.js";
+import type { QueueHandler } from "../queue/IQueueService.js";
+
+export const notificationWorker: QueueHandler<{ order_id?: string; kind: string; [k: string]: unknown }> = async (
+  msg,
+) => {
+  logger.info({ payload: msg.payload }, "Notification dispatched");
+};
+
+
+--- FILE: packages\backend\src\workers\orderAssignmentWorker.ts ---
+// Picks a freelancer for an order. If the order's Shopify mapping has
+// `auto_assign_enabled`, uses `default_freelancer_id`; otherwise picks the most
+// available freelancer in the matching service category.
+import { container } from "../container.js";
+import { logger } from "../logger.js";
+import type { QueueHandler } from "../queue/IQueueService.js";
+
+export const orderAssignmentWorker: QueueHandler<{ order_id: string }> = async (msg) => {
+  const { order_id } = msg.payload;
+  if (!order_id) throw new Error("orders.assignment requires payload.order_id");
+
+  const order = await container.repos.orders.findById(order_id);
+  if (!order) throw new Error(`Order ${order_id} not found`);
+  if (order.assigned_freelancer_id) {
+    logger.debug({ order_id }, "Order already assigned, skipping");
+    return;
+  }
+
+  let freelancerId: string | null = null;
+
+  // 1. Check Shopify mapping for auto-assign default
+  if (order.shopify_order_id && order.service_id) {
+    const mappings = await container.repos.shopifyMappings.list();
+    const mapping = mappings.find((m) => m.service_id === order.service_id && m.auto_assign_enabled);
+    if (mapping?.default_freelancer_id) freelancerId = mapping.default_freelancer_id;
+  }
+
+  // 2. Otherwise round-robin among available freelancers in the service category
+  if (!freelancerId && order.service_id) {
+    const service = await container.repos.services.findById(order.service_id);
+    if (service) {
+      const candidates = await container.repos.freelancers.list({
+        availability_status: "available",
+        category: service.category,
+      });
+      if (candidates.length > 0) {
+        freelancerId = candidates.sort(
+          (a, b) => a.total_orders_completed - b.total_orders_completed,
+        )[0]!.freelancer_id;
+      }
+    }
+  }
+
+  if (!freelancerId) {
+    logger.warn({ order_id }, "No freelancer found for auto-assignment");
+    return;
+  }
+
+  await container.repos.orders.update(order_id, {
+    assigned_freelancer_id: freelancerId,
+    status: "assigned",
+  });
+  await container.queue.enqueue(
+    "orders.notification",
+    { order_id, kind: "freelancer_assigned", freelancer_id: freelancerId },
+    order_id,
+  );
+  logger.info({ order_id, freelancerId }, "Order assigned");
+};
+
+
+--- FILE: packages\backend\src\workers\shopifySyncWorker.ts ---
+// Pulls order detail from Shopify Admin API for incoming webhook payloads, then
+// upserts a CRM order. Falls back to the webhook payload itself when no admin
+// token is configured (dev/local).
+import { container } from "../container.js";
+import { logger } from "../logger.js";
+import { config } from "../config.js";
+import type { QueueHandler } from "../queue/IQueueService.js";
+
+interface ShopifyOrderPayload {
+  id: string | number;
+  email?: string;
+  customer?: { first_name?: string; last_name?: string };
+  total_price?: string;
+  currency?: string;
+  line_items?: { product_id: string | number; title: string }[];
+}
+
+export const shopifySyncWorker: QueueHandler<{ order: ShopifyOrderPayload }> = async (msg) => {
+  const { order } = msg.payload;
+  if (!order) throw new Error("shopify.sync requires payload.order");
+
+  const shopifyOrderId = String(order.id);
+  const existing = await container.repos.orders.findByShopifyId(shopifyOrderId);
+  if (existing) {
+    logger.debug({ shopifyOrderId }, "Shopify order already synced");
+    return;
+  }
+
+  const firstItem = order.line_items?.[0];
+  let serviceId: string | null = null;
+  let serviceName = firstItem?.title ?? "Unknown service";
+  if (firstItem) {
+    const mapping = await container.repos.shopifyMappings.findByShopifyProductId(String(firstItem.product_id));
+    if (mapping) {
+      serviceId = mapping.service_id;
+      const svc = await container.repos.services.findById(mapping.service_id);
+      if (svc) serviceName = svc.name;
+    }
+  }
+
+  const customerName =
+    `${order.customer?.first_name ?? ""} ${order.customer?.last_name ?? ""}`.trim() || "Shopify customer";
+
+  const created = await container.repos.orders.create({
+    shopify_order_id: shopifyOrderId,
+    customer_name: customerName,
+    customer_email: order.email ?? "unknown@shopify.local",
+    service_id: serviceId,
+    service_type: serviceName,
+    status: "new",
+    total_amount: Number(order.total_price ?? 0),
+    currency: order.currency ?? "USD",
+    notes: `Imported from Shopify (store: ${config.SHOPIFY_STORE_DOMAIN ?? "unknown"})`,
+  });
+
+  await container.queue.enqueue("orders.assignment", { order_id: created.order_id }, created.order_id);
+  logger.info({ order_id: created.order_id, shopifyOrderId }, "Shopify order synced");
+};
+
+
+--- FILE: packages\backend\src\workers\socialPostWorker.ts ---
+// Dispatches a queued social post via the appropriate ISocialPoster.
+import { container } from "../container.js";
+import { logger } from "../logger.js";
+import type { QueueHandler } from "../queue/IQueueService.js";
+import type { SocialPlatform } from "@dm/shared";
+
+export const socialPostWorker: QueueHandler<{
+  account_id: string;
+  content: string;
+  media_urls?: string[];
+}> = async (msg) => {
+  const { account_id, content, media_urls } = msg.payload;
+  const account = await container.repos.socialAccounts.findById(account_id);
+  if (!account) throw new Error(`Social account ${account_id} not found`);
+  if (!account.active) throw new Error(`Social account ${account_id} is inactive`);
+
+  const poster = container.socialPoster(account.platform as SocialPlatform);
+  const result = await poster.post(account, content, media_urls ?? []);
+  logger.info({ account_id, platform: account.platform, external_post_id: result.external_post_id }, "Social post sent");
+};
+
+
+--- FILE: packages\backend\vitest.config.ts ---
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "node",
+    globals: true,
+    coverage: {
+      reporter: ["text", "html"],
+      exclude: ["node_modules/", "dist/", "src/seed.ts"],
+    },
+  },
+});
+
+
+--- FILE: packages\frontend\src\api\client.ts ---
+// Typed fetch wrapper with auth token support.
+// Vite dev proxy forwards /api to the backend, so relative URLs work in both dev and prod.
+
+export interface ApiResponse<T> {
+  data: T;
+}
+
+let _getAccessToken: (() => Promise<string | null>) | null = null;
+
+/** Called once from AuthProvider to inject the token getter */
+export function setTokenGetter(fn: () => Promise<string | null>) {
+  _getAccessToken = fn;
+}
+
+async function request<T>(
+  path: string,
+  init: RequestInit & { json?: unknown } = {},
+): Promise<T> {
+  const { json, headers, ...rest } = init;
+
+  // Attach Bearer token if available (Fix #9: frontend API client now sends auth token)
+  const authHeaders: Record<string, string> = {};
+  if (_getAccessToken) {
+    const token = await _getAccessToken();
+    if (token) authHeaders["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`/api${path}`, {
+    ...rest,
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders,
+      ...(headers as Record<string, string> | undefined),
+    },
+    body: json !== undefined ? JSON.stringify(json) : (init.body ?? undefined),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`HTTP ${res.status} ${res.statusText}: ${text}`);
+  }
+  if (res.status === 204) return undefined as T;
+  const payload = (await res.json()) as ApiResponse<T>;
+  return payload.data;
+}
+
+export const api = {
+  get: <T,>(path: string) => request<T>(path),
+  post: <T,>(path: string, body?: unknown) => request<T>(path, { method: "POST", json: body }),
+  patch: <T,>(path: string, body?: unknown) => request<T>(path, { method: "PATCH", json: body }),
+  delete: <T,>(path: string) => request<T>(path, { method: "DELETE" }),
+};
+
+
+--- FILE: packages\frontend\src\api\resources.ts ---
+import type {
+  Freelancer,
+  FreelancerCreate,
+  Order,
+  OrderCreate,
+  OrderQueueItem,
+  OrderUpdate,
+  QueueStats,
+  Service,
+  ServiceCreate,
+  ShopifyMapping,
+  ShopifyMappingCreate,
+  SocialMediaAccount,
+  SocialPlatform,
+} from "@dm/shared";
+import { api } from "./client.js";
+
+export const ordersApi = {
+  list: (params?: { status?: string; assigned_freelancer_id?: string | null }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (params?.assigned_freelancer_id !== undefined)
+      query.set("assigned_freelancer_id", params.assigned_freelancer_id ?? "null");
+    const qs = query.toString();
+    return api.get<Order[]>(`/orders${qs ? `?${qs}` : ""}`);
+  },
+  get: (id: string) => api.get<Order>(`/orders/${id}`),
+  create: (data: OrderCreate) => api.post<Order>(`/orders`, data),
+  update: (id: string, data: OrderUpdate) => api.patch<Order>(`/orders/${id}`, data),
+  assign: (id: string, freelancer_id: string) => api.post<Order>(`/orders/${id}/assign`, { freelancer_id }),
+  delete: (id: string) => api.delete<void>(`/orders/${id}`),
+};
+
+export const freelancersApi = {
+  list: (params?: { availability_status?: string; category?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.availability_status) query.set("availability_status", params.availability_status);
+    if (params?.category) query.set("category", params.category);
+    const qs = query.toString();
+    return api.get<Freelancer[]>(`/freelancers${qs ? `?${qs}` : ""}`);
+  },
+  get: (id: string) => api.get<Freelancer>(`/freelancers/${id}`),
+  create: (data: FreelancerCreate) => api.post<Freelancer>(`/freelancers`, data),
+  update: (id: string, data: Partial<FreelancerCreate>) => api.patch<Freelancer>(`/freelancers/${id}`, data),
+  delete: (id: string) => api.delete<void>(`/freelancers/${id}`),
+};
+
+export const servicesApi = {
+  list: () => api.get<Service[]>(`/services`),
+  create: (data: ServiceCreate) => api.post<Service>(`/services`, data),
+  update: (id: string, data: Partial<ServiceCreate>) => api.patch<Service>(`/services/${id}`, data),
+  delete: (id: string) => api.delete<void>(`/services/${id}`),
+};
+
+export const mappingsApi = {
+  list: () => api.get<ShopifyMapping[]>(`/shopify-mappings`),
+  create: (data: ShopifyMappingCreate) => api.post<ShopifyMapping>(`/shopify-mappings`, data),
+  update: (id: string, data: Partial<ShopifyMappingCreate>) =>
+    api.patch<ShopifyMapping>(`/shopify-mappings/${id}`, data),
+  delete: (id: string) => api.delete<void>(`/shopify-mappings/${id}`),
+};
+
+export const queueApi = {
+  stats: () => api.get<QueueStats[]>(`/queue/stats`),
+  items: (params?: { queue_type?: string; status?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.queue_type) query.set("queue_type", params.queue_type);
+    if (params?.status) query.set("status", params.status);
+    const qs = query.toString();
+    return api.get<OrderQueueItem[]>(`/queue/items${qs ? `?${qs}` : ""}`);
+  },
+  testMessage: (queue_name: string, payload: Record<string, unknown>) =>
+    api.post<OrderQueueItem>(`/queue/test-message`, { queue_name, payload }),
+};
+
+export type SocialAccountSummary = Omit<SocialMediaAccount, "access_token" | "refresh_token"> & {
+  has_access_token: boolean;
+  has_refresh_token: boolean;
+};
+
+export const socialApi = {
+  platforms: () => api.get<{ platform: SocialPlatform; available: boolean }[]>(`/social/platforms`),
+  accounts: (platform?: string) =>
+    api.get<SocialAccountSummary[]>(`/social/accounts${platform ? `?platform=${platform}` : ""}`),
+  createAccount: (data: { platform: SocialPlatform; account_name: string; access_token: string; refresh_token?: string | null }) =>
+    api.post<SocialAccountSummary>(`/social/accounts`, data),
+  deleteAccount: (id: string) => api.delete<void>(`/social/accounts/${id}`),
+  post: (data: { account_id: string; content: string; media_urls?: string[] }) =>
+    api.post<{ queued: OrderQueueItem }>(`/social/post`, data),
+};
+
+
+--- FILE: packages\frontend\src\App.tsx ---
+import { NavLink, Route, Routes, Navigate } from "react-router-dom";
+import { useAuth } from "./auth/AuthProvider.js";
+import { Dashboard } from "./pages/Dashboard.js";
+import { Orders } from "./pages/Orders.js";
+import { Freelancers } from "./pages/Freelancers.js";
+import { Services } from "./pages/Services.js";
+import { ShopifyMappings } from "./pages/ShopifyMappings.js";
+import { Queue } from "./pages/Queue.js";
+import { Social } from "./pages/Social.js";
+
+const tabs = [
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/orders", label: "Orders" },
+  { to: "/freelancers", label: "Freelancers" },
+  { to: "/services", label: "Services" },
+  { to: "/mappings", label: "Shopify" },
+  { to: "/queue", label: "Queue" },
+  { to: "/social", label: "Social" },
+];
+
+export function App() {
+  const { user } = useAuth();
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="bg-navy-dark border-b border-borderc px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded bg-gold flex items-center justify-center text-navy-dark font-extrabold">
+            DM
+          </div>
+          <div>
+            <h1 className="text-gold text-lg font-semibold tracking-wider">DesignersMeet CRM</h1>
+            <span className="text-ice-dim text-[11px] uppercase tracking-widest">Operations</span>
+          </div>
+        </div>
+        <div className="text-textDim text-xs">{user?.email}</div>
+      </header>
+
+      <nav className="bg-navy-dark border-b-2 border-borderc px-6 flex gap-0 overflow-x-auto">
+        {tabs.map((t) => (
+          <NavLink
+            key={t.to}
+            to={t.to}
+            className={({ isActive }) => `nav-tab ${isActive ? "active" : ""}`}
+          >
+            {t.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      <main className="flex-1 px-6 py-5">
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/freelancers" element={<Freelancers />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/mappings" element={<ShopifyMappings />} />
+          <Route path="/queue" element={<Queue />} />
+          <Route path="/social" element={<Social />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\auth\AuthProvider.tsx ---
+// Auth context with dual-mode support:
+// - Development (default): stub DEV_USER â€” backend dev bypass accepts the request
+// - Production: @azure/msal-react with Entra ID tokens
+import { createContext, useContext, useMemo, useCallback, type ReactNode } from "react";
+
+export type AppRole = "admin" | "designer" | "client";
+
+interface AuthUser {
+  sub: string;
+  email: string;
+  name: string;
+  roles: AppRole[];
+}
+
+interface AuthContextValue {
+  user: AuthUser | null;
+  signedIn: boolean;
+  getAccessToken: () => Promise<string | null>;
+  signOut: () => void;
+}
+
+const DEV_USER: AuthUser = {
+  sub: "dev-user",
+  email: "dev@designersmeet.local",
+  name: "Dev Admin",
+  roles: ["admin"],
+};
+
+const isDevMode = (import.meta.env.VITE_AUTH_MODE ?? "dev") === "dev";
+
+const AuthContext = createContext<AuthContextValue>({
+  user: DEV_USER,
+  signedIn: true,
+  getAccessToken: async () => null,
+  signOut: () => undefined,
+});
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const signOut = useCallback(() => {
+    if (isDevMode) {
+      console.info("Sign-out requested (dev mode is a no-op)");
+      return;
+    }
+    // Production: msalInstance.logoutRedirect();
+    window.location.href = "/";
+  }, []);
+
+  const getAccessToken = useCallback(async (): Promise<string | null> => {
+    if (isDevMode) return null;
+    // Production: acquire token silently from MSAL
+    // const accounts = msalInstance.getAllAccounts();
+    // const response = await msalInstance.acquireTokenSilent({
+    //   scopes: [import.meta.env.VITE_MSAL_SCOPE],
+    //   account: accounts[0],
+    // });
+    // return response.accessToken;
+    return null;
+  }, []);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user: DEV_USER,
+      signedIn: true,
+      getAccessToken,
+      signOut,
+    }),
+    [getAccessToken, signOut],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export const useAuth = () => useContext(AuthContext);
+
+
+--- FILE: packages\frontend\src\components\ErrorBoundary.tsx ---
+import { Component, type ReactNode } from "react";
+
+interface Props {
+  children: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("[ErrorBoundary] Uncaught error:", error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-bg p-8">
+          <div className="card max-w-lg w-full text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-statusRed/10 flex items-center justify-center">
+              <svg className="w-8 h-8 text-statusRed" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-textc mb-2">Something went wrong</h2>
+            <p className="text-textDim text-sm mb-4">
+              {this.state.error?.message || "An unexpected error occurred."}
+            </p>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.href = "/";
+              }}
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+
+--- FILE: packages\frontend\src\components\KanbanBoard.tsx ---
+// Drag-drop Kanban for orders. Uses @dnd-kit/core for accessible DnD.
+// Drop targets correspond 1:1 with OrderStatus values.
+import { DndContext, type DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core";
+import type { Freelancer, Order, OrderStatus } from "@dm/shared";
+import { ORDER_STATUSES } from "@dm/shared";
+
+interface Props {
+  orders: Order[];
+  freelancers: Freelancer[];
+  onMove: (orderId: string, newStatus: OrderStatus) => void;
+}
+
+const COLUMN_LABELS: Record<OrderStatus, string> = {
+  new: "New",
+  assigned: "Assigned",
+  in_progress: "In Progress",
+  review: "Review",
+  revision: "Revision",
+  completed: "Completed",
+  delivered: "Delivered",
+};
+
+export function KanbanBoard({ orders, freelancers, onMove }: Props) {
+  const handleDragEnd = (event: DragEndEvent) => {
+    const orderId = event.active.id as string;
+    const newStatus = event.over?.id as OrderStatus | undefined;
+    if (newStatus && ORDER_STATUSES.includes(newStatus)) {
+      onMove(orderId, newStatus);
+    }
+  };
+
+  const freelancerById = new Map(freelancers.map((f) => [f.freelancer_id, f.name]));
+
+  return (
+    <DndContext onDragEnd={handleDragEnd}>
+      <div className="flex gap-3 overflow-x-auto pb-4">
+        {ORDER_STATUSES.map((status) => {
+          const columnOrders = orders.filter((o) => o.status === status);
+          return (
+            <KanbanColumn key={status} status={status} count={columnOrders.length}>
+              {columnOrders.map((order) => (
+                <OrderCard
+                  key={order.order_id}
+                  order={order}
+                  freelancerName={
+                    order.assigned_freelancer_id ? freelancerById.get(order.assigned_freelancer_id) ?? null : null
+                  }
+                />
+              ))}
+            </KanbanColumn>
+          );
+        })}
+      </div>
+    </DndContext>
+  );
+}
+
+function KanbanColumn({
+  status,
+  count,
+  children,
+}: {
+  status: OrderStatus;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const { isOver, setNodeRef } = useDroppable({ id: status });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-w-[260px] max-w-[260px] bg-card border border-borderc rounded-lg flex flex-col ${
+        isOver ? "ring-2 ring-gold/30" : ""
+      }`}
+    >
+      <div className="p-3 border-b border-borderc flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-ice">{COLUMN_LABELS[status]}</h3>
+        <span className="badge">{count}</span>
+      </div>
+      <div className="p-2 flex-1 overflow-y-auto min-h-[120px]">{children}</div>
+    </div>
+  );
+}
+
+function OrderCard({ order, freelancerName }: { order: Order; freelancerName: string | null }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: order.order_id });
+  const valueClass =
+    order.total_amount >= 5000 ? "text-statusGreen" : order.total_amount >= 1000 ? "text-statusAmber" : "text-statusBlue";
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`bg-bg border border-borderc rounded-md p-2.5 mb-2 cursor-grab transition hover:border-ice-dim ${
+        isDragging ? "opacity-50 rotate-1" : ""
+      }`}
+    >
+      <div className="text-[13px] font-semibold text-textc">{order.customer_name}</div>
+      <div className="text-[11px] text-ice-dim">{order.customer_email}</div>
+      <div className="text-[11px] text-gold mt-1">{order.service_type}</div>
+      <div className="flex justify-between items-center mt-1.5 text-[11px] text-textDim">
+        <span>{freelancerName ?? "Unassigned"}</span>
+        <span className={`${valueClass} font-bold`}>
+          {order.currency} {order.total_amount.toLocaleString()}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\components\MetricCard.tsx ---
+interface Props {
+  label: string;
+  value: string | number;
+  sub?: string;
+}
+
+export function MetricCard({ label, value, sub }: Props) {
+  return (
+    <div className="metric-card">
+      <h3 className="text-[11px] uppercase tracking-widest text-textDim mb-1.5">{label}</h3>
+      <div className="text-2xl font-bold text-textc">{value}</div>
+      {sub && <div className="text-xs text-ice-dim mt-1">{sub}</div>}
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\main.tsx ---
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { App } from "./App.js";
+import { AuthProvider } from "./auth/AuthProvider.js";
+import { ErrorBoundary } from "./components/ErrorBoundary.js";
+import "./index.css";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 30_000, refetchOnWindowFocus: false },
+  },
+});
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  </React.StrictMode>,
+);
+
+
+--- FILE: packages\frontend\src\pages\Dashboard.tsx ---
+import { useQuery } from "@tanstack/react-query";
+import { ordersApi, freelancersApi, queueApi } from "../api/resources.js";
+import { MetricCard } from "../components/MetricCard.js";
+
+export function Dashboard() {
+  const ordersQ = useQuery({ queryKey: ["orders"], queryFn: () => ordersApi.list() });
+  const freelancersQ = useQuery({ queryKey: ["freelancers"], queryFn: () => freelancersApi.list() });
+  const queueStatsQ = useQuery({
+    queryKey: ["queue", "stats"],
+    queryFn: () => queueApi.stats(),
+    refetchInterval: 5_000,
+  });
+
+  const orders = ordersQ.data ?? [];
+  const freelancers = freelancersQ.data ?? [];
+  const queueStats = queueStatsQ.data ?? [];
+
+  const newOrders = orders.filter((o) => o.status === "new").length;
+  const inProgress = orders.filter((o) => o.status === "in_progress" || o.status === "assigned").length;
+  const completedToday = orders.filter(
+    (o) => o.status === "delivered" || o.status === "completed",
+  ).length;
+  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+  const totalQueueDepth = queueStats.reduce((s, q) => s + q.pending + q.processing, 0);
+  const totalDlq = queueStats.reduce((s, q) => s + q.dlq, 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <MetricCard label="New Orders" value={newOrders} sub="awaiting assignment" />
+        <MetricCard label="In Progress" value={inProgress} />
+        <MetricCard label="Completed" value={completedToday} sub="all-time" />
+        <MetricCard label="Freelancers" value={freelancers.length} sub="in DB" />
+        <MetricCard label="Queue Depth" value={totalQueueDepth} sub={`${totalDlq} in DLQ`} />
+        <MetricCard
+          label="Pipeline Value"
+          value={`$${totalRevenue.toLocaleString()}`}
+          sub="total order value"
+        />
+      </div>
+
+      <section className="card" aria-label="Recent orders">
+        <h2 className="text-sm font-semibold text-ice uppercase tracking-widest mb-3">Recent Orders</h2>
+        <table className="w-full text-sm" aria-label="Recent orders table">
+          <thead className="text-textDim text-xs uppercase">
+            <tr>
+              <th className="text-left py-2">Customer</th>
+              <th className="text-left py-2">Service</th>
+              <th className="text-left py-2">Status</th>
+              <th className="text-right py-2">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.slice(0, 8).map((o) => (
+              <tr key={o.order_id} className="border-t border-borderc">
+                <td className="py-2">
+                  <div>{o.customer_name}</div>
+                  <div className="text-textDim text-xs">{o.customer_email}</div>
+                </td>
+                <td className="py-2 text-gold">{o.service_type}</td>
+                <td className="py-2 capitalize">{o.status.replace("_", " ")}</td>
+                <td className="py-2 text-right">
+                  {o.currency} {Number(o.total_amount).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+            {orders.length === 0 && (
+              <tr>
+                <td colSpan={4} className="py-6 text-center text-textDim">
+                  No orders yet â€” drop a Shopify webhook on /webhooks/shopify/orders/create.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="card" aria-label="Queue health">
+        <h2 className="text-sm font-semibold text-ice uppercase tracking-widest mb-3">Queue Health</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {queueStats.map((q) => (
+            <div key={q.queue_name} className="bg-bg border border-borderc rounded-md p-3">
+              <div className="text-xs text-gold font-semibold">{q.queue_name}</div>
+              <div className="text-textDim text-xs mt-1">
+                pending {q.pending} Â· processing {q.processing} Â· done {q.completed}
+              </div>
+              {(q.failed > 0 || q.dlq > 0) && (
+                <div className="text-statusRed text-xs mt-1">
+                  failed {q.failed} Â· dlq {q.dlq}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\pages\Freelancers.tsx ---
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { FREELANCER_AVAILABILITY, SERVICE_CATEGORIES } from "@dm/shared";
+import { freelancersApi } from "../api/resources.js";
+
+export function Freelancers() {
+  const [availability, setAvailability] = useState<string>("");
+  const [category, setCategory] = useState<string>("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["freelancers", availability, category],
+    queryFn: () =>
+      freelancersApi.list({
+        availability_status: availability || undefined,
+        category: category || undefined,
+      }),
+  });
+
+  const rows = useMemo(() => data ?? [], [data]);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-lg font-semibold">Freelancers ({rows.length})</h1>
+        <div className="flex gap-2">
+          <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by category">
+            <option value="">All categories</option>
+            {SERVICE_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <select value={availability} onChange={(e) => setAvailability(e.target.value)} aria-label="Filter by availability">
+            <option value="">All availability</option>
+            {FREELANCER_AVAILABILITY.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="card overflow-x-auto">
+        {isLoading ? (
+          <div className="text-textDim">Loadingâ€¦</div>
+        ) : (
+          <table className="w-full text-sm" aria-label="Freelancers list">
+            <thead className="text-textDim text-xs uppercase">
+              <tr>
+                <th className="text-left py-2">Name</th>
+                <th className="text-left py-2">Country</th>
+                <th className="text-right py-2">Rate</th>
+                <th className="text-right py-2">Quality</th>
+                <th className="text-right py-2">Orders</th>
+                <th className="text-left py-2 pl-4">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((f) => (
+                <tr key={f.freelancer_id} className="border-t border-borderc">
+                  <td className="py-2">
+                    <div className="font-semibold">{f.name}</div>
+                    <div className="text-textDim text-xs">{f.email}</div>
+                  </td>
+                  <td className="py-2">{f.country ?? "â€”"}</td>
+                  <td className="py-2 text-right">
+                    ${f.rate_min} â€“ ${f.rate_max}
+                  </td>
+                  <td className="py-2 text-right">{f.quality_rating.toFixed(1)} â˜…</td>
+                  <td className="py-2 text-right">{f.total_orders_completed}</td>
+                  <td className="py-2 pl-4">
+                    <span className="badge">{f.availability_status}</span>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-textDim">
+                    No freelancers match the current filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\pages\Orders.tsx ---
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { OrderStatus } from "@dm/shared";
+import { ordersApi, freelancersApi } from "../api/resources.js";
+import { KanbanBoard } from "../components/KanbanBoard.js";
+
+export function Orders() {
+  const qc = useQueryClient();
+  const ordersQ = useQuery({ queryKey: ["orders"], queryFn: () => ordersApi.list() });
+  const freelancersQ = useQuery({ queryKey: ["freelancers"], queryFn: () => freelancersApi.list() });
+
+  const moveMutation = useMutation({
+    mutationFn: ({ orderId, status }: { orderId: string; status: OrderStatus }) =>
+      ordersApi.update(orderId, { status }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  });
+
+  return (
+    <div role="main" aria-label="Orders management">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-lg font-semibold">Orders</h1>
+        <span className="text-textDim text-xs">Drag a card between columns to update status.</span>
+      </div>
+      {ordersQ.isLoading || freelancersQ.isLoading ? (
+        <div className="text-textDim">Loadingâ€¦</div>
+      ) : (
+        <KanbanBoard
+          orders={ordersQ.data ?? []}
+          freelancers={freelancersQ.data ?? []}
+          onMove={(orderId, status) => moveMutation.mutate({ orderId, status })}
+        />
+      )}
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\pages\Queue.tsx ---
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { QUEUE_NAMES } from "@dm/shared";
+import { queueApi } from "../api/resources.js";
+
+export function Queue() {
+  const qc = useQueryClient();
+  const statsQ = useQuery({
+    queryKey: ["queue", "stats"],
+    queryFn: () => queueApi.stats(),
+    refetchInterval: 3_000,
+  });
+  const itemsQ = useQuery({
+    queryKey: ["queue", "items"],
+    queryFn: () => queueApi.items(),
+    refetchInterval: 5_000,
+  });
+
+  const sendTest = useMutation({
+    mutationFn: (queueName: string) => queueApi.testMessage(queueName, { kind: "manual_test", at: new Date().toISOString() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["queue"] }),
+  });
+
+  const stats = statsQ.data ?? [];
+  const items = itemsQ.data ?? [];
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-lg font-semibold">Microsoft Queue Dashboard</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        {QUEUE_NAMES.map((name) => {
+          const s = stats.find((x) => x.queue_name === name);
+          return (
+            <div key={name} className="card">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gold">{name}</span>
+                <button className="btn-secondary btn-sm" onClick={() => sendTest.mutate(name)} aria-label={`Send test message to ${name} queue`}>
+                  Test
+                </button>
+              </div>
+              <div className="grid grid-cols-5 gap-1 mt-3 text-center text-[11px]">
+                <Stat label="pending" value={s?.pending ?? 0} cls="text-statusBlue" />
+                <Stat label="processing" value={s?.processing ?? 0} cls="text-statusAmber" />
+                <Stat label="done" value={s?.completed ?? 0} cls="text-statusGreen" />
+                <Stat label="failed" value={s?.failed ?? 0} cls="text-statusAmber" />
+                <Stat label="dlq" value={s?.dlq ?? 0} cls="text-statusRed" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="card overflow-x-auto">
+        <h2 className="text-sm uppercase tracking-widest text-ice mb-3">Recent messages</h2>
+        <table className="w-full text-xs" aria-label="Recent queue messages">
+          <thead className="text-textDim uppercase">
+            <tr>
+              <th className="text-left py-2">Queue</th>
+              <th className="text-left py-2">Status</th>
+              <th className="text-left py-2">Order</th>
+              <th className="text-left py-2">Retries</th>
+              <th className="text-left py-2">Updated</th>
+              <th className="text-left py-2">Last error</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.slice(0, 30).map((m) => (
+              <tr key={m.queue_id} className="border-t border-borderc">
+                <td className="py-2 text-gold">{m.queue_type}</td>
+                <td className="py-2 capitalize">{m.status}</td>
+                <td className="py-2 font-mono text-[10px] text-textDim">{m.order_id ?? "â€”"}</td>
+                <td className="py-2">{m.retry_count}</td>
+                <td className="py-2 text-textDim">{m.updated_at}</td>
+                <td className="py-2 text-statusRed">{m.last_error ?? ""}</td>
+              </tr>
+            ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-6 text-center text-textDim">
+                  No queue messages yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value, cls }: { label: string; value: number; cls: string }) {
+  return (
+    <div>
+      <div className={`text-base font-bold ${cls}`}>{value}</div>
+      <div className="text-textDim uppercase tracking-wider">{label}</div>
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\pages\Services.tsx ---
+import { useQuery } from "@tanstack/react-query";
+import { servicesApi } from "../api/resources.js";
+
+export function Services() {
+  const { data, isLoading } = useQuery({ queryKey: ["services"], queryFn: () => servicesApi.list() });
+  const services = data ?? [];
+
+  return (
+    <div>
+      <h1 className="text-lg font-semibold mb-4">Service Catalog ({services.length})</h1>
+      {isLoading ? (
+        <div className="text-textDim">Loadingâ€¦</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {services.map((s) => (
+            <div key={s.service_id} className="card">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-textc">{s.name}</h3>
+                  <div className="text-xs text-gold">{s.category}</div>
+                </div>
+                <span className={`badge ${s.active ? "" : "opacity-50"}`}>
+                  {s.active ? "active" : "inactive"}
+                </span>
+              </div>
+              <p className="text-textDim text-xs mt-2">{s.description || "No description"}</p>
+              <div className="mt-3 flex justify-between items-end">
+                <span className="text-xs text-ice-dim">Base price</span>
+                <span className="text-textc font-bold text-lg">${s.base_price.toLocaleString()}</span>
+              </div>
+              {s.shopify_product_ids.length > 0 && (
+                <div className="text-xs text-textDim mt-2">
+                  Shopify product IDs: {s.shopify_product_ids.join(", ")}
+                </div>
+              )}
+            </div>
+          ))}
+          {services.length === 0 && (
+            <div className="text-textDim col-span-full text-center py-6">
+              No services yet â€” seed data missing or filtered out.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\pages\ShopifyMappings.tsx ---
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { freelancersApi, mappingsApi, servicesApi } from "../api/resources.js";
+
+export function ShopifyMappings() {
+  const qc = useQueryClient();
+  const mappingsQ = useQuery({ queryKey: ["mappings"], queryFn: () => mappingsApi.list() });
+  const servicesQ = useQuery({ queryKey: ["services"], queryFn: () => servicesApi.list() });
+  const freelancersQ = useQuery({ queryKey: ["freelancers"], queryFn: () => freelancersApi.list() });
+
+  const [draft, setDraft] = useState({
+    shopify_product_id: "",
+    shopify_product_title: "",
+    service_id: "",
+    auto_assign_enabled: false,
+    default_freelancer_id: "",
+  });
+
+  const createM = useMutation({
+    mutationFn: () =>
+      mappingsApi.create({
+        shopify_product_id: draft.shopify_product_id,
+        shopify_product_title: draft.shopify_product_title,
+        service_id: draft.service_id,
+        auto_assign_enabled: draft.auto_assign_enabled,
+        default_freelancer_id: draft.default_freelancer_id || null,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["mappings"] });
+      setDraft({
+        shopify_product_id: "",
+        shopify_product_title: "",
+        service_id: "",
+        auto_assign_enabled: false,
+        default_freelancer_id: "",
+      });
+    },
+  });
+
+  const toggleAutoM = useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      mappingsApi.update(id, { auto_assign_enabled: enabled }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["mappings"] }),
+  });
+
+  const deleteM = useMutation({
+    mutationFn: (id: string) => mappingsApi.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["mappings"] }),
+  });
+
+  const services = servicesQ.data ?? [];
+  const freelancers = freelancersQ.data ?? [];
+  const mappings = mappingsQ.data ?? [];
+  const serviceById = new Map(services.map((s) => [s.service_id, s]));
+  const freelancerById = new Map(freelancers.map((f) => [f.freelancer_id, f]));
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-lg font-semibold">Shopify â†” Service Mappings</h1>
+
+      <div className="card">
+        <h2 className="text-sm uppercase tracking-widest text-ice mb-3">Add mapping</h2>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+          <input
+            placeholder="Shopify product ID"
+            value={draft.shopify_product_id}
+            onChange={(e) => setDraft((d) => ({ ...d, shopify_product_id: e.target.value }))}
+          />
+          <input
+            placeholder="Product title"
+            value={draft.shopify_product_title}
+            onChange={(e) => setDraft((d) => ({ ...d, shopify_product_title: e.target.value }))}
+          />
+          <select
+            value={draft.service_id}
+            onChange={(e) => setDraft((d) => ({ ...d, service_id: e.target.value }))}
+          >
+            <option value="">Select serviceâ€¦</option>
+            {services.map((s) => (
+              <option key={s.service_id} value={s.service_id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={draft.default_freelancer_id}
+            onChange={(e) => setDraft((d) => ({ ...d, default_freelancer_id: e.target.value }))}
+          >
+            <option value="">Default freelancer (optional)â€¦</option>
+            {freelancers.map((f) => (
+              <option key={f.freelancer_id} value={f.freelancer_id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 text-xs text-textDim">
+            <input
+              type="checkbox"
+              checked={draft.auto_assign_enabled}
+              onChange={(e) => setDraft((d) => ({ ...d, auto_assign_enabled: e.target.checked }))}
+            />
+            Auto-assign on Shopify webhook
+          </label>
+        </div>
+        <button
+          className="btn-primary mt-3"
+          disabled={!draft.shopify_product_id || !draft.service_id || createM.isPending}
+          onClick={() => createM.mutate()}
+        >
+          Add mapping
+        </button>
+      </div>
+
+      <div className="card overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-textDim text-xs uppercase">
+            <tr>
+              <th className="text-left py-2">Shopify product</th>
+              <th className="text-left py-2">â†’ Service</th>
+              <th className="text-left py-2">Default freelancer</th>
+              <th className="text-left py-2">Auto-assign</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {mappings.map((m) => (
+              <tr key={m.mapping_id} className="border-t border-borderc">
+                <td className="py-2">
+                  <div className="font-mono text-xs">{m.shopify_product_id}</div>
+                  <div className="text-textDim text-xs">{m.shopify_product_title}</div>
+                </td>
+                <td className="py-2 text-gold">{serviceById.get(m.service_id)?.name ?? "â€”"}</td>
+                <td className="py-2">
+                  {m.default_freelancer_id ? freelancerById.get(m.default_freelancer_id)?.name ?? "â€”" : "â€”"}
+                </td>
+                <td className="py-2">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={m.auto_assign_enabled}
+                      onChange={(e) => toggleAutoM.mutate({ id: m.mapping_id, enabled: e.target.checked })}
+                    />
+                  </label>
+                </td>
+                <td className="py-2 text-right">
+                  <button className="btn-danger btn-sm" onClick={() => deleteM.mutate(m.mapping_id)}>
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {mappings.length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-6 text-center text-textDim">
+                  No mappings yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\pages\Social.tsx ---
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { SOCIAL_PLATFORMS, type SocialPlatform } from "@dm/shared";
+import { socialApi } from "../api/resources.js";
+
+export function Social() {
+  const qc = useQueryClient();
+  const platformsQ = useQuery({ queryKey: ["social", "platforms"], queryFn: () => socialApi.platforms() });
+  const accountsQ = useQuery({ queryKey: ["social", "accounts"], queryFn: () => socialApi.accounts() });
+
+  const [draft, setDraft] = useState<{ platform: SocialPlatform; account_name: string; access_token: string }>({
+    platform: "linkedin",
+    account_name: "",
+    access_token: "",
+  });
+  const [postContent, setPostContent] = useState("");
+  const [postAccountId, setPostAccountId] = useState("");
+
+  const createAccountM = useMutation({
+    mutationFn: () =>
+      socialApi.createAccount({
+        platform: draft.platform,
+        account_name: draft.account_name,
+        access_token: draft.access_token,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["social", "accounts"] });
+      setDraft({ platform: "linkedin", account_name: "", access_token: "" });
+    },
+  });
+
+  const deleteAccountM = useMutation({
+    mutationFn: (id: string) => socialApi.deleteAccount(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["social", "accounts"] }),
+  });
+
+  const postM = useMutation({
+    mutationFn: () => socialApi.post({ account_id: postAccountId, content: postContent }),
+    onSuccess: () => {
+      setPostContent("");
+      qc.invalidateQueries({ queryKey: ["queue"] });
+    },
+  });
+
+  const platforms = platformsQ.data ?? [];
+  const accounts = accountsQ.data ?? [];
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-lg font-semibold">Social Pipeline</h1>
+
+      <div className="card">
+        <h2 className="text-sm uppercase tracking-widest text-ice mb-3">Channels</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {SOCIAL_PLATFORMS.map((p) => {
+            const meta = platforms.find((x) => x.platform === p);
+            return (
+              <div key={p} className="bg-bg border border-borderc rounded-md p-3">
+                <div className="flex items-center justify-between">
+                  <span className="capitalize font-semibold text-textc">{p}</span>
+                  <span className={`badge ${meta?.available ? "" : "opacity-50"}`}>
+                    {meta?.available ? "live" : "stub"}
+                  </span>
+                </div>
+                <div className="text-xs text-textDim mt-2">
+                  {meta?.available ? "Wired up â€” ready to post." : "Coming soon â€” interface ready, implementation pending."}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="card">
+        <h2 className="text-sm uppercase tracking-widest text-ice mb-3">Connected accounts</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+          <select
+            value={draft.platform}
+            onChange={(e) => setDraft((d) => ({ ...d, platform: e.target.value as SocialPlatform }))}
+            aria-label="Select social platform"
+          >
+            {SOCIAL_PLATFORMS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <input
+            aria-label="Account name"
+            placeholder="Account name (LinkedIn URN or handle)"
+            value={draft.account_name}
+            onChange={(e) => setDraft((d) => ({ ...d, account_name: e.target.value }))}
+          />
+          <input
+            aria-label="Access token"
+            placeholder="Access token"
+            type="password"
+            value={draft.access_token}
+            onChange={(e) => setDraft((d) => ({ ...d, access_token: e.target.value }))}
+          />
+        </div>
+        <button
+          className="btn-primary"
+          disabled={!draft.account_name || !draft.access_token || createAccountM.isPending}
+          onClick={() => createAccountM.mutate()}
+          aria-label="Add social media account"
+        >
+          Add account
+        </button>
+
+        <table className="w-full text-sm mt-4">
+          <thead className="text-textDim text-xs uppercase">
+            <tr>
+              <th className="text-left py-2">Platform</th>
+              <th className="text-left py-2">Account</th>
+              <th className="text-left py-2">Token</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.map((a) => (
+              <tr key={a.account_id} className="border-t border-borderc">
+                <td className="py-2 capitalize text-gold">{a.platform}</td>
+                <td className="py-2">{a.account_name}</td>
+                <td className="py-2 text-textDim">{a.has_access_token ? "stored" : "missing"}</td>
+                <td className="py-2 text-right">
+                  <button className="btn-danger btn-sm" onClick={() => deleteAccountM.mutate(a.account_id)} aria-label={`Remove ${a.platform} account ${a.account_name}`}>
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {accounts.length === 0 && (
+              <tr>
+                <td colSpan={4} className="py-6 text-center text-textDim">
+                  No accounts connected.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="card">
+        <h2 className="text-sm uppercase tracking-widest text-ice mb-3">Compose post</h2>
+        <select className="mb-2" value={postAccountId} onChange={(e) => setPostAccountId(e.target.value)} aria-label="Select account to post from">
+          <option value="">Select accountâ€¦</option>
+          {accounts.map((a) => (
+            <option key={a.account_id} value={a.account_id}>
+              {a.platform} â€” {a.account_name}
+            </option>
+          ))}
+        </select>
+        <textarea
+          rows={5}
+          aria-label="Post content"
+          placeholder="What's on your mind?"
+          value={postContent}
+          onChange={(e) => setPostContent(e.target.value)}
+        />
+        <button
+          className="btn-primary mt-2"
+          disabled={!postAccountId || !postContent || postM.isPending}
+          onClick={() => postM.mutate()}
+          aria-label="Queue social media post"
+        >
+          Queue post
+        </button>
+        {postM.isSuccess && <div className="text-statusGreen text-xs mt-2">Queued â€” check the Queue tab.</div>}
+        {postM.isError && <div className="text-statusRed text-xs mt-2">{(postM.error as Error).message}</div>}
+      </div>
+    </div>
+  );
+}
+
+
+--- FILE: packages\frontend\src\test\ErrorBoundary.test.tsx ---
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { ErrorBoundary } from "../components/ErrorBoundary.js";
+
+function ThrowError({ shouldThrow }: { shouldThrow: boolean }) {
+  if (shouldThrow) throw new Error("Test error");
+  return <div>No error</div>;
+}
+
+describe("ErrorBoundary", () => {
+  it("renders children when there is no error", () => {
+    render(
+      <ErrorBoundary>
+        <ThrowError shouldThrow={false} />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByText("No error")).toBeDefined();
+  });
+
+  it("renders error UI when child throws", () => {
+    // Suppress console.error for this test
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    render(
+      <ErrorBoundary>
+        <ThrowError shouldThrow={true} />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByText("Something went wrong")).toBeDefined();
+    expect(screen.getByText("Test error")).toBeDefined();
+    expect(screen.getByText("Return to Dashboard")).toBeDefined();
+    vi.restoreAllMocks();
+  });
+});
+
+
+--- FILE: packages\frontend\src\test\setup.ts ---
+import "@testing-library/jest-dom";
+import { afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
+
+afterEach(() => {
+  cleanup();
+});
+
+
+--- FILE: packages\frontend\tailwind.config.ts ---
+import type { Config } from "tailwindcss";
+
+// DesignersMeet design tokens â€” lifted from research/designersmeet-crm.html
+const config: Config = {
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        navy: {
+          DEFAULT: "#1E2761",
+          dark: "#151d4a",
+          light: "#2a3578",
+        },
+        gold: {
+          DEFAULT: "#FFD700",
+          hover: "#e6c200",
+        },
+        ice: {
+          DEFAULT: "#CADCFC",
+          dim: "#8ea4c8",
+        },
+        bg: "#0d1117",
+        card: "#161b22",
+        cardHover: "#1c2333",
+        borderc: "#30363d",
+        textc: "#e6edf3",
+        textDim: "#8b949e",
+        statusGreen: "#2ea043",
+        statusAmber: "#d29922",
+        statusRed: "#f85149",
+        statusBlue: "#58a6ff",
+      },
+      fontFamily: {
+        sans: ["-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Helvetica", "Arial", "sans-serif"],
+      },
+      boxShadow: {
+        card: "0 1px 0 rgba(255,255,255,0.04)",
+        focusGold: "0 0 0 2px rgba(255,215,0,.15)",
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
+
+
+--- FILE: packages\frontend\vite.config.ts ---
+import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const port = Number(env.FRONTEND_PORT ?? 5173);
+  const backendPort = Number(env.BACKEND_PORT ?? 4000);
+  return {
+    plugins: [react()],
+    server: {
+      port,
+      proxy: {
+        "/api": { target: `http://localhost:${backendPort}`, changeOrigin: true },
+        "/health": { target: `http://localhost:${backendPort}`, changeOrigin: true },
+      },
+    },
+  };
+});
+
+
+--- FILE: packages\frontend\vitest.config.ts ---
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: "./src/test/setup.ts",
+    css: true,
+    coverage: {
+      reporter: ["text", "html"],
+      exclude: ["node_modules/", "dist/", "src/test/"],
+    },
+  },
+});
+
+
+--- FILE: packages\shared\src\constants.ts ---
+export const ORDER_STATUSES = [
+  "new",
+  "assigned",
+  "in_progress",
+  "review",
+  "revision",
+  "completed",
+  "delivered",
+] as const;
+
+export const QUEUE_STATUSES = [
+  "pending",
+  "processing",
+  "completed",
+  "failed",
+  "dlq",
+] as const;
+
+export const QUEUE_NAMES = [
+  "orders.assignment",
+  "orders.notification",
+  "shopify.sync",
+  "social.post",
+] as const;
+
+export const SOCIAL_PLATFORMS = ["linkedin", "facebook", "instagram"] as const;
+
+export const SERVICE_CATEGORIES = [
+  "Logo Animation",
+  "Brand Identity",
+  "Motion Graphics",
+  "Web Design",
+  "Immersive Web",
+  "UI/UX Design",
+  "Video Production",
+  "AI Content",
+  "Presentation Design",
+  "Packaging Design",
+] as const;
+
+export const FREELANCER_AVAILABILITY = [
+  "available",
+  "busy",
+  "off",
+  "inactive",
+] as const;
+
+export const SKILL_LEVELS = ["junior", "intermediate", "senior", "lead"] as const;
+
+
+--- FILE: packages\shared\src\index.ts ---
+export * from "./schemas.js";
+export * from "./constants.js";
+
+
+--- FILE: packages\shared\src\schemas.ts ---
+import { z } from "zod";
+import {
+  FREELANCER_AVAILABILITY,
+  ORDER_STATUSES,
+  QUEUE_NAMES,
+  QUEUE_STATUSES,
+  SKILL_LEVELS,
+  SOCIAL_PLATFORMS,
+} from "./constants.js";
+
+const isoDate = z.string().datetime({ offset: true });
+
+export const OrderStatus = z.enum(ORDER_STATUSES);
+export type OrderStatus = z.infer<typeof OrderStatus>;
+
+export const QueueStatus = z.enum(QUEUE_STATUSES);
+export type QueueStatus = z.infer<typeof QueueStatus>;
+
+export const QueueName = z.enum(QUEUE_NAMES);
+export type QueueName = z.infer<typeof QueueName>;
+
+export const SocialPlatform = z.enum(SOCIAL_PLATFORMS);
+export type SocialPlatform = z.infer<typeof SocialPlatform>;
+
+export const FreelancerAvailability = z.enum(FREELANCER_AVAILABILITY);
+export type FreelancerAvailability = z.infer<typeof FreelancerAvailability>;
+
+export const SkillLevel = z.enum(SKILL_LEVELS);
+export type SkillLevel = z.infer<typeof SkillLevel>;
+
+// â”€â”€â”€ Freelancer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const Freelancer = z.object({
+  freelancer_id: z.string().uuid(),
+  name: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().nullable().default(null),
+  portfolio_url: z.string().url().nullable().default(null),
+  rate_min: z.number().nonnegative(),
+  rate_max: z.number().nonnegative(),
+  quality_rating: z.number().min(0).max(5).default(0),
+  availability_status: FreelancerAvailability.default("available"),
+  ai_tools_used: z.array(z.string()).default([]),
+  country: z.string().nullable().default(null),
+  timezone: z.string().nullable().default(null),
+  total_orders_completed: z.number().int().nonnegative().default(0),
+  avg_delivery_time_hours: z.number().nonnegative().default(0),
+  created_at: isoDate,
+  updated_at: isoDate,
+});
+export type Freelancer = z.infer<typeof Freelancer>;
+export const FreelancerCreate = Freelancer.omit({
+  freelancer_id: true,
+  created_at: true,
+  updated_at: true,
+}).partial({
+  quality_rating: true,
+  availability_status: true,
+  ai_tools_used: true,
+  country: true,
+  timezone: true,
+  total_orders_completed: true,
+  avg_delivery_time_hours: true,
+  phone: true,
+  portfolio_url: true,
+});
+export type FreelancerCreate = z.infer<typeof FreelancerCreate>;
+
+// â”€â”€â”€ Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const Service = z.object({
+  service_id: z.string().uuid(),
+  name: z.string().min(1),
+  category: z.string().min(1),
+  base_price: z.number().nonnegative(),
+  estimated_hours: z.number().nonnegative().default(0),
+  shopify_product_ids: z.array(z.string()).default([]),
+  description: z.string().default(""),
+  active: z.boolean().default(true),
+  created_at: isoDate,
+  updated_at: isoDate,
+});
+export type Service = z.infer<typeof Service>;
+export const ServiceCreate = Service.omit({
+  service_id: true,
+  created_at: true,
+  updated_at: true,
+}).partial({
+  estimated_hours: true,
+  shopify_product_ids: true,
+  description: true,
+  active: true,
+});
+export type ServiceCreate = z.infer<typeof ServiceCreate>;
+
+// â”€â”€â”€ FreelancerService (junction) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const FreelancerService = z.object({
+  freelancer_id: z.string().uuid(),
+  service_id: z.string().uuid(),
+  custom_rate: z.number().nonnegative().nullable().default(null),
+  skill_level: SkillLevel.default("intermediate"),
+});
+export type FreelancerService = z.infer<typeof FreelancerService>;
+
+// â”€â”€â”€ Order â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const Order = z.object({
+  order_id: z.string().uuid(),
+  shopify_order_id: z.string().nullable().default(null),
+  customer_name: z.string().min(1),
+  customer_email: z.string().email(),
+  service_id: z.string().uuid().nullable().default(null),
+  service_type: z.string().min(1),
+  assigned_freelancer_id: z.string().uuid().nullable().default(null),
+  status: OrderStatus.default("new"),
+  priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+  due_date: isoDate.nullable().default(null),
+  total_amount: z.number().nonnegative().default(0),
+  currency: z.string().length(3).default("USD"),
+  notes: z.string().default(""),
+  created_at: isoDate,
+  updated_at: isoDate,
+});
+export type Order = z.infer<typeof Order>;
+export const OrderCreate = Order.omit({
+  order_id: true,
+  created_at: true,
+  updated_at: true,
+}).partial({
+  shopify_order_id: true,
+  service_id: true,
+  assigned_freelancer_id: true,
+  status: true,
+  priority: true,
+  due_date: true,
+  total_amount: true,
+  currency: true,
+  notes: true,
+});
+export type OrderCreate = z.infer<typeof OrderCreate>;
+
+export const OrderUpdate = OrderCreate.partial();
+export type OrderUpdate = z.infer<typeof OrderUpdate>;
+
+// â”€â”€â”€ Shopify mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const ShopifyMapping = z.object({
+  mapping_id: z.string().uuid(),
+  shopify_product_id: z.string().min(1),
+  shopify_product_title: z.string().default(""),
+  service_id: z.string().uuid(),
+  auto_assign_enabled: z.boolean().default(false),
+  default_freelancer_id: z.string().uuid().nullable().default(null),
+  created_at: isoDate,
+  updated_at: isoDate,
+});
+export type ShopifyMapping = z.infer<typeof ShopifyMapping>;
+export const ShopifyMappingCreate = ShopifyMapping.omit({
+  mapping_id: true,
+  created_at: true,
+  updated_at: true,
+}).partial({
+  shopify_product_title: true,
+  auto_assign_enabled: true,
+  default_freelancer_id: true,
+});
+export type ShopifyMappingCreate = z.infer<typeof ShopifyMappingCreate>;
+
+// â”€â”€â”€ Queue item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const OrderQueueItem = z.object({
+  queue_id: z.string().uuid(),
+  order_id: z.string().uuid().nullable().default(null),
+  queue_type: QueueName,
+  payload: z.record(z.unknown()),
+  status: QueueStatus.default("pending"),
+  retry_count: z.number().int().nonnegative().default(0),
+  last_error: z.string().nullable().default(null),
+  created_at: isoDate,
+  updated_at: isoDate,
+});
+export type OrderQueueItem = z.infer<typeof OrderQueueItem>;
+
+// â”€â”€â”€ Social media account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const SocialMediaAccount = z.object({
+  account_id: z.string().uuid(),
+  platform: SocialPlatform,
+  account_name: z.string().min(1),
+  access_token: z.string(),
+  refresh_token: z.string().nullable().default(null),
+  token_expires_at: isoDate.nullable().default(null),
+  active: z.boolean().default(true),
+  created_at: isoDate,
+  updated_at: isoDate,
+});
+export type SocialMediaAccount = z.infer<typeof SocialMediaAccount>;
+export const SocialMediaAccountCreate = SocialMediaAccount.omit({
+  account_id: true,
+  created_at: true,
+  updated_at: true,
+}).partial({
+  refresh_token: true,
+  token_expires_at: true,
+  active: true,
+});
+export type SocialMediaAccountCreate = z.infer<typeof SocialMediaAccountCreate>;
+
+export const SocialPostRequest = z.object({
+  account_id: z.string().uuid(),
+  content: z.string().min(1).max(3000),
+  media_urls: z.array(z.string().url()).default([]),
+  scheduled_at: isoDate.nullable().default(null),
+});
+export type SocialPostRequest = z.infer<typeof SocialPostRequest>;
+
+// â”€â”€â”€ Queue stats (for dashboard) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const QueueStats = z.object({
+  queue_name: QueueName,
+  pending: z.number().int().nonnegative(),
+  processing: z.number().int().nonnegative(),
+  completed: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  dlq: z.number().int().nonnegative(),
+});
+export type QueueStats = z.infer<typeof QueueStats>;
+
+
+

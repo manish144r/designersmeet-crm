@@ -1,0 +1,14 @@
+﻿FIXES APPLIED (Inner Loop 1):
+1. Pagination: limit/offset on all 4 list endpoints (freelancers, orders, services, shopifyMappings) with min/max bounds
+2. CSP: helmet configured with strict CSP directives (defaultSrc self, scriptSrc self, etc.)
+3. CORS: changed from single origin to allowlist (comma-separated origins validated per-request)
+4. Graceful shutdown: SIGTERM/SIGINT handlers calling queue.shutdown() + httpServer.close() with 10s forced timeout
+5. Config validation: Fatal errors thrown if AUTH_MODE=dev in production, or QUEUE_PROVIDER=memory without persistent fallback
+6. FB/IG posters: Return {success:false, error:...} instead of throwing NotImplementedSocialPosterError
+7. ARIA labels: Added to all interactive elements across 7 pages
+8. CI/CD: GitHub Actions workflow (install, typecheck, test, build)
+9. Tests: 25 total (was 8) — config, pagination, social posters, middleware, cache, ErrorBoundary
+
+TEST RESULTS: 25/25 pass. Build: shared OK, backend OK, frontend OK (331KB JS, 14KB CSS).
+
+VERDICT? APPROVE or REJECT with specific P0/P1 blockers only.

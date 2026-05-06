@@ -1,0 +1,34 @@
+﻿{
+    "timestamp":  "2026-05-06T20:34:17",
+    "majority":  "APPROVED",
+    "pass":  "3-rerun-inner-loop-1",
+    "rejects":  0,
+    "reviewers":  [
+                      {
+                          "provider":  "ollama",
+                          "verdict":  "APPROVE",
+                          "reviewer":  "deepseek-r1:8b"
+                      },
+                      {
+                          "provider":  "mistral",
+                          "verdict":  "APPROVE",
+                          "reviewer":  "mistral-small-latest"
+                      },
+                      {
+                          "provider":  "sambanova",
+                          "verdict":  "APPROVE",
+                          "reviewer":  "Meta-Llama-3.3-70B"
+                      },
+                      {
+                          "provider":  "ollama",
+                          "verdict":  "APPROVE",
+                          "reviewer":  "qwen3:8b"
+                      },
+                      {
+                          "provider":  "ollama",
+                          "verdict":  "APPROVE",
+                          "reviewer":  "phi4"
+                      }
+                  ],
+    "approves":  5
+}

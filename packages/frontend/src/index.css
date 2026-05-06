@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body { background: #0d1117; color: #e6edf3; }
+  *, *::before, *::after { box-sizing: border-box; }
+  input, select, textarea { background: #161b22; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: #FFD700; box-shadow: 0 0 0 2px rgba(255,215,0,.15); }
+}
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center font-semibold rounded-md px-4 py-2 transition; }
+  .btn-primary { @apply btn bg-gold text-navy-dark hover:bg-gold-hover; }
+  .btn-secondary { @apply btn bg-navy-light text-ice hover:bg-navy; }
+  .btn-danger { @apply btn bg-statusRed text-white hover:opacity-90; }
+  .btn-sm { @apply px-3 py-1 text-xs; }
+  .card { @apply bg-card border border-borderc rounded-lg p-4; }
+  .metric-card { @apply card relative overflow-hidden; }
+  .metric-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: #FFD700;
+  }
+  .nav-tab { @apply px-5 py-2.5 text-sm font-medium text-textDim border-b-2 border-transparent hover:text-textc transition cursor-pointer; }
+  .nav-tab.active { @apply text-gold border-gold; }
+  .badge { @apply inline-block bg-navy-light text-gold text-[11px] font-semibold rounded-xl px-2 py-0.5; }
+}

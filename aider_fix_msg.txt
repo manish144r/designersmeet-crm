@@ -1,0 +1,35 @@
+﻿Fix the following P1 issues from the QA code review (Pass 3 rejected 4/5). Apply ALL fixes:
+
+1. PAGINATION: Add limit/offset query params to ALL list endpoints in:
+   - packages/backend/src/routes/freelancers.ts (GET /)
+   - packages/backend/src/routes/orders.ts (GET /)
+   - packages/backend/src/routes/services.ts (GET /)
+   - packages/backend/src/routes/shopifyMappings.ts (GET /)
+   Parse ?limit=N&offset=N from req.query, default limit=50, offset=0. Pass to repository .list() calls. Each list method should accept and use these params.
+
+2. CSP HEADERS: In packages/backend/src/server.ts, helmet() is already used but configure it with a stricter CSP policy:
+   app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", "data:", "https:"], connectSrc: ["'self'"] } } }));
+
+3. CORS ALLOWLIST: In packages/backend/src/server.ts, replace the single CORS_ORIGIN with a proper allowlist. Change cors config to validate origin against an allowlist array parsed from CORS_ORIGIN (comma-separated).
+
+4. GRACEFUL SHUTDOWN: In packages/backend/src/server.ts, add SIGTERM/SIGINT handlers that call container.queue.shutdown(), close the HTTP server, then process.exit(0). Store the server instance from app.listen().
+
+5. ARIA LABELS: Add aria-label attributes to all interactive elements (buttons, inputs, links) in these React components:
+   - packages/frontend/src/pages/Dashboard.tsx
+   - packages/frontend/src/pages/Orders.tsx
+   - packages/frontend/src/pages/Freelancers.tsx
+   - packages/frontend/src/pages/Services.tsx
+   - packages/frontend/src/pages/ShopifyMappings.tsx
+   - packages/frontend/src/pages/Queue.tsx
+   - packages/frontend/src/pages/Social.tsx
+   - packages/frontend/src/components/KanbanBoard.tsx
+   - packages/frontend/src/components/MetricCard.tsx
+
+6. GITHUB ACTIONS CI/CD: Create .github/workflows/ci.yml with:
+   - trigger: push to main, pull_request
+   - jobs: install deps, typecheck, lint, test, build
+   - node 20, npm ci, npm run typecheck, npm test, npm run build
+
+7. FACEBOOK/INSTAGRAM POSTER ERROR HANDLING: In packages/backend/src/integrations/social/facebookPoster.ts and instagramPoster.ts, instead of throwing NotImplementedSocialPosterError, return a proper error response. Change the post() method to return { success: false, error: 'Facebook/Instagram posting is not yet implemented' } instead of throwing.
+
+8. CONFIG VALIDATION: In packages/backend/src/config.ts, add a validateProductionConfig() function that throws if AUTH_MODE=dev when NODE_ENV=production, or if QUEUE_PROVIDER=memory when NODE_ENV=production without SUPABASE_URL fallback. Call it at the end of config initialization.
