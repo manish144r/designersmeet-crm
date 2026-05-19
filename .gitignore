@@ -10,3 +10,9 @@ build
 coverage
 *.tsbuildinfo
 .aider*
+
+# DM rebuild transient artifacts
+brief/.codex-log/
+packages/frontend/.vr-out/
+packages/frontend/test-results/
+packages/frontend/storybook-static/

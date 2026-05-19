@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Calendar · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-[232px] flex-shrink-0 border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col">
+      <div class="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="dm-brand">
+          <span class="dm-brand-glyph">D</span>
+          <span>DesignersMeet</span>
+        </div>
+        <button class="btn-icon" title="Collapse"><i data-lucide="panel-left-close" class="icon-sm"></i></button>
+      </div>
+      <div class="px-3 pt-3">
+        <div class="workspace-pill">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">HQ</div>
+            <div class="min-w-0">
+              <div class="text-[12px] font-semibold text-slate-900 truncate">DesignersMeet HQ</div>
+              <div class="text-[10px] text-slate-500 truncate">Bengaluru workspace</div>
+            </div>
+          </div>
+          <i data-lucide="chevrons-up-down" class="icon-sm text-slate-400"></i>
+        </div>
+      </div>
+      <nav class="px-2 pt-3 flex-1 overflow-y-auto">
+        <div class="nav-section-label">Workspace</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Contacts</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="hard-hat"></i><span>Vendors</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="git-branch"></i><span>Pipelines</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layers"></i><span>Projects</span></div>
+          <div class="nav-item" data-active="true"><i data-lucide="calendar"></i><span>Calendar</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="messages-square"></i><span>Conversations</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="clipboard-list"></i><span>Forms</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="zap"></i><span>Workflows</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="bar-chart-3"></i><span>Reports</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="settings"></i><span>Settings</span></div>
+        </div>
+        <div class="nav-section-label">Surfaces</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Outlook add-in</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams app</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layout-grid"></i><span>M365 launcher</span></div>
+        </div>
+      </nav>
+      <div class="px-3 py-3 border-t border-[#E5E7EB]">
+        <div class="flex items-center gap-2 px-1">
+          <div class="avatar avatar-a">MS</div>
+          <div class="min-w-0">
+            <div class="text-[12px] font-semibold text-slate-900 truncate">Manish</div>
+            <div class="text-[10px] text-slate-500 truncate">Workspace owner</div>
+          </div>
+          <button class="btn-icon ml-auto" title="Menu"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+    </aside>
+    
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      
+    <header class="app-topbar">
+      <nav class="flex items-center gap-2 text-[13px]"><span class="text-slate-500">Calendar</span><i data-lucide="chevron-right" class="icon-sm text-slate-300"></i><span class="text-slate-900 font-medium">This week</span></nav>
+      <div class="dm-search flex-1 max-w-[480px] ml-auto mr-auto">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search contacts, projects, vendors…" />
+        <span class="absolute right-2 top-1/2 -translate-y-1/2"><kbd class="kbd">⌘K</kbd></span>
+      </div>
+      <div class="flex items-center gap-1 ml-auto">
+        
+        <button class="btn-icon" title="Help"><i data-lucide="circle-help" class="icon-sm"></i></button>
+        <button class="btn-icon relative" title="Notifications">
+          <i data-lucide="bell" class="icon-sm"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        </button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+          <div class="avatar avatar-a avatar-sm">MS</div>
+          <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+    
+      <main class="flex-1 overflow-auto bg-white">
+        
+  <div class="flex h-full">
+    <!-- Main calendar -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <div class="px-8 pt-6 pb-4 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <button class="btn-primary"><i data-lucide="plus" class="icon-sm"></i> New event</button>
+          <div class="flex items-center gap-1">
+            <button class="btn-icon"><i data-lucide="chevron-left" class="icon-sm"></i></button>
+            <button class="btn-icon"><i data-lucide="chevron-right" class="icon-sm"></i></button>
+            <button class="btn-ghost !text-[12px]">Today</button>
+          </div>
+          <h1 class="font-display text-[18px] font-semibold text-slate-900">May 18 — 24, 2026</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex items-center bg-white border border-slate-300 rounded-md">
+            <button class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-50 text-[12px] rounded-l-md">Day</button>
+            <button class="px-2.5 py-1.5 text-indigo-600 bg-indigo-50 text-[12px] font-medium">Week</button>
+            <button class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-50 text-[12px]">Month</button>
+            <button class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-50 text-[12px] rounded-r-md">Agenda</button>
+          </div>
+          <button class="btn-secondary"><i data-lucide="link" class="icon-sm"></i> Booking link</button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-auto border-t border-slate-200">
+        <div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="border-r border-b border-slate-100 bg-slate-50/40 h-12"></div><div class="border-r border-b border-slate-100 bg-indigo-50 h-12 flex flex-col items-center justify-center"><div class="text-[10px] text-slate-500 uppercase">Mon</div><div class="text-[15px] text-indigo-700 font-semibold">18</div></div><div class="border-r border-b border-slate-100 bg-slate-50/40 h-12 flex flex-col items-center justify-center"><div class="text-[10px] text-slate-500 uppercase">Tue</div><div class="text-[15px] text-slate-700 font-semibold">19</div></div><div class="border-r border-b border-slate-100 bg-slate-50/40 h-12 flex flex-col items-center justify-center"><div class="text-[10px] text-slate-500 uppercase">Wed</div><div class="text-[15px] text-slate-700 font-semibold">20</div></div><div class="border-r border-b border-slate-100 bg-slate-50/40 h-12 flex flex-col items-center justify-center"><div class="text-[10px] text-slate-500 uppercase">Thu</div><div class="text-[15px] text-slate-700 font-semibold">21</div></div><div class="border-r border-b border-slate-100 bg-slate-50/40 h-12 flex flex-col items-center justify-center"><div class="text-[10px] text-slate-500 uppercase">Fri</div><div class="text-[15px] text-slate-700 font-semibold">22</div></div><div class="border-r border-b border-slate-100 bg-slate-50/40 h-12 flex flex-col items-center justify-center"><div class="text-[10px] text-slate-500 uppercase">Sat</div><div class="text-[15px] text-slate-700 font-semibold">23</div></div><div class="border-r border-b border-slate-100 bg-slate-50/40 h-12 flex flex-col items-center justify-center"><div class="text-[10px] text-slate-500 uppercase">Sun</div><div class="text-[15px] text-slate-700 font-semibold">24</div></div></div>
+        <div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">8 AM</div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(100% - 4px);background:#E0F2FE;border-left:3px solid #0369A1;color:#0369A1;border-top:1px solid #BAE6FD;border-right:1px solid #BAE6FD;border-bottom:1px solid #BAE6FD"><div class="font-semibold truncate" style="color:#0369A1">Coffee — Tanvi Joshi</div><div class="opacity-75 truncate">Discovery · MG Road</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">9 AM</div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(100% - 4px);background:#F8FAFC;border-left:3px solid #475569;color:#475569;border-top:1px solid #E2E8F0;border-right:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0"><div class="font-semibold truncate" style="color:#475569">PM stand-up</div><div class="opacity-75 truncate">Internal · Teams</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(100% - 4px);background:#FEF3C7;border-left:3px solid #B45309;color:#B45309;border-top:1px solid #FDE68A;border-right:1px solid #FDE68A;border-bottom:1px solid #FDE68A"><div class="font-semibold truncate" style="color:#B45309">Vendor sync</div><div class="opacity-75 truncate">Voltek + MK Carpenter</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">10 AM</div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(200% - 4px);background:#EEF2FF;border-left:3px solid #4F46E5;color:#4F46E5;border-top:1px solid #C7D2FE;border-right:1px solid #C7D2FE;border-bottom:1px solid #C7D2FE"><div class="font-semibold truncate" style="color:#4F46E5">Concept review</div><div class="opacity-75 truncate">Aurora Studio · Teams</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(300% - 4px);background:#FEF3C7;border-left:3px solid #B45309;color:#B45309;border-top:1px solid #FDE68A;border-right:1px solid #FDE68A;border-bottom:1px solid #FDE68A"><div class="font-semibold truncate" style="color:#B45309">Whitefield install QC</div><div class="opacity-75 truncate">Half-day on site</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">11 AM</div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(100% - 4px);background:#EEF2FF;border-left:3px solid #4F46E5;color:#4F46E5;border-top:1px solid #C7D2FE;border-right:1px solid #C7D2FE;border-bottom:1px solid #C7D2FE"><div class="font-semibold truncate" style="color:#4F46E5">Site walk — HSR</div><div class="opacity-75 truncate">Priya Raghavan</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(100% - 4px);background:#F8FAFC;border-left:3px solid #475569;color:#475569;border-top:1px solid #E2E8F0;border-right:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0"><div class="font-semibold truncate" style="color:#475569">Sample review</div><div class="opacity-75 truncate">FabTextiles + Aurora</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">12 PM</div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(200% - 4px);background:#EEF2FF;border-left:3px solid #4F46E5;color:#4F46E5;border-top:1px solid #C7D2FE;border-right:1px solid #C7D2FE;border-bottom:1px solid #C7D2FE"><div class="font-semibold truncate" style="color:#4F46E5">Site visit — JP Nagar</div><div class="opacity-75 truncate">Lakshmi & Ravi</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">1 PM</div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">2 PM</div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(100% - 4px);background:#E0F2FE;border-left:3px solid #0369A1;color:#0369A1;border-top:1px solid #BAE6FD;border-right:1px solid #BAE6FD;border-bottom:1px solid #BAE6FD"><div class="font-semibold truncate" style="color:#0369A1">Brief discovery</div><div class="opacity-75 truncate">Suri Kapoor</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">3 PM</div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(100% - 4px);background:#F8FAFC;border-left:3px solid #475569;color:#475569;border-top:1px solid #E2E8F0;border-right:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0"><div class="font-semibold truncate" style="color:#475569">Weekly review</div><div class="opacity-75 truncate">Internal</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">4 PM</div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"><div class="absolute left-1 right-1 rounded p-1.5 text-[10px] leading-tight overflow-hidden cursor-pointer" style="top:2px;height:calc(100% - 4px);background:#F8FAFC;border-left:3px solid #475569;color:#475569;border-top:1px solid #E2E8F0;border-right:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0"><div class="font-semibold truncate" style="color:#475569">Q3 board update</div><div class="opacity-75 truncate">Internal · Outlook</div></div></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">5 PM</div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div><div class="grid grid-cols-[60px_repeat(7,1fr)]"><div class="text-[10px] text-slate-400 text-right pr-2 py-1 border-r border-slate-100">6 PM</div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div><div class="relative border-r border-b border-slate-100 h-[60px]"></div></div>
+      </div>
+    </div>
+
+    <!-- Right rail: booking page + calendars -->
+    <aside class="w-[340px] border-l border-slate-200 bg-slate-50/30 overflow-auto">
+      <div class="p-5 border-b border-slate-200 bg-white">
+        <div class="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-3">Public booking page</div>
+        <div class="border border-slate-200 rounded-lg bg-white p-4">
+          <div class="dm-brand mb-3">
+            <span class="dm-brand-glyph">D</span>
+            <span class="text-[12px]">DesignersMeet</span>
+          </div>
+          <div class="text-[14px] font-semibold text-slate-900">Book a discovery call with Manish</div>
+          <div class="text-[11.5px] text-slate-500 mt-1">30 minutes · Google Meet or Teams</div>
+          <div class="mt-4">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Select a date</div>
+            <div class="grid grid-cols-7 gap-1 text-center text-[10px]">
+              <div class="text-slate-400">S</div><div class="text-slate-400">M</div><div class="text-slate-400">T</div><div class="text-slate-400">W</div><div class="text-slate-400">T</div><div class="text-slate-400">F</div><div class="text-slate-400">S</div>
+              <div class="py-1.5 rounded text-slate-300">1</div><div class="py-1.5 rounded text-slate-300">2</div><div class="py-1.5 rounded text-slate-300">3</div>
+              <div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">4</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">5</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">6</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">7</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">8</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">9</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">10</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">11</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">12</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">13</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">14</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">15</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">16</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">17</div>
+              <div class="py-1.5 rounded bg-indigo-600 text-white font-semibold">18</div>
+              <div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">19</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">20</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">21</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">22</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">23</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">24</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">25</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">26</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">27</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">28</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">29</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">30</div><div class="py-1.5 rounded text-slate-700 hover:bg-indigo-50 cursor-pointer">31</div>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Available · Mon May 18</div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button class="border border-slate-200 rounded py-1.5 text-[11px] text-slate-700 hover:border-indigo-600 hover:text-indigo-600">9:30</button>
+              <button class="border border-indigo-600 bg-indigo-50 rounded py-1.5 text-[11px] text-indigo-700 font-semibold">10:00</button>
+              <button class="border border-slate-200 rounded py-1.5 text-[11px] text-slate-700 hover:border-indigo-600 hover:text-indigo-600">10:30</button>
+              <button class="border border-slate-200 rounded py-1.5 text-[11px] text-slate-700 hover:border-indigo-600 hover:text-indigo-600">2:00</button>
+              <button class="border border-slate-200 rounded py-1.5 text-[11px] text-slate-700 hover:border-indigo-600 hover:text-indigo-600">2:30</button>
+              <button class="border border-slate-200 rounded py-1.5 text-[11px] text-slate-700 hover:border-indigo-600 hover:text-indigo-600">5:00</button>
+            </div>
+          </div>
+          <button class="btn-primary w-full justify-center mt-4">Confirm booking</button>
+          <div class="text-[10px] text-slate-400 mt-3 text-center">Powered by DesignersMeet · book.designersmeet.com/manish</div>
+        </div>
+      </div>
+
+      <div class="p-5">
+        <div class="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-3">My calendars</div>
+        <div class="space-y-1">
+          <label class="flex items-center gap-2.5 text-[12.5px] text-slate-700">
+            <input type="checkbox" checked class="rounded border-slate-300" style="accent-color:#4F46E5" />
+            <span class="w-3 h-3 rounded-sm bg-indigo-500"></span>
+            <span>Personal (Outlook)</span>
+          </label>
+          <label class="flex items-center gap-2.5 text-[12.5px] text-slate-700">
+            <input type="checkbox" checked class="rounded border-slate-300" style="accent-color:#0284C7" />
+            <span class="w-3 h-3 rounded-sm bg-sky-500"></span>
+            <span>Discovery calls</span>
+          </label>
+          <label class="flex items-center gap-2.5 text-[12.5px] text-slate-700">
+            <input type="checkbox" checked class="rounded border-slate-300" style="accent-color:#B45309" />
+            <span class="w-3 h-3 rounded-sm bg-amber-500"></span>
+            <span>Site visits</span>
+          </label>
+          <label class="flex items-center gap-2.5 text-[12.5px] text-slate-700">
+            <input type="checkbox" class="rounded border-slate-300" />
+            <span class="w-3 h-3 rounded-sm bg-slate-400"></span>
+            <span>Team — Anita M.</span>
+          </label>
+          <label class="flex items-center gap-2.5 text-[12.5px] text-slate-700">
+            <input type="checkbox" class="rounded border-slate-300" />
+            <span class="w-3 h-3 rounded-sm bg-slate-400"></span>
+            <span>Team — Rohit</span>
+          </label>
+        </div>
+
+        <div class="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-3 mt-6">Bookable services</div>
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between p-2.5 border border-slate-200 rounded-md bg-white">
+            <div>
+              <div class="text-[12.5px] font-semibold text-slate-900">Discovery — 30 min</div>
+              <div class="text-[11px] text-slate-500">Round-robin · 12 bookings</div>
+            </div>
+            <button class="btn-icon"><i data-lucide="copy" class="icon-sm"></i></button>
+          </div>
+          <div class="flex items-center justify-between p-2.5 border border-slate-200 rounded-md bg-white">
+            <div>
+              <div class="text-[12.5px] font-semibold text-slate-900">Site walk — 90 min</div>
+              <div class="text-[11px] text-slate-500">Manish only · 6 bookings</div>
+            </div>
+            <button class="btn-icon"><i data-lucide="copy" class="icon-sm"></i></button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+    
+      </main>
+    </div>
+  </div>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

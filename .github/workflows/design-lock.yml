@@ -1,0 +1,54 @@
+name: design-lock
+
+# Authoritative, unbypassable design-lock gate (template Layer 4).
+# Local husky hooks are a convenience; THIS is the enforcement boundary.
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  design-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+
+      - name: Install
+        run: npm ci || npm install
+
+      - name: Regenerate tokens & assert no drift
+        run: |
+          node brief/style-dictionary.config.js
+          git diff --exit-code -- \
+            packages/frontend/src/styles/tokens.css \
+            packages/frontend/tailwind.tokens.ts
+
+      - name: Colour-guard lint (no raw hex/rgb/hsl)
+        working-directory: packages/frontend
+        run: npm run lint
+
+      - name: Brand-change gate on locked files
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          [ -z "$BASE" ] && BASE=HEAD~1
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          LOCKED=$(node -e "console.log(JSON.parse(require('fs').readFileSync('brief/locked-files.json')).locked.join('\n'))")
+          MSG=$(git log -1 --pretty=%B)
+          HIT=0
+          for f in $CHANGED; do
+            for l in $LOCKED; do
+              case "$l" in
+                */) [ "${f#$l}" != "$f" ] && HIT=1 ;;
+                *)  [ "$f" = "$l" ] && HIT=1 ;;
+              esac
+            done
+          done
+          if [ "$HIT" = "1" ] && ! echo "$MSG" | grep -q '\[brand-change\]'; then
+            echo "::error::Locked design files changed without [brand-change] in the commit message."
+            exit 1
+          fi
+          echo "design-lock OK"

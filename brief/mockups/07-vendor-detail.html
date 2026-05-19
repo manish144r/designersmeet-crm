@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Vendor detail · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-[232px] flex-shrink-0 border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col">
+      <div class="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="dm-brand">
+          <span class="dm-brand-glyph">D</span>
+          <span>DesignersMeet</span>
+        </div>
+        <button class="btn-icon" title="Collapse"><i data-lucide="panel-left-close" class="icon-sm"></i></button>
+      </div>
+      <div class="px-3 pt-3">
+        <div class="workspace-pill">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">HQ</div>
+            <div class="min-w-0">
+              <div class="text-[12px] font-semibold text-slate-900 truncate">DesignersMeet HQ</div>
+              <div class="text-[10px] text-slate-500 truncate">Bengaluru workspace</div>
+            </div>
+          </div>
+          <i data-lucide="chevrons-up-down" class="icon-sm text-slate-400"></i>
+        </div>
+      </div>
+      <nav class="px-2 pt-3 flex-1 overflow-y-auto">
+        <div class="nav-section-label">Workspace</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Contacts</span></div>
+          <div class="nav-item" data-active="true"><i data-lucide="hard-hat"></i><span>Vendors</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="git-branch"></i><span>Pipelines</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layers"></i><span>Projects</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="calendar"></i><span>Calendar</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="messages-square"></i><span>Conversations</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="clipboard-list"></i><span>Forms</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="zap"></i><span>Workflows</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="bar-chart-3"></i><span>Reports</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="settings"></i><span>Settings</span></div>
+        </div>
+        <div class="nav-section-label">Surfaces</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Outlook add-in</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams app</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layout-grid"></i><span>M365 launcher</span></div>
+        </div>
+      </nav>
+      <div class="px-3 py-3 border-t border-[#E5E7EB]">
+        <div class="flex items-center gap-2 px-1">
+          <div class="avatar avatar-a">MS</div>
+          <div class="min-w-0">
+            <div class="text-[12px] font-semibold text-slate-900 truncate">Manish</div>
+            <div class="text-[10px] text-slate-500 truncate">Workspace owner</div>
+          </div>
+          <button class="btn-icon ml-auto" title="Menu"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+    </aside>
+    
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      
+    <header class="app-topbar">
+      <nav class="flex items-center gap-2 text-[13px]"><span class="text-slate-500">Vendors</span><i data-lucide="chevron-right" class="icon-sm text-slate-300"></i><span class="text-slate-900 font-medium">Aurora Studio</span></nav>
+      <div class="dm-search flex-1 max-w-[480px] ml-auto mr-auto">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search contacts, projects, vendors…" />
+        <span class="absolute right-2 top-1/2 -translate-y-1/2"><kbd class="kbd">⌘K</kbd></span>
+      </div>
+      <div class="flex items-center gap-1 ml-auto">
+        
+        <button class="btn-icon" title="Help"><i data-lucide="circle-help" class="icon-sm"></i></button>
+        <button class="btn-icon relative" title="Notifications">
+          <i data-lucide="bell" class="icon-sm"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        </button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+          <div class="avatar avatar-a avatar-sm">MS</div>
+          <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+    
+      <main class="flex-1 overflow-auto bg-white">
+        
+  <div class="flex h-full">
+    <div class="flex-1 overflow-auto">
+      <!-- Header -->
+      <div class="px-8 pt-6 pb-4 border-b border-slate-100">
+        <div class="flex items-start gap-4">
+          <div class="avatar avatar-b avatar-xl">AS</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3">
+              <h1 class="font-display text-[24px] font-semibold tracking-tight text-slate-900">Aurora Studio</h1>
+              <span class="badge badge-indigo">Tier-1 partner</span>
+              <span class="badge badge-success badge-dot">Active</span>
+              <div class="flex items-center gap-1 ml-2">
+                <i data-lucide="star" class="icon-sm text-amber-400" style="fill:currentColor"></i>
+                <span class="font-semibold text-slate-900 text-[13px]">4.9</span>
+                <span class="text-slate-400 text-[12px]">· 12 projects</span>
+              </div>
+            </div>
+            <div class="text-[13px] text-slate-500 mt-1">Concept · 3D visualization · Brand refresh · Founded 2018 · Bengaluru + Chennai</div>
+            <div class="flex items-center gap-4 mt-3 text-[12px] text-slate-600">
+              <span class="flex items-center gap-1.5"><i data-lucide="mail" class="icon-sm text-slate-400"></i> hello@aurorastudio.in</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="phone" class="icon-sm text-slate-400"></i> +91 80 4123 5678</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="globe" class="icon-sm text-slate-400"></i> aurorastudio.in</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="instagram" class="icon-sm text-slate-400"></i> @aurora.studio</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="btn-secondary"><i data-lucide="message-circle" class="icon-sm"></i> WhatsApp</button>
+            <button class="btn-secondary"><i data-lucide="mail" class="icon-sm"></i> Email</button>
+            <button class="btn-primary"><i data-lucide="user-plus" class="icon-sm"></i> Assign to project</button>
+            <button class="btn-icon"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+          </div>
+        </div>
+        <div class="dm-tabs mt-5">
+          <div class="dm-tab" data-active="true">Profile</div>
+          <div class="dm-tab">Projects <span class="badge badge-neutral ml-1">12</span></div>
+          <div class="dm-tab">Tasks <span class="badge badge-neutral ml-1">8</span></div>
+          <div class="dm-tab">Deliverables <span class="badge badge-neutral ml-1">47</span></div>
+          <div class="dm-tab">Conversations</div>
+          <div class="dm-tab">Files</div>
+          <div class="dm-tab">Reviews <span class="badge badge-neutral ml-1">12</span></div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="grid grid-cols-3 gap-6 px-8 py-6">
+        <div class="col-span-2 space-y-4">
+          <!-- Skills -->
+          <div class="dm-card">
+            <div class="dm-card-header">
+              <div class="text-[13px] font-semibold text-slate-900">Skills & specialization</div>
+              <button class="btn-ghost !text-[12px]"><i data-lucide="pencil" class="icon-sm"></i> Edit</button>
+            </div>
+            <div class="dm-card-body">
+              <div class="flex flex-wrap gap-2">
+                <span class="badge badge-indigo">Concept design</span>
+                <span class="badge badge-indigo">3D visualization</span>
+                <span class="badge badge-indigo">Brand identity</span>
+                <span class="badge badge-neutral">Mood boards</span>
+                <span class="badge badge-neutral">Material palette</span>
+                <span class="badge badge-neutral">F&B interiors</span>
+                <span class="badge badge-neutral">Residential</span>
+                <span class="badge badge-neutral">VR walk-throughs</span>
+              </div>
+              <div class="grid grid-cols-3 gap-4 mt-5 pt-4 border-t border-slate-100">
+                <div>
+                  <div class="text-[11px] text-slate-500 uppercase tracking-wider">Avg. project value</div>
+                  <div class="text-[16px] font-semibold text-slate-900 mt-1">₹ 4.2 L</div>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-500 uppercase tracking-wider">On-time delivery</div>
+                  <div class="text-[16px] font-semibold text-emerald-600 mt-1">94%</div>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-500 uppercase tracking-wider">Last assignment</div>
+                  <div class="text-[16px] font-semibold text-slate-900 mt-1">5h ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rate card -->
+          <div class="dm-card">
+            <div class="dm-card-header">
+              <div class="text-[13px] font-semibold text-slate-900">Rate card</div>
+              <button class="btn-ghost !text-[12px]"><i data-lucide="external-link" class="icon-sm"></i> View MSA</button>
+            </div>
+            <div class="dm-card-body !p-0">
+              <table class="dm-table">
+                <thead><tr><th>Deliverable</th><th>Unit</th><th>Rate</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="font-medium text-slate-900">Concept board</span></td><td>per project</td><td>₹ 45,000</td><td class="text-slate-500">3 revision rounds incl.</td></tr>
+                  <tr><td><span class="font-medium text-slate-900">3D rendered view</span></td><td>per view</td><td>₹ 8,500</td><td class="text-slate-500">2 days SLA</td></tr>
+                  <tr><td><span class="font-medium text-slate-900">VR walk-through</span></td><td>per project</td><td>₹ 1,20,000</td><td class="text-slate-500">10–15 day SLA</td></tr>
+                  <tr><td><span class="font-medium text-slate-900">Brand identity refresh</span></td><td>per scope</td><td>₹ 2,80,000</td><td class="text-slate-500">Logo, palette, type</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Project history -->
+          <div class="dm-card">
+            <div class="dm-card-header">
+              <div class="text-[13px] font-semibold text-slate-900">Project history</div>
+              <button class="btn-ghost !text-[12px]">All 12 →</button>
+            </div>
+            <div class="dm-card-body !p-0">
+              <table class="dm-table">
+                <thead><tr><th>Project</th><th>Role</th><th>Period</th><th>Fee</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="font-medium text-slate-900">Brand Refresh — Lumen Café</span></td><td>Concept lead</td><td>Mar 12 → Jun 30</td><td>₹ 3,25,000</td><td><span class="status-pill status-design">Active</span></td></tr>
+                  <tr><td><span class="font-medium text-slate-900">Whitefield Villa</span></td><td>3D + VR</td><td>Feb 2 → May 18</td><td>₹ 4,80,000</td><td><span class="status-pill status-install">Install</span></td></tr>
+                  <tr><td><span class="font-medium text-slate-900">Indiranagar Loft Reno</span></td><td>Concept board</td><td>Jan 15 → Feb 10</td><td>₹ 95,000</td><td><span class="status-pill status-handover">Closed</span></td></tr>
+                  <tr><td><span class="font-medium text-slate-900">Koramangala Co-work</span></td><td>Brand + interiors</td><td>Nov 4 → Jan 8</td><td>₹ 5,40,000</td><td><span class="status-pill status-handover">Closed</span></td></tr>
+                  <tr><td><span class="font-medium text-slate-900">Café Espresso Roastery</span></td><td>Concept</td><td>Sep 1 → Oct 30</td><td>₹ 1,20,000</td><td><span class="status-pill status-closed">Closed</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right rail -->
+        <div class="col-span-1 space-y-4">
+          <div class="dm-card">
+            <div class="dm-card-header"><div class="text-[13px] font-semibold text-slate-900">Compliance</div></div>
+            <div class="dm-card-body !p-0">
+              <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+                <div>
+                  <div class="text-[12.5px] font-medium text-slate-900">NDA</div>
+                  <div class="text-[11px] text-slate-500">Signed Jan 12, 2024</div>
+                </div>
+                <span class="badge badge-success badge-dot">Valid</span>
+              </div>
+              <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+                <div>
+                  <div class="text-[12.5px] font-medium text-slate-900">MSA</div>
+                  <div class="text-[11px] text-slate-500">Signed Jan 12, 2024 · renews Jan 2027</div>
+                </div>
+                <span class="badge badge-success badge-dot">Valid</span>
+              </div>
+              <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+                <div>
+                  <div class="text-[12.5px] font-medium text-slate-900">GST registration</div>
+                  <div class="text-[11px] text-slate-500">29AABCT1234X1Z5</div>
+                </div>
+                <span class="badge badge-success badge-dot">Verified</span>
+              </div>
+              <div class="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <div class="text-[12.5px] font-medium text-slate-900">Insurance</div>
+                  <div class="text-[11px] text-amber-600">Expires Jul 14, 2026</div>
+                </div>
+                <span class="badge badge-warning badge-dot">Renew soon</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dm-card">
+            <div class="dm-card-header"><div class="text-[13px] font-semibold text-slate-900">Portfolio</div></div>
+            <div class="dm-card-body !p-0">
+              <div class="grid grid-cols-2 gap-px bg-slate-100 p-px">
+                
+      <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        <svg viewBox="0 0 60 45" class="w-12 h-9 text-slate-400">
+          <rect x="2" y="6" width="56" height="33" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="14" cy="18" r="3" fill="currentColor" opacity="0.4"/>
+          <path d="M2 32 L20 22 L34 30 L48 18 L58 28 L58 39 L2 39 Z" fill="currentColor" opacity="0.25"/>
+        </svg>
+      </div>
+    
+      <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        <svg viewBox="0 0 60 45" class="w-12 h-9 text-slate-400">
+          <rect x="2" y="6" width="56" height="33" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="14" cy="18" r="3" fill="currentColor" opacity="0.4"/>
+          <path d="M2 32 L20 22 L34 30 L48 18 L58 28 L58 39 L2 39 Z" fill="currentColor" opacity="0.25"/>
+        </svg>
+      </div>
+    
+      <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        <svg viewBox="0 0 60 45" class="w-12 h-9 text-slate-400">
+          <rect x="2" y="6" width="56" height="33" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="14" cy="18" r="3" fill="currentColor" opacity="0.4"/>
+          <path d="M2 32 L20 22 L34 30 L48 18 L58 28 L58 39 L2 39 Z" fill="currentColor" opacity="0.25"/>
+        </svg>
+      </div>
+    
+      <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        <svg viewBox="0 0 60 45" class="w-12 h-9 text-slate-400">
+          <rect x="2" y="6" width="56" height="33" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="14" cy="18" r="3" fill="currentColor" opacity="0.4"/>
+          <path d="M2 32 L20 22 L34 30 L48 18 L58 28 L58 39 L2 39 Z" fill="currentColor" opacity="0.25"/>
+        </svg>
+      </div>
+    
+              </div>
+              <div class="px-4 py-2.5 border-t border-slate-100 text-center">
+                <a href="#" class="text-[12px] text-indigo-600 font-medium hover:underline">Open SharePoint folder →</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="dm-card">
+            <div class="dm-card-header"><div class="text-[13px] font-semibold text-slate-900">Team contacts</div></div>
+            <div class="dm-card-body !p-0">
+              <div class="px-4 py-2.5 flex items-center gap-3 border-b border-slate-100">
+                <div class="avatar avatar-b avatar-sm">RB</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[12.5px] font-medium text-slate-900">Rohan Batra</div>
+                  <div class="text-[11px] text-slate-500">Founder · Primary contact</div>
+                </div>
+              </div>
+              <div class="px-4 py-2.5 flex items-center gap-3 border-b border-slate-100">
+                <div class="avatar avatar-d avatar-sm">SK</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[12.5px] font-medium text-slate-900">Sneha Kapur</div>
+                  <div class="text-[11px] text-slate-500">3D lead</div>
+                </div>
+              </div>
+              <div class="px-4 py-2.5 flex items-center gap-3">
+                <div class="avatar avatar-e avatar-sm">DP</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[12.5px] font-medium text-slate-900">Devika Pillai</div>
+                  <div class="text-[11px] text-slate-500">Project coordinator</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+    
+      </main>
+    </div>
+  </div>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

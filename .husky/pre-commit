@@ -1,0 +1,28 @@
+#!/bin/sh
+# DesignersMeet design-lock — pre-commit (Layers 1-3 drift guard).
+# 1. Regenerate tokens from brief/tokens.json; fail if generated outputs drift.
+# 2. Run the frontend colour-guard lint (ESLint dm/no-raw-color + CSS scan).
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 0
+
+if [ -f brief/style-dictionary.config.js ] && [ -d node_modules ]; then
+  node brief/style-dictionary.config.js >/dev/null 2>&1 || true
+  if ! git diff --quiet -- packages/frontend/src/styles/tokens.css packages/frontend/tailwind.tokens.ts 2>/dev/null; then
+    echo ""
+    echo "  DESIGN LOCK — token drift detected."
+    echo "  Generated tokens differ from brief/tokens.json. Stage the regenerated"
+    echo "  packages/frontend/src/styles/tokens.css + tailwind.tokens.ts (use [brand-change])."
+    exit 1
+  fi
+fi
+
+if [ -d packages/frontend/node_modules ] || [ -d node_modules ]; then
+  ( cd packages/frontend && npm run --silent lint ) || {
+    echo ""
+    echo "  DESIGN LOCK — colour-guard lint failed (raw hex/rgb/hsl in src)."
+    exit 1
+  }
+fi
+
+exit 0

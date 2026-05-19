@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Project detail · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-[232px] flex-shrink-0 border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col">
+      <div class="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="dm-brand">
+          <span class="dm-brand-glyph">D</span>
+          <span>DesignersMeet</span>
+        </div>
+        <button class="btn-icon" title="Collapse"><i data-lucide="panel-left-close" class="icon-sm"></i></button>
+      </div>
+      <div class="px-3 pt-3">
+        <div class="workspace-pill">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">HQ</div>
+            <div class="min-w-0">
+              <div class="text-[12px] font-semibold text-slate-900 truncate">DesignersMeet HQ</div>
+              <div class="text-[10px] text-slate-500 truncate">Bengaluru workspace</div>
+            </div>
+          </div>
+          <i data-lucide="chevrons-up-down" class="icon-sm text-slate-400"></i>
+        </div>
+      </div>
+      <nav class="px-2 pt-3 flex-1 overflow-y-auto">
+        <div class="nav-section-label">Workspace</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Contacts</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="hard-hat"></i><span>Vendors</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="git-branch"></i><span>Pipelines</span></div>
+          <div class="nav-item" data-active="true"><i data-lucide="layers"></i><span>Projects</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="calendar"></i><span>Calendar</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="messages-square"></i><span>Conversations</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="clipboard-list"></i><span>Forms</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="zap"></i><span>Workflows</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="bar-chart-3"></i><span>Reports</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="settings"></i><span>Settings</span></div>
+        </div>
+        <div class="nav-section-label">Surfaces</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Outlook add-in</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams app</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layout-grid"></i><span>M365 launcher</span></div>
+        </div>
+      </nav>
+      <div class="px-3 py-3 border-t border-[#E5E7EB]">
+        <div class="flex items-center gap-2 px-1">
+          <div class="avatar avatar-a">MS</div>
+          <div class="min-w-0">
+            <div class="text-[12px] font-semibold text-slate-900 truncate">Manish</div>
+            <div class="text-[10px] text-slate-500 truncate">Workspace owner</div>
+          </div>
+          <button class="btn-icon ml-auto" title="Menu"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+    </aside>
+    
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      
+    <header class="app-topbar">
+      <nav class="flex items-center gap-2 text-[13px]"><span class="text-slate-500">Projects</span><i data-lucide="chevron-right" class="icon-sm text-slate-300"></i><span class="text-slate-900 font-medium">Brand Refresh — Lumen Café</span></nav>
+      <div class="dm-search flex-1 max-w-[480px] ml-auto mr-auto">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search contacts, projects, vendors…" />
+        <span class="absolute right-2 top-1/2 -translate-y-1/2"><kbd class="kbd">⌘K</kbd></span>
+      </div>
+      <div class="flex items-center gap-1 ml-auto">
+        
+        <button class="btn-icon" title="Help"><i data-lucide="circle-help" class="icon-sm"></i></button>
+        <button class="btn-icon relative" title="Notifications">
+          <i data-lucide="bell" class="icon-sm"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        </button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+          <div class="avatar avatar-a avatar-sm">MS</div>
+          <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+    
+      <main class="flex-1 overflow-auto bg-white">
+        
+  <div class="flex flex-col h-full">
+    <!-- Header -->
+    <div class="px-8 pt-6 pb-4 border-b border-slate-100">
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center">
+          <i data-lucide="layers" class="icon-lg"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-3">
+            <h1 class="font-display text-[22px] font-semibold tracking-tight text-slate-900">Brand Refresh — Lumen Café</h1>
+            <span class="status-pill status-design">Design</span>
+            <span class="badge badge-success badge-dot">On track</span>
+          </div>
+          <div class="text-[12.5px] text-slate-500 mt-1">
+            <span class="font-medium text-slate-700">Priya Raghavan</span> ·
+            PM <span class="font-medium text-slate-700">Manish</span> ·
+            Designer <span class="font-medium text-slate-700">Anita M.</span> ·
+            Target <span class="font-medium text-slate-700">Jun 30, 2026</span> · 43 days remaining
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-secondary"><i data-lucide="folder-open" class="icon-sm"></i> SharePoint</button>
+          <button class="btn-secondary"><i data-lucide="users-round" class="icon-sm"></i> Teams channel</button>
+          <button class="btn-primary"><i data-lucide="check-circle" class="icon-sm"></i> Mark milestone done</button>
+          <button class="btn-icon"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+
+      <!-- Milestone bar -->
+      <div class="mt-5 grid grid-cols-7 gap-2">
+        
+          <div class="flex flex-col items-center text-center gap-2">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500 text-white"><i data-lucide="check" class="icon-sm"></i></div>
+            <div class="text-[11px] text-slate-900 leading-tight">Brief sign-off</div>
+          </div>
+        
+          <div class="flex flex-col items-center text-center gap-2">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500 text-white"><i data-lucide="check" class="icon-sm"></i></div>
+            <div class="text-[11px] text-slate-900 leading-tight">Concept</div>
+          </div>
+        
+          <div class="flex flex-col items-center text-center gap-2">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center bg-indigo-600 text-white ring-4 ring-indigo-100"><span class="text-[10px] font-bold">●</span></div>
+            <div class="text-[11px] text-indigo-700 font-semibold leading-tight">Design dev</div>
+          </div>
+        
+          <div class="flex flex-col items-center text-center gap-2">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center bg-white border border-slate-300 text-slate-400"><span class="text-[10px]">·</span></div>
+            <div class="text-[11px] text-slate-400 leading-tight">Procurement</div>
+          </div>
+        
+          <div class="flex flex-col items-center text-center gap-2">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center bg-white border border-slate-300 text-slate-400"><span class="text-[10px]">·</span></div>
+            <div class="text-[11px] text-slate-400 leading-tight">Install</div>
+          </div>
+        
+          <div class="flex flex-col items-center text-center gap-2">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center bg-white border border-slate-300 text-slate-400"><span class="text-[10px]">·</span></div>
+            <div class="text-[11px] text-slate-400 leading-tight">Snag</div>
+          </div>
+        
+          <div class="flex flex-col items-center text-center gap-2">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center bg-white border border-slate-300 text-slate-400"><span class="text-[10px]">·</span></div>
+            <div class="text-[11px] text-slate-400 leading-tight">Handover</div>
+          </div>
+        
+      </div>
+
+      <div class="dm-tabs mt-5">
+        <div class="dm-tab" data-active="true">Overview</div>
+        <div class="dm-tab">Tasks <span class="badge badge-neutral ml-1">23</span></div>
+        <div class="dm-tab">Deliverables <span class="badge badge-neutral ml-1">12</span></div>
+        <div class="dm-tab">Vendors <span class="badge badge-neutral ml-1">3</span></div>
+        <div class="dm-tab">Files <span class="badge badge-neutral ml-1">47</span></div>
+        <div class="dm-tab">Activity</div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-auto">
+      <div class="grid grid-cols-3 gap-6 px-8 py-6">
+        <div class="col-span-2 space-y-4">
+          <!-- Deliverables (current focus) -->
+          <div class="dm-card">
+            <div class="dm-card-header">
+              <div class="text-[13px] font-semibold text-slate-900">Deliverables — current milestone</div>
+              <button class="btn-secondary !text-[12px]"><i data-lucide="plus" class="icon-sm"></i> New deliverable</button>
+            </div>
+            <div class="dm-card-body">
+              <div class="grid grid-cols-2 gap-3">
+                
+        <div class="border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 transition-colors group">
+          
+      <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        <svg viewBox="0 0 60 45" class="w-12 h-9 text-slate-400">
+          <rect x="2" y="6" width="56" height="33" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="14" cy="18" r="3" fill="currentColor" opacity="0.4"/>
+          <path d="M2 32 L20 22 L34 30 L48 18 L58 28 L58 39 L2 39 Z" fill="currentColor" opacity="0.25"/>
+        </svg>
+      </div>
+    
+          <div class="p-3 border-t border-slate-200">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-[13px] font-semibold text-slate-900 truncate">Concept board v3</div>
+                <div class="text-[11px] text-slate-500 truncate">Aurora Studio · v3</div>
+              </div>
+              <span class="status-pill status-design">In review</span>
+            </div>
+            <div class="flex items-center justify-between mt-2.5 pt-2.5 border-t border-slate-100">
+              <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="history" class="icon-sm"></i> 3 versions</span>
+              </div>
+              <button class="text-[11px] text-indigo-600 font-medium opacity-0 group-hover:opacity-100">Request approval →</button>
+            </div>
+          </div>
+        </div>
+    
+                
+        <div class="border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 transition-colors group">
+          
+      <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        <svg viewBox="0 0 60 45" class="w-12 h-9 text-slate-400">
+          <rect x="2" y="6" width="56" height="33" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="14" cy="18" r="3" fill="currentColor" opacity="0.4"/>
+          <path d="M2 32 L20 22 L34 30 L48 18 L58 28 L58 39 L2 39 Z" fill="currentColor" opacity="0.25"/>
+        </svg>
+      </div>
+    
+          <div class="p-3 border-t border-slate-200">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-[13px] font-semibold text-slate-900 truncate">Material palette v2</div>
+                <div class="text-[11px] text-slate-500 truncate">Aurora Studio · v3</div>
+              </div>
+              <span class="status-pill status-handover">Approved</span>
+            </div>
+            <div class="flex items-center justify-between mt-2.5 pt-2.5 border-t border-slate-100">
+              <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="history" class="icon-sm"></i> 3 versions</span>
+              </div>
+              <button class="text-[11px] text-indigo-600 font-medium opacity-0 group-hover:opacity-100">Request approval →</button>
+            </div>
+          </div>
+        </div>
+    
+                
+        <div class="border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 transition-colors group">
+          
+      <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        <svg viewBox="0 0 60 45" class="w-12 h-9 text-slate-400">
+          <rect x="2" y="6" width="56" height="33" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="14" cy="18" r="3" fill="currentColor" opacity="0.4"/>
+          <path d="M2 32 L20 22 L34 30 L48 18 L58 28 L58 39 L2 39 Z" fill="currentColor" opacity="0.25"/>
+        </svg>
+      </div>
+    
+          <div class="p-3 border-t border-slate-200">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-[13px] font-semibold text-slate-900 truncate">3D — bar elevation</div>
+                <div class="text-[11px] text-slate-500 truncate">Render Boutique · v3</div>
+              </div>
+              <span class="status-pill status-brief">Awaiting upload</span>
+            </div>
+            <div class="flex items-center justify-between mt-2.5 pt-2.5 border-t border-slate-100">
+              <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="history" class="icon-sm"></i> 3 versions</span>
+              </div>
+              <button class="text-[11px] text-indigo-600 font-medium opacity-0 group-hover:opacity-100">Request approval →</button>
+            </div>
+          </div>
+        </div>
+    
+                
+        <div class="border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 transition-colors group">
+          
+      <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        <svg viewBox="0 0 60 45" class="w-12 h-9 text-slate-400">
+          <rect x="2" y="6" width="56" height="33" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="14" cy="18" r="3" fill="currentColor" opacity="0.4"/>
+          <path d="M2 32 L20 22 L34 30 L48 18 L58 28 L58 39 L2 39 Z" fill="currentColor" opacity="0.25"/>
+        </svg>
+      </div>
+    
+          <div class="p-3 border-t border-slate-200">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-[13px] font-semibold text-slate-900 truncate">Brand mark refresh</div>
+                <div class="text-[11px] text-slate-500 truncate">Aurora Studio · v3</div>
+              </div>
+              <span class="status-pill status-design">In review</span>
+            </div>
+            <div class="flex items-center justify-between mt-2.5 pt-2.5 border-t border-slate-100">
+              <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="history" class="icon-sm"></i> 3 versions</span>
+              </div>
+              <button class="text-[11px] text-indigo-600 font-medium opacity-0 group-hover:opacity-100">Request approval →</button>
+            </div>
+          </div>
+        </div>
+    
+              </div>
+            </div>
+          </div>
+
+          <!-- Tasks -->
+          <div class="dm-card">
+            <div class="dm-card-header">
+              <div class="text-[13px] font-semibold text-slate-900">Next-up tasks</div>
+              <button class="btn-ghost !text-[12px]">Full task list →</button>
+            </div>
+            <div class="dm-card-body !p-0">
+              
+        <div class="px-4 py-2.5 flex items-center gap-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/40">
+          <button class="w-4 h-4 rounded-sm border-2 border-indigo-500 bg-indigo-50 flex items-center justify-center"><span class="w-1.5 h-1.5 bg-indigo-500 rounded-sm"></span></button>
+          <div class="flex-1 min-w-0 text-[13px] text-slate-900">Approve concept board v3</div>
+          <span class="badge badge-indigo">In progress</span>
+          <span class="text-[11px] text-slate-500 w-[90px] text-right">Today</span>
+          <span class="text-[11px] text-slate-500 w-[80px] text-right">Manish</span>
+        </div>
+    
+              
+        <div class="px-4 py-2.5 flex items-center gap-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/40">
+          <button class="w-4 h-4 rounded-sm border-2 border-slate-300"></button>
+          <div class="flex-1 min-w-0 text-[13px] text-slate-900">Order brass bar fittings (sample)</div>
+          <span class="badge badge-neutral">To do</span>
+          <span class="text-[11px] text-slate-500 w-[90px] text-right">Wed, May 20</span>
+          <span class="text-[11px] text-slate-500 w-[80px] text-right">Aurora Studio</span>
+        </div>
+    
+              
+        <div class="px-4 py-2.5 flex items-center gap-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/40">
+          <button class="w-4 h-4 rounded-sm border-2 border-slate-300"></button>
+          <div class="flex-1 min-w-0 text-[13px] text-slate-900">Confirm cane fabric — alternate from FabTextiles</div>
+          <span class="badge badge-neutral">To do</span>
+          <span class="text-[11px] text-slate-500 w-[90px] text-right">Thu, May 21</span>
+          <span class="text-[11px] text-slate-500 w-[80px] text-right">Anita M.</span>
+        </div>
+    
+              
+        <div class="px-4 py-2.5 flex items-center gap-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/40">
+          <button class="w-4 h-4 rounded-sm border-2 border-slate-300"></button>
+          <div class="flex-1 min-w-0 text-[13px] text-slate-900">Send Pune install timeline to Priya</div>
+          <span class="badge badge-neutral">To do</span>
+          <span class="text-[11px] text-slate-500 w-[90px] text-right">Fri, May 22</span>
+          <span class="text-[11px] text-slate-500 w-[80px] text-right">Manish</span>
+        </div>
+    
+              
+        <div class="px-4 py-2.5 flex items-center gap-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/40">
+          <button class="w-4 h-4 rounded-sm border-2 border-red-300 flex items-center justify-center"><i data-lucide="x" class="icon-sm text-red-500" style="width:10px;height:10px"></i></button>
+          <div class="flex-1 min-w-0 text-[13px] text-slate-900">Lock floor plan (final)</div>
+          <span class="badge badge-danger">Blocked</span>
+          <span class="text-[11px] text-slate-500 w-[90px] text-right">Mon, May 25</span>
+          <span class="text-[11px] text-slate-500 w-[80px] text-right">Anita M.</span>
+        </div>
+    
+            </div>
+          </div>
+
+          <!-- Activity -->
+          <div class="dm-card">
+            <div class="dm-card-header">
+              <div class="text-[13px] font-semibold text-slate-900">Activity</div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-neutral">All</span><span class="badge badge-neutral">Comments</span><span class="badge badge-neutral">Status</span>
+              </div>
+            </div>
+            <div class="dm-card-body !p-0">
+              
+          <div class="px-4 py-2.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+            <div class="avatar avatar-b avatar-sm">AS</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[12.5px] text-slate-700"><span class="font-medium text-slate-900">Aurora Studio</span> uploaded <span class="font-medium text-slate-900">Concept board v3.pdf</span></div>
+              <div class="text-[11px] text-slate-400">5h ago</div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-2.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+            <div class="avatar avatar-a avatar-sm">MS</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[12.5px] text-slate-700"><span class="font-medium text-slate-900">Manish</span> marked deliverable <span class="font-medium text-slate-900">Material palette v2 → Approved</span></div>
+              <div class="text-[11px] text-slate-400">1d ago</div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-2.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+            <div class="avatar avatar-e avatar-sm">VE</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[12.5px] text-slate-700"><span class="font-medium text-slate-900">Voltek Electricals</span> left a comment on <span class="font-medium text-slate-900">Electrical load schedule</span></div>
+              <div class="text-[11px] text-slate-400">2d ago</div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-2.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+            <div class="avatar avatar-f avatar-sm">SY</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[12.5px] text-slate-700"><span class="font-medium text-slate-900">System</span> renewed <span class="font-medium text-slate-900">Microsoft Graph mail subscription</span></div>
+              <div class="text-[11px] text-slate-400">3d ago</div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-2.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+            <div class="avatar avatar-b avatar-sm">AS</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[12.5px] text-slate-700"><span class="font-medium text-slate-900">Aurora Studio</span> accepted assignment for <span class="font-medium text-slate-900">Concept lead · 3D</span></div>
+              <div class="text-[11px] text-slate-400">1w ago</div>
+            </div>
+          </div>
+        
+            </div>
+          </div>
+        </div>
+
+        <!-- Right rail -->
+        <div class="col-span-1 space-y-4">
+          <div class="dm-card">
+            <div class="dm-card-header">
+              <div class="text-[13px] font-semibold text-slate-900">Assigned vendors</div>
+              <button class="btn-ghost !text-[12px]"><i data-lucide="user-plus" class="icon-sm"></i> Invite</button>
+            </div>
+            <div class="dm-card-body !p-0">
+              
+        <div class="px-4 py-3 flex items-center gap-3 border-b border-slate-100 last:border-b-0">
+          <div class="avatar avatar-b">AS</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[13px] font-semibold text-slate-900 truncate">Aurora Studio</div>
+            <div class="text-[11px] text-slate-500 truncate">Concept lead · 3D · ₹ 3,25,000</div>
+          </div>
+          <span class="badge badge-success badge-dot">Active</span>
+        </div>
+    
+              
+        <div class="px-4 py-3 flex items-center gap-3 border-b border-slate-100 last:border-b-0">
+          <div class="avatar avatar-f">RB</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[13px] font-semibold text-slate-900 truncate">Render Boutique</div>
+            <div class="text-[11px] text-slate-500 truncate">VR walk-through · ₹ 1,20,000</div>
+          </div>
+          <span class="badge badge-success badge-dot">Active</span>
+        </div>
+    
+              
+        <div class="px-4 py-3 flex items-center gap-3 border-b border-slate-100 last:border-b-0">
+          <div class="avatar avatar-a">FT</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[13px] font-semibold text-slate-900 truncate">FabTextiles</div>
+            <div class="text-[11px] text-slate-500 truncate">Soft furnishings · ₹ 78,000</div>
+          </div>
+          <span class="badge badge-warning badge-dot">Invited</span>
+        </div>
+    
+            </div>
+          </div>
+
+          <div class="dm-card">
+            <div class="dm-card-header"><div class="text-[13px] font-semibold text-slate-900">Comments</div></div>
+            <div class="dm-card-body !p-0">
+              <div class="px-4 py-3 border-b border-slate-100">
+                <div class="flex items-start gap-2.5">
+                  <div class="avatar avatar-a avatar-sm">MS</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[12px]"><span class="font-medium text-slate-900">Manish</span> <span class="text-slate-400">· 2h ago</span></div>
+                    <div class="text-[12.5px] text-slate-700 mt-1 leading-snug">Priya is in on Wed for the concept review — let's batch the material samples + brand mark in the same session.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 py-3 border-b border-slate-100">
+                <div class="flex items-start gap-2.5">
+                  <div class="avatar avatar-b avatar-sm">AS</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[12px]"><span class="font-medium text-slate-900">Aurora Studio</span> <span class="text-slate-400">· 5h ago</span></div>
+                    <div class="text-[12.5px] text-slate-700 mt-1 leading-snug">v3 uploaded. Brass detail above the bar revised per call. Cane fabric option B from FabTextiles in slide 12.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 py-2.5">
+                <textarea class="w-full border-0 text-[13px] resize-none focus:outline-none" rows="2" placeholder="Comment or @mention…"></textarea>
+                <div class="flex items-center justify-between mt-1">
+                  <div class="flex gap-1">
+                    <button class="btn-icon"><i data-lucide="paperclip" class="icon-sm"></i></button>
+                    <button class="btn-icon"><i data-lucide="at-sign" class="icon-sm"></i></button>
+                  </div>
+                  <button class="btn-primary !text-[11px] !px-3 !py-1">Comment</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dm-card">
+            <div class="dm-card-header"><div class="text-[13px] font-semibold text-slate-900">Project details</div></div>
+            <div class="dm-card-body !p-0 text-[12.5px]">
+              <div class="px-4 py-2.5 flex justify-between border-b border-slate-100"><span class="text-slate-500">Started</span><span class="text-slate-900">Mar 12, 2026</span></div>
+              <div class="px-4 py-2.5 flex justify-between border-b border-slate-100"><span class="text-slate-500">Target end</span><span class="text-slate-900">Jun 30, 2026</span></div>
+              <div class="px-4 py-2.5 flex justify-between border-b border-slate-100"><span class="text-slate-500">Budget</span><span class="text-slate-900">₹ 18.4 L</span></div>
+              <div class="px-4 py-2.5 flex justify-between border-b border-slate-100"><span class="text-slate-500">Spent</span><span class="text-slate-900">₹ 6.2 L (34%)</span></div>
+              <div class="px-4 py-2.5 flex justify-between"><span class="text-slate-500">Opportunity source</span><span class="text-slate-900">Referral</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+    
+      </main>
+    </div>
+  </div>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

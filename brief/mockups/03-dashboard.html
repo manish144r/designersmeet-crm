@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Dashboard · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-[232px] flex-shrink-0 border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col">
+      <div class="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="dm-brand">
+          <span class="dm-brand-glyph">D</span>
+          <span>DesignersMeet</span>
+        </div>
+        <button class="btn-icon" title="Collapse"><i data-lucide="panel-left-close" class="icon-sm"></i></button>
+      </div>
+      <div class="px-3 pt-3">
+        <div class="workspace-pill">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">HQ</div>
+            <div class="min-w-0">
+              <div class="text-[12px] font-semibold text-slate-900 truncate">DesignersMeet HQ</div>
+              <div class="text-[10px] text-slate-500 truncate">Bengaluru workspace</div>
+            </div>
+          </div>
+          <i data-lucide="chevrons-up-down" class="icon-sm text-slate-400"></i>
+        </div>
+      </div>
+      <nav class="px-2 pt-3 flex-1 overflow-y-auto">
+        <div class="nav-section-label">Workspace</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="true"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Contacts</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="hard-hat"></i><span>Vendors</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="git-branch"></i><span>Pipelines</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layers"></i><span>Projects</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="calendar"></i><span>Calendar</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="messages-square"></i><span>Conversations</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="clipboard-list"></i><span>Forms</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="zap"></i><span>Workflows</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="bar-chart-3"></i><span>Reports</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="settings"></i><span>Settings</span></div>
+        </div>
+        <div class="nav-section-label">Surfaces</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Outlook add-in</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams app</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layout-grid"></i><span>M365 launcher</span></div>
+        </div>
+      </nav>
+      <div class="px-3 py-3 border-t border-[#E5E7EB]">
+        <div class="flex items-center gap-2 px-1">
+          <div class="avatar avatar-a">MS</div>
+          <div class="min-w-0">
+            <div class="text-[12px] font-semibold text-slate-900 truncate">Manish</div>
+            <div class="text-[10px] text-slate-500 truncate">Workspace owner</div>
+          </div>
+          <button class="btn-icon ml-auto" title="Menu"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+    </aside>
+    
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      
+    <header class="app-topbar">
+      <nav class="flex items-center gap-2 text-[13px]"><span class="text-slate-900 font-medium">Dashboard</span></nav>
+      <div class="dm-search flex-1 max-w-[480px] ml-auto mr-auto">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search contacts, projects, vendors…" />
+        <span class="absolute right-2 top-1/2 -translate-y-1/2"><kbd class="kbd">⌘K</kbd></span>
+      </div>
+      <div class="flex items-center gap-1 ml-auto">
+        
+        <button class="btn-icon" title="Help"><i data-lucide="circle-help" class="icon-sm"></i></button>
+        <button class="btn-icon relative" title="Notifications">
+          <i data-lucide="bell" class="icon-sm"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        </button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+          <div class="avatar avatar-a avatar-sm">MS</div>
+          <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+    
+      <main class="flex-1 overflow-auto bg-white">
+        
+  <div class="px-8 py-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="font-display text-[22px] font-semibold tracking-tight text-slate-900">Dashboard</h1>
+        <p class="text-[13px] text-slate-500 mt-1">Monday, May 18 · 12 active projects · 3 deliverables awaiting approval</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn-secondary"><i data-lucide="calendar" class="icon-sm"></i> Last 30 days <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i></button>
+        <button class="btn-secondary"><i data-lucide="download" class="icon-sm"></i> Export</button>
+        <button class="btn-primary"><i data-lucide="plus" class="icon-sm"></i> New project</button>
+      </div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="dm-card !p-5">
+        <div class="flex items-start justify-between">
+          <div class="text-[12px] font-medium text-slate-500 uppercase tracking-wider">Pipeline value</div>
+          <i data-lucide="git-branch" class="icon-sm text-slate-300"></i>
+        </div>
+        <div class="font-display text-[28px] font-semibold text-slate-900 mt-2">₹ 84.2 L</div>
+        <div class="flex items-center gap-1.5 text-[12px] mt-1">
+          <span class="text-emerald-600 font-medium flex items-center"><i data-lucide="trending-up" class="icon-sm"></i> +12.4%</span>
+          <span class="text-slate-400">vs last month</span>
+        </div>
+      </div>
+      <div class="dm-card !p-5">
+        <div class="flex items-start justify-between">
+          <div class="text-[12px] font-medium text-slate-500 uppercase tracking-wider">Projects on track</div>
+          <i data-lucide="layers" class="icon-sm text-slate-300"></i>
+        </div>
+        <div class="font-display text-[28px] font-semibold text-slate-900 mt-2">9 <span class="text-[16px] text-slate-400 font-normal">/ 12</span></div>
+        <div class="flex items-center gap-2 mt-2">
+          <div class="dm-progress flex-1"><div style="width:75%"></div></div>
+          <span class="text-[11px] text-slate-500">75%</span>
+        </div>
+      </div>
+      <div class="dm-card !p-5">
+        <div class="flex items-start justify-between">
+          <div class="text-[12px] font-medium text-slate-500 uppercase tracking-wider">Vendor utilization</div>
+          <i data-lucide="hard-hat" class="icon-sm text-slate-300"></i>
+        </div>
+        <div class="font-display text-[28px] font-semibold text-slate-900 mt-2">68%</div>
+        <div class="flex items-center gap-1.5 text-[12px] mt-1">
+          <span class="text-slate-500">28 of 41 vendors active</span>
+        </div>
+      </div>
+      <div class="dm-card !p-5">
+        <div class="flex items-start justify-between">
+          <div class="text-[12px] font-medium text-slate-500 uppercase tracking-wider">Deliverable cycle</div>
+          <i data-lucide="clock" class="icon-sm text-slate-300"></i>
+        </div>
+        <div class="font-display text-[28px] font-semibold text-slate-900 mt-2">3.2 <span class="text-[16px] text-slate-400 font-normal">days</span></div>
+        <div class="flex items-center gap-1.5 text-[12px] mt-1">
+          <span class="text-amber-600 font-medium flex items-center"><i data-lucide="trending-up" class="icon-sm"></i> +0.4d</span>
+          <span class="text-slate-400">vs last month</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <!-- Chart -->
+      <div class="dm-card col-span-2">
+        <div class="dm-card-header">
+          <div>
+            <div class="text-[14px] font-semibold text-slate-900">Pipeline by stage</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">Sales pipeline, indexed to expected close date</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="btn-ghost !text-[12px]">Last 30 days</button>
+            <button class="btn-icon"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+          </div>
+        </div>
+        <div class="dm-card-body">
+          <div class="h-[200px] relative flex items-end gap-4 px-4">
+            <div class="flex-1 flex flex-col items-center gap-2"><div class="w-full max-w-[64px] rounded-t-md transition-all" style="height:35%; background:#94A3B8"></div></div><div class="flex-1 flex flex-col items-center gap-2"><div class="w-full max-w-[64px] rounded-t-md transition-all" style="height:50%; background:#94A3B8"></div></div><div class="flex-1 flex flex-col items-center gap-2"><div class="w-full max-w-[64px] rounded-t-md transition-all" style="height:70%; background:#6366F1"></div></div><div class="flex-1 flex flex-col items-center gap-2"><div class="w-full max-w-[64px] rounded-t-md transition-all" style="height:55%; background:#6366F1"></div></div><div class="flex-1 flex flex-col items-center gap-2"><div class="w-full max-w-[64px] rounded-t-md transition-all" style="height:80%; background:#10B981"></div></div>
+          </div>
+          <div class="grid grid-cols-5 gap-4 px-4 mt-3 text-center">
+            <div><div class="text-[11px] text-slate-500">New</div><div class="text-[13px] font-semibold text-slate-900">₹ 12L</div></div>
+            <div><div class="text-[11px] text-slate-500">Qualified</div><div class="text-[13px] font-semibold text-slate-900">₹ 18L</div></div>
+            <div><div class="text-[11px] text-slate-500">Brief</div><div class="text-[13px] font-semibold text-slate-900">₹ 22L</div></div>
+            <div><div class="text-[11px] text-slate-500">Proposal</div><div class="text-[13px] font-semibold text-slate-900">₹ 16L</div></div>
+            <div><div class="text-[11px] text-slate-500">Won</div><div class="text-[13px] font-semibold text-emerald-600">₹ 16.2L</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent activity -->
+      <div class="dm-card">
+        <div class="dm-card-header">
+          <div class="text-[14px] font-semibold text-slate-900">Recent activity</div>
+          <button class="btn-ghost !text-[12px]">See all</button>
+        </div>
+        <div class="dm-card-body !p-0">
+          
+            <div class="px-5 py-3.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+              <div class="avatar avatar-a avatar-sm">MS</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12.5px] leading-snug text-slate-700">
+                  <span class="font-medium text-slate-900">Manish</span> approved deliverable
+                  <span class="font-medium text-slate-900">Concept board v2</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Brand Refresh — Lumen Café · 5m ago</div>
+              </div>
+            </div>
+        
+            <div class="px-5 py-3.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+              <div class="avatar avatar-b avatar-sm">AS</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12.5px] leading-snug text-slate-700">
+                  <span class="font-medium text-slate-900">Aurora Studio</span> uploaded
+                  <span class="font-medium text-slate-900">Concept board v3.pdf</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Brand Refresh — Lumen Café · 22m ago</div>
+              </div>
+            </div>
+        
+            <div class="px-5 py-3.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+              <div class="avatar avatar-d avatar-sm">PR</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12.5px] leading-snug text-slate-700">
+                  <span class="font-medium text-slate-900">Priya Raghavan</span> replied to
+                  <span class="font-medium text-slate-900">RE: Snag list review</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">HSR Penthouse · 1h ago</div>
+              </div>
+            </div>
+        
+            <div class="px-5 py-3.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+              <div class="avatar avatar-e avatar-sm">VE</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12.5px] leading-snug text-slate-700">
+                  <span class="font-medium text-slate-900">Voltek Electricals</span> marked task blocked
+                  <span class="font-medium text-slate-900">Awaiting MCB spec confirmation</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">HSR Penthouse · 2h ago</div>
+              </div>
+            </div>
+        
+            <div class="px-5 py-3.5 flex items-start gap-3 border-b border-slate-100 last:border-b-0">
+              <div class="avatar avatar-c avatar-sm">MK</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12.5px] leading-snug text-slate-700">
+                  <span class="font-medium text-slate-900">Manjunath Karpenter Co</span> accepted assignment
+                  <span class="font-medium text-slate-900">Carpentry — Phase 1</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Indiranagar Loft Reno · 4h ago</div>
+              </div>
+            </div>
+        
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom row -->
+    <div class="grid grid-cols-3 gap-4">
+      <!-- Upcoming deliveries -->
+      <div class="dm-card col-span-2">
+        <div class="dm-card-header">
+          <div class="text-[14px] font-semibold text-slate-900">Upcoming deliveries this week</div>
+          <button class="btn-ghost !text-[12px]">View all projects</button>
+        </div>
+        <div class="dm-card-body !p-0">
+          <table class="dm-table">
+            <thead>
+              <tr><th>Deliverable</th><th>Project</th><th>Vendor</th><th>Due</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="font-medium text-slate-900">Concept board v3</span></td>
+                <td><span class="text-slate-600">Brand Refresh — Lumen Café</span></td>
+                <td><div class="flex items-center gap-2"><div class="avatar avatar-b avatar-sm">AS</div><span class="text-slate-700">Aurora Studio</span></div></td>
+                <td><span class="text-slate-500">Wed, May 20</span></td>
+                <td><span class="status-pill status-design">In review</span></td>
+              </tr>
+              <tr>
+                <td><span class="font-medium text-slate-900">Carpentry shop drawings</span></td>
+                <td><span class="text-slate-600">Indiranagar Loft Reno</span></td>
+                <td><div class="flex items-center gap-2"><div class="avatar avatar-c avatar-sm">MK</div><span class="text-slate-700">Manjunath Karpenter Co</span></div></td>
+                <td><span class="text-slate-500">Thu, May 21</span></td>
+                <td><span class="status-pill status-procurement">On track</span></td>
+              </tr>
+              <tr>
+                <td><span class="font-medium text-slate-900">Electrical load schedule</span></td>
+                <td><span class="text-slate-600">HSR Penthouse</span></td>
+                <td><div class="flex items-center gap-2"><div class="avatar avatar-e avatar-sm">VE</div><span class="text-slate-700">Voltek Electricals</span></div></td>
+                <td><span class="text-amber-600 font-medium">Tomorrow</span></td>
+                <td><span class="status-pill status-snag">Blocked</span></td>
+              </tr>
+              <tr>
+                <td><span class="font-medium text-slate-900">Final 3D walkthrough</span></td>
+                <td><span class="text-slate-600">Whitefield Villa</span></td>
+                <td><div class="flex items-center gap-2"><div class="avatar avatar-f avatar-sm">RB</div><span class="text-slate-700">Render Boutique</span></div></td>
+                <td><span class="text-slate-500">Fri, May 22</span></td>
+                <td><span class="status-pill status-design">In review</span></td>
+              </tr>
+              <tr>
+                <td><span class="font-medium text-slate-900">Snag list — site visit 4</span></td>
+                <td><span class="text-slate-600">JP Nagar Bungalow</span></td>
+                <td><div class="flex items-center gap-2"><div class="avatar avatar-a avatar-sm">MS</div><span class="text-slate-700">Manish (PM)</span></div></td>
+                <td><span class="text-slate-500">Fri, May 22</span></td>
+                <td><span class="status-pill status-handover">Approved</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Today / This week -->
+      <div class="dm-card">
+        <div class="dm-card-header">
+          <div class="text-[14px] font-semibold text-slate-900">Today's bookings</div>
+          <button class="btn-ghost !text-[12px]">Calendar</button>
+        </div>
+        <div class="dm-card-body !p-0">
+          <div class="divide-y divide-slate-100">
+            <div class="px-5 py-3 flex items-start gap-3">
+              <div class="text-center flex-shrink-0">
+                <div class="text-[11px] text-slate-500">11:00</div>
+                <div class="text-[10px] text-slate-400">AM</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium text-slate-900 truncate">Site walk-through</div>
+                <div class="text-[12px] text-slate-500 truncate">Priya Raghavan · HSR Penthouse</div>
+              </div>
+              <span class="badge badge-indigo">in 1h</span>
+            </div>
+            <div class="px-5 py-3 flex items-start gap-3">
+              <div class="text-center flex-shrink-0">
+                <div class="text-[11px] text-slate-500">2:30</div>
+                <div class="text-[10px] text-slate-400">PM</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium text-slate-900 truncate">Vendor sync — Aurora</div>
+                <div class="text-[12px] text-slate-500 truncate">Concept board review</div>
+              </div>
+              <span class="badge badge-neutral">Teams</span>
+            </div>
+            <div class="px-5 py-3 flex items-start gap-3">
+              <div class="text-center flex-shrink-0">
+                <div class="text-[11px] text-slate-500">4:00</div>
+                <div class="text-[10px] text-slate-400">PM</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium text-slate-900 truncate">Brief discovery — Suri Family</div>
+                <div class="text-[12px] text-slate-500 truncate">Lead → Qualified</div>
+              </div>
+              <span class="badge badge-neutral">Outlook</span>
+            </div>
+            <div class="px-5 py-3 flex items-start gap-3">
+              <div class="text-center flex-shrink-0">
+                <div class="text-[11px] text-slate-500">5:30</div>
+                <div class="text-[10px] text-slate-400">PM</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-medium text-slate-900 truncate">Weekly PM stand-up</div>
+                <div class="text-[12px] text-slate-500 truncate">Internal · all PMs</div>
+              </div>
+              <span class="badge badge-neutral">Teams</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+    
+      </main>
+    </div>
+  </div>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

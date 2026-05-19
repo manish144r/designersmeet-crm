@@ -1,65 +1,68 @@
-import { NavLink, Route, Routes, Navigate } from "react-router-dom";
+import { Suspense, lazy } from "react";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider.js";
-import { Dashboard } from "./pages/Dashboard.js";
-import { Orders } from "./pages/Orders.js";
-import { Freelancers } from "./pages/Freelancers.js";
-import { Services } from "./pages/Services.js";
-import { ShopifyMappings } from "./pages/ShopifyMappings.js";
-import { Queue } from "./pages/Queue.js";
-import { Social } from "./pages/Social.js";
 
-const tabs = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/orders", label: "Orders" },
-  { to: "/freelancers", label: "Freelancers" },
-  { to: "/services", label: "Services" },
-  { to: "/mappings", label: "Shopify" },
-  { to: "/queue", label: "Queue" },
-  { to: "/social", label: "Social" },
-];
+// Pages translated 1:1 from brief/mockups/*.html by Codex (design-locked).
+const SignIn = lazy(() => import("./pages/01-signin.js"));
+const Onboarding = lazy(() => import("./pages/02-onboarding.js"));
+const Dashboard = lazy(() => import("./pages/03-dashboard.js"));
+const Contacts = lazy(() => import("./pages/04-contacts.js"));
+const ContactDetail = lazy(() => import("./pages/05-contact-detail.js"));
+const Vendors = lazy(() => import("./pages/06-vendors.js"));
+const VendorDetail = lazy(() => import("./pages/07-vendor-detail.js"));
+const ProjectsBoard = lazy(() => import("./pages/08-projects-board.js"));
+const ProjectDetail = lazy(() => import("./pages/09-project-detail.js"));
+const Pipelines = lazy(() => import("./pages/10-pipelines.js"));
+const Calendar = lazy(() => import("./pages/11-calendar.js"));
+const Conversations = lazy(() => import("./pages/12-conversations.js"));
+const Workflows = lazy(() => import("./pages/13-workflows.js"));
+const Forms = lazy(() => import("./pages/14-forms.js"));
+const Settings = lazy(() => import("./pages/15-settings.js"));
+const SpecSheet = lazy(() => import("./pages/16-spec-sheet.js"));
+
+const Loading = () => (
+  <div className="flex h-screen items-center justify-center text-sm text-muted">Loading…</div>
+);
 
 export function App() {
-  const { user } = useAuth();
+  const { signedIn } = useAuth();
+
+  if (!signedIn) {
+    return (
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="*" element={<SignIn />} />
+        </Routes>
+      </Suspense>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-navy-dark border-b border-borderc px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-gold flex items-center justify-center text-navy-dark font-extrabold">
-            DM
-          </div>
-          <div>
-            <h1 className="text-gold text-lg font-semibold tracking-wider">DesignersMeet CRM</h1>
-            <span className="text-ice-dim text-[11px] uppercase tracking-widest">Operations</span>
-          </div>
-        </div>
-        <div className="text-textDim text-xs">{user?.email}</div>
-      </header>
-
-      <nav className="bg-navy-dark border-b-2 border-borderc px-6 flex gap-0 overflow-x-auto">
-        {tabs.map((t) => (
-          <NavLink
-            key={t.to}
-            to={t.to}
-            className={({ isActive }) => `nav-tab ${isActive ? "active" : ""}`}
-          >
-            {t.label}
-          </NavLink>
-        ))}
-      </nav>
-
-      <main className="flex-1 px-6 py-5">
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/freelancers" element={<Freelancers />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/mappings" element={<ShopifyMappings />} />
-          <Route path="/queue" element={<Queue />} />
-          <Route path="/social" element={<Social />} />
-        </Routes>
-      </main>
-    </div>
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/signin" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/contacts" element={<Contacts />} />
+        <Route path="/contacts/:id" element={<ContactDetail />} />
+        <Route path="/contact-detail" element={<ContactDetail />} />
+        <Route path="/vendors" element={<Vendors />} />
+        <Route path="/vendors/:id" element={<VendorDetail />} />
+        <Route path="/vendor-detail" element={<VendorDetail />} />
+        <Route path="/projects" element={<ProjectsBoard />} />
+        <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/project-detail" element={<ProjectDetail />} />
+        <Route path="/pipelines" element={<Pipelines />} />
+        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/conversations" element={<Conversations />} />
+        <Route path="/workflows" element={<Workflows />} />
+        <Route path="/forms" element={<Forms />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/spec" element={<SpecSheet />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </Suspense>
   );
 }

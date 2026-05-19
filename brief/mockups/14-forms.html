@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Forms · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-[232px] flex-shrink-0 border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col">
+      <div class="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="dm-brand">
+          <span class="dm-brand-glyph">D</span>
+          <span>DesignersMeet</span>
+        </div>
+        <button class="btn-icon" title="Collapse"><i data-lucide="panel-left-close" class="icon-sm"></i></button>
+      </div>
+      <div class="px-3 pt-3">
+        <div class="workspace-pill">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">HQ</div>
+            <div class="min-w-0">
+              <div class="text-[12px] font-semibold text-slate-900 truncate">DesignersMeet HQ</div>
+              <div class="text-[10px] text-slate-500 truncate">Bengaluru workspace</div>
+            </div>
+          </div>
+          <i data-lucide="chevrons-up-down" class="icon-sm text-slate-400"></i>
+        </div>
+      </div>
+      <nav class="px-2 pt-3 flex-1 overflow-y-auto">
+        <div class="nav-section-label">Workspace</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Contacts</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="hard-hat"></i><span>Vendors</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="git-branch"></i><span>Pipelines</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layers"></i><span>Projects</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="calendar"></i><span>Calendar</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="messages-square"></i><span>Conversations</span></div>
+          <div class="nav-item" data-active="true"><i data-lucide="clipboard-list"></i><span>Forms</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="zap"></i><span>Workflows</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="bar-chart-3"></i><span>Reports</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="settings"></i><span>Settings</span></div>
+        </div>
+        <div class="nav-section-label">Surfaces</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Outlook add-in</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams app</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layout-grid"></i><span>M365 launcher</span></div>
+        </div>
+      </nav>
+      <div class="px-3 py-3 border-t border-[#E5E7EB]">
+        <div class="flex items-center gap-2 px-1">
+          <div class="avatar avatar-a">MS</div>
+          <div class="min-w-0">
+            <div class="text-[12px] font-semibold text-slate-900 truncate">Manish</div>
+            <div class="text-[10px] text-slate-500 truncate">Workspace owner</div>
+          </div>
+          <button class="btn-icon ml-auto" title="Menu"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+    </aside>
+    
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      
+    <header class="app-topbar">
+      <nav class="flex items-center gap-2 text-[13px]"><span class="text-slate-500">Forms</span><i data-lucide="chevron-right" class="icon-sm text-slate-300"></i><span class="text-slate-900 font-medium">Vendor onboarding form</span></nav>
+      <div class="dm-search flex-1 max-w-[480px] ml-auto mr-auto">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search contacts, projects, vendors…" />
+        <span class="absolute right-2 top-1/2 -translate-y-1/2"><kbd class="kbd">⌘K</kbd></span>
+      </div>
+      <div class="flex items-center gap-1 ml-auto">
+        
+        <button class="btn-icon" title="Help"><i data-lucide="circle-help" class="icon-sm"></i></button>
+        <button class="btn-icon relative" title="Notifications">
+          <i data-lucide="bell" class="icon-sm"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        </button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+          <div class="avatar avatar-a avatar-sm">MS</div>
+          <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+    
+      <main class="flex-1 overflow-auto bg-white">
+        
+  <div class="flex h-full">
+    <!-- Field types palette -->
+    <aside class="w-[240px] border-r border-slate-200 flex flex-col bg-slate-50/40">
+      <div class="px-4 py-3 border-b border-slate-200 bg-white">
+        <div class="text-[12px] font-semibold uppercase tracking-wider text-slate-500">Field types</div>
+      </div>
+      <div class="flex-1 overflow-y-auto p-3 space-y-2">
+        <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 px-2 mb-1">Text</div>
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="text-cursor-input" class="icon-sm text-slate-500"></i>
+          <span>Short text</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="align-left" class="icon-sm text-slate-500"></i>
+          <span>Long text</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="type" class="icon-sm text-slate-500"></i>
+          <span>Rich text</span>
+        </div>
+    
+
+        <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 px-2 mb-1 mt-3">Contact</div>
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="mail" class="icon-sm text-slate-500"></i>
+          <span>Email</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="phone" class="icon-sm text-slate-500"></i>
+          <span>Phone</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="map-pin" class="icon-sm text-slate-500"></i>
+          <span>Address</span>
+        </div>
+    
+
+        <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 px-2 mb-1 mt-3">Choice</div>
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="chevron-down-square" class="icon-sm text-slate-500"></i>
+          <span>Dropdown</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="circle" class="icon-sm text-slate-500"></i>
+          <span>Radio</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="check-square" class="icon-sm text-slate-500"></i>
+          <span>Checkboxes</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="list-checks" class="icon-sm text-slate-500"></i>
+          <span>Multi-select</span>
+        </div>
+    
+
+        <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 px-2 mb-1 mt-3">Other</div>
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="hash" class="icon-sm text-slate-500"></i>
+          <span>Number</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="calendar" class="icon-sm text-slate-500"></i>
+          <span>Date</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="upload" class="icon-sm text-slate-500"></i>
+          <span>File upload</span>
+        </div>
+    
+        
+        <div class="flex items-center gap-2.5 px-2.5 py-2 bg-white border border-slate-200 rounded-md hover:border-indigo-300 hover:bg-indigo-50/30 cursor-grab text-[12.5px] text-slate-700">
+          <i data-lucide="minus" class="icon-sm text-slate-500"></i>
+          <span>Section break</span>
+        </div>
+    
+      </div>
+    </aside>
+
+    <!-- Canvas -->
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div class="px-6 py-3 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-semibold text-[16px] text-slate-900">Vendor onboarding form</h1>
+            <span class="badge badge-success badge-dot">Published</span>
+          </div>
+          <div class="text-[11.5px] text-slate-500 flex items-center gap-2 mt-0.5">
+            <i data-lucide="link" class="icon-sm"></i>
+            <code class="font-mono text-[11px] bg-slate-100 px-1.5 py-0.5 rounded">forms.designersmeet.com/vendor-onboarding</code>
+            <button class="btn-icon !w-5 !h-5"><i data-lucide="copy" class="icon-sm"></i></button>
+            <span>· 47 submissions · last 2h ago</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex items-center bg-white border border-slate-300 rounded-md">
+            <button class="px-2.5 py-1.5 text-indigo-600 bg-indigo-50 rounded-l-md flex items-center gap-1.5 text-[12px] font-medium"><i data-lucide="pencil-ruler" class="icon-sm"></i> Build</button>
+            <button class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-50 flex items-center gap-1.5 text-[12px]"><i data-lucide="eye" class="icon-sm"></i> Preview</button>
+            <button class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-50 flex items-center gap-1.5 text-[12px]"><i data-lucide="code" class="icon-sm"></i> Embed</button>
+            <button class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-50 rounded-r-md flex items-center gap-1.5 text-[12px]"><i data-lucide="zap" class="icon-sm"></i> Logic</button>
+          </div>
+          <button class="btn-secondary">Save draft</button>
+          <button class="btn-primary"><i data-lucide="check" class="icon-sm"></i> Publish</button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-auto p-8 bg-slate-100/40">
+        <div class="max-w-[640px] mx-auto bg-white border border-slate-200 rounded-lg shadow-sm">
+          <!-- Form header -->
+          <div class="px-7 py-6 border-b border-slate-100">
+            <div class="dm-brand mb-3"><span class="dm-brand-glyph">D</span><span class="text-[12px]">DesignersMeet</span></div>
+            <h2 class="font-display text-[22px] font-semibold text-slate-900 tracking-tight">Vendor onboarding</h2>
+            <p class="text-[13px] text-slate-500 mt-1">Tell us about your studio and we'll get you set up in the DesignersMeet vendor pool.</p>
+          </div>
+
+          <div class="px-7 py-6 space-y-5">
+            
+        <div class="group relative border border-slate-200 hover:border-slate-300 rounded-md p-4">
+          <button class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100"><i data-lucide="grip-vertical" class="icon-sm text-slate-400"></i></button>
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <label class="text-[13px] font-semibold text-slate-900">Studio / company name<span class="text-red-500 ml-0.5">*</span></label>
+              <div class="text-[11px] text-slate-500 mt-0.5">Required</div>
+            </div>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="copy" class="icon-sm"></i></button>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="trash-2" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <input class="dm-input" value="Aurora Studio" placeholder="Type your answer…" />
+        </div>
+    
+            
+        <div class="group relative border border-slate-200 hover:border-slate-300 rounded-md p-4">
+          <button class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100"><i data-lucide="grip-vertical" class="icon-sm text-slate-400"></i></button>
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <label class="text-[13px] font-semibold text-slate-900">Primary contact email<span class="text-red-500 ml-0.5">*</span></label>
+              <div class="text-[11px] text-slate-500 mt-0.5">Required</div>
+            </div>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="copy" class="icon-sm"></i></button>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="trash-2" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <input class="dm-input" value="hello@aurorastudio.in" placeholder="Type your answer…" />
+        </div>
+    
+            
+        <div class="group relative border border-slate-200 hover:border-slate-300 rounded-md p-4">
+          <button class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100"><i data-lucide="grip-vertical" class="icon-sm text-slate-400"></i></button>
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <label class="text-[13px] font-semibold text-slate-900">WhatsApp number</label>
+              <div class="text-[11px] text-slate-500 mt-0.5">Required</div>
+            </div>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="copy" class="icon-sm"></i></button>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="trash-2" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <input class="dm-input" value="+91 80 4123 5678" placeholder="Type your answer…" />
+        </div>
+    
+            
+        <div class="group relative border border-indigo-400 ring-2 ring-indigo-100 rounded-md p-4">
+          <button class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100"><i data-lucide="grip-vertical" class="icon-sm text-slate-400"></i></button>
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <label class="text-[13px] font-semibold text-slate-900">Skills / disciplines</label>
+              <div class="text-[11px] text-slate-500 mt-0.5">Required · 1–6 selections</div>
+            </div>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="copy" class="icon-sm"></i></button>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="trash-2" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="badge badge-indigo">Concept design ×</span><span class="badge badge-indigo">3D visualization ×</span><span class="badge badge-neutral">+ Add skill</span></div>
+        </div>
+    
+            
+        <div class="group relative border border-slate-200 hover:border-slate-300 rounded-md p-4">
+          <button class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100"><i data-lucide="grip-vertical" class="icon-sm text-slate-400"></i></button>
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <label class="text-[13px] font-semibold text-slate-900">Regions you serve</label>
+              <div class="text-[11px] text-slate-500 mt-0.5">Required</div>
+            </div>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="copy" class="icon-sm"></i></button>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="trash-2" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="badge badge-indigo">Karnataka ×</span><span class="badge badge-indigo">Tamil Nadu ×</span><span class="badge badge-neutral">+ Add region</span></div>
+        </div>
+    
+            
+        <div class="group relative border border-slate-200 hover:border-slate-300 rounded-md p-4">
+          <button class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100"><i data-lucide="grip-vertical" class="icon-sm text-slate-400"></i></button>
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <label class="text-[13px] font-semibold text-slate-900">Years in business</label>
+              <div class="text-[11px] text-slate-500 mt-0.5">Optional</div>
+            </div>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="copy" class="icon-sm"></i></button>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="trash-2" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <input class="dm-input" value="8" placeholder="Type your answer…" />
+        </div>
+    
+            
+        <div class="group relative border border-slate-200 hover:border-slate-300 rounded-md p-4">
+          <button class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100"><i data-lucide="grip-vertical" class="icon-sm text-slate-400"></i></button>
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <label class="text-[13px] font-semibold text-slate-900">Portfolio link</label>
+              <div class="text-[11px] text-slate-500 mt-0.5">Required</div>
+            </div>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="copy" class="icon-sm"></i></button>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="trash-2" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <input class="dm-input" value="https://aurorastudio.in/work" placeholder="Type your answer…" />
+        </div>
+    
+            
+        <div class="group relative border border-slate-200 hover:border-slate-300 rounded-md p-4">
+          <button class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100"><i data-lucide="grip-vertical" class="icon-sm text-slate-400"></i></button>
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <label class="text-[13px] font-semibold text-slate-900">Upload latest case studies (PDF)</label>
+              <div class="text-[11px] text-slate-500 mt-0.5">Optional · max 25MB</div>
+            </div>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="copy" class="icon-sm"></i></button>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="trash-2" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <div class="border-2 border-dashed border-slate-200 rounded-md py-6 text-center text-[12px] text-slate-500"><i data-lucide="upload-cloud" class="w-5 h-5 inline-block mb-1 text-slate-400"></i><div>Click or drop a file here</div></div>
+        </div>
+    
+
+            <div class="pt-5 border-t border-slate-100 flex items-center justify-between">
+              <label class="flex items-center gap-2 text-[12px] text-slate-600"><input type="checkbox" class="rounded border-slate-300" /> I agree to the vendor terms.</label>
+              <button class="btn-primary" disabled style="opacity:0.7">Submit application</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- On-submit hint -->
+        <div class="max-w-[640px] mx-auto mt-4 flex items-center gap-3 px-4 py-3 bg-indigo-50/50 border border-indigo-100 rounded-md">
+          <i data-lucide="zap" class="icon-sm text-indigo-600 flex-shrink-0"></i>
+          <div class="text-[12px] text-slate-700 flex-1">On submit, this form triggers the workflow <span class="font-semibold">Vendor onboarding sequence</span> (7 steps).</div>
+          <a class="text-[12px] text-indigo-600 font-medium hover:underline">Edit workflow →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Field inspector -->
+    <aside class="w-[280px] border-l border-slate-200 overflow-auto bg-white">
+      <div class="px-5 py-3 border-b border-slate-200">
+        <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">Selected field</div>
+        <div class="text-[14px] font-semibold text-slate-900 mt-1">Skills / disciplines</div>
+        <div class="text-[11px] text-slate-500">Multi-select</div>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Label</label>
+          <input class="dm-input" value="Skills / disciplines" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Help text</label>
+          <input class="dm-input" value="Pick 1–6 specialities" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Options</label>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2"><input class="dm-input flex-1" value="Carpentry" /><button class="btn-icon"><i data-lucide="grip-vertical" class="icon-sm"></i></button></div>
+            <div class="flex items-center gap-2"><input class="dm-input flex-1" value="Electrical" /><button class="btn-icon"><i data-lucide="grip-vertical" class="icon-sm"></i></button></div>
+            <div class="flex items-center gap-2"><input class="dm-input flex-1" value="Plumbing" /><button class="btn-icon"><i data-lucide="grip-vertical" class="icon-sm"></i></button></div>
+            <div class="flex items-center gap-2"><input class="dm-input flex-1" value="Painting & finishes" /><button class="btn-icon"><i data-lucide="grip-vertical" class="icon-sm"></i></button></div>
+            <div class="flex items-center gap-2"><input class="dm-input flex-1" value="Soft furnishings" /><button class="btn-icon"><i data-lucide="grip-vertical" class="icon-sm"></i></button></div>
+            <div class="flex items-center gap-2"><input class="dm-input flex-1" value="3D / visualization" /><button class="btn-icon"><i data-lucide="grip-vertical" class="icon-sm"></i></button></div>
+            <button class="btn-ghost !text-[12px]"><i data-lucide="plus" class="icon-sm"></i> Add option</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Required</label>
+          <label class="flex items-center gap-2 text-[12.5px] text-slate-700"><input type="checkbox" checked class="rounded border-slate-300" style="accent-color:#4F46E5" /> Required to submit</label>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Selection limit</label>
+          <div class="flex items-center gap-2"><input class="dm-input w-16" value="1" /><span class="text-[12px] text-slate-500">to</span><input class="dm-input w-16" value="6" /></div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Maps to contact field</label>
+          <select class="dm-input">
+            <option>vendor.skills (array)</option>
+            <option>custom_fields.skills</option>
+            <option>Don't map</option>
+          </select>
+        </div>
+      </div>
+    </aside>
+  </div>
+    
+      </main>
+    </div>
+  </div>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

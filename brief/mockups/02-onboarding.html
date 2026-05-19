@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Onboarding · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-[232px] flex-shrink-0 border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col">
+      <div class="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="dm-brand">
+          <span class="dm-brand-glyph">D</span>
+          <span>DesignersMeet</span>
+        </div>
+        <button class="btn-icon" title="Collapse"><i data-lucide="panel-left-close" class="icon-sm"></i></button>
+      </div>
+      <div class="px-3 pt-3">
+        <div class="workspace-pill">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">HQ</div>
+            <div class="min-w-0">
+              <div class="text-[12px] font-semibold text-slate-900 truncate">DesignersMeet HQ</div>
+              <div class="text-[10px] text-slate-500 truncate">Bengaluru workspace</div>
+            </div>
+          </div>
+          <i data-lucide="chevrons-up-down" class="icon-sm text-slate-400"></i>
+        </div>
+      </div>
+      <nav class="px-2 pt-3 flex-1 overflow-y-auto">
+        <div class="nav-section-label">Workspace</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="true"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Contacts</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="hard-hat"></i><span>Vendors</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="git-branch"></i><span>Pipelines</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layers"></i><span>Projects</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="calendar"></i><span>Calendar</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="messages-square"></i><span>Conversations</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="clipboard-list"></i><span>Forms</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="zap"></i><span>Workflows</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="bar-chart-3"></i><span>Reports</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="settings"></i><span>Settings</span></div>
+        </div>
+        <div class="nav-section-label">Surfaces</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Outlook add-in</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams app</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layout-grid"></i><span>M365 launcher</span></div>
+        </div>
+      </nav>
+      <div class="px-3 py-3 border-t border-[#E5E7EB]">
+        <div class="flex items-center gap-2 px-1">
+          <div class="avatar avatar-a">MS</div>
+          <div class="min-w-0">
+            <div class="text-[12px] font-semibold text-slate-900 truncate">Manish</div>
+            <div class="text-[10px] text-slate-500 truncate">Workspace owner</div>
+          </div>
+          <button class="btn-icon ml-auto" title="Menu"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+    </aside>
+    
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      
+    <header class="app-topbar">
+      <nav class="flex items-center gap-2 text-[13px]"><span class="text-slate-900 font-medium">Welcome</span></nav>
+      <div class="dm-search flex-1 max-w-[480px] ml-auto mr-auto">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search contacts, projects, vendors…" />
+        <span class="absolute right-2 top-1/2 -translate-y-1/2"><kbd class="kbd">⌘K</kbd></span>
+      </div>
+      <div class="flex items-center gap-1 ml-auto">
+        
+        <button class="btn-icon" title="Help"><i data-lucide="circle-help" class="icon-sm"></i></button>
+        <button class="btn-icon relative" title="Notifications">
+          <i data-lucide="bell" class="icon-sm"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        </button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+          <div class="avatar avatar-a avatar-sm">MS</div>
+          <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+    
+      <main class="flex-1 overflow-auto bg-white">
+        
+  <div class="max-w-[1040px] mx-auto px-8 py-10">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="font-display text-[24px] font-semibold tracking-tight text-slate-900">Welcome, Manish</h1>
+        <p class="text-[14px] text-slate-500 mt-1">Let's set up DesignersMeet HQ. You can come back to any step from Settings.</p>
+      </div>
+      <button class="btn-ghost text-slate-500">Skip for now</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="dm-card mb-6">
+      <div class="dm-card-body !p-5">
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2.5 flex-1">
+            <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-semibold flex items-center justify-center"><i data-lucide="check" class="icon-sm"></i></span>
+            <span class="text-[13px] text-slate-900 font-medium">Workspace created</span>
+          </div>
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <div class="flex items-center gap-2.5 flex-1">
+            <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-semibold flex items-center justify-center">2</span>
+            <span class="text-[13px] text-slate-900 font-medium">Connect Microsoft 365</span>
+          </div>
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <div class="flex items-center gap-2.5 flex-1">
+            <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 text-[11px] font-semibold flex items-center justify-center">3</span>
+            <span class="text-[13px] text-slate-500 font-medium">Import vendors</span>
+          </div>
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <div class="flex items-center gap-2.5 flex-1">
+            <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 text-[11px] font-semibold flex items-center justify-center">4</span>
+            <span class="text-[13px] text-slate-500 font-medium">Invite your team</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active step -->
+    <div class="dm-card mb-6">
+      <div class="dm-card-header">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center">
+            <svg viewBox="0 0 21 21" class="w-4 h-4">
+              <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+              <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+              <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+              <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-[14px] font-semibold text-slate-900">Connect Microsoft 365</div>
+            <div class="text-[12px] text-slate-500">We'll sync Outlook mail, Calendar, and SharePoint files.</div>
+          </div>
+        </div>
+        <button class="btn-primary"><i data-lucide="link" class="icon-sm"></i> Connect tenant</button>
+      </div>
+      <div class="dm-card-body">
+        <div class="grid grid-cols-3 gap-4">
+          <div class="border border-slate-200 rounded-lg p-4">
+            <i data-lucide="mail" class="icon-lg text-indigo-600 mb-3"></i>
+            <div class="text-[13px] font-semibold text-slate-900">Outlook mail</div>
+            <div class="text-[12px] text-slate-500 mt-1">Threaded into Conversations inbox.</div>
+            <div class="text-[11px] text-slate-400 mt-3">Scopes: Mail.Read, Mail.Send</div>
+          </div>
+          <div class="border border-slate-200 rounded-lg p-4">
+            <i data-lucide="calendar" class="icon-lg text-indigo-600 mb-3"></i>
+            <div class="text-[13px] font-semibold text-slate-900">Calendar two-way</div>
+            <div class="text-[12px] text-slate-500 mt-1">Booking page writes back to your calendar.</div>
+            <div class="text-[11px] text-slate-400 mt-3">Scopes: Calendars.ReadWrite</div>
+          </div>
+          <div class="border border-slate-200 rounded-lg p-4">
+            <i data-lucide="folder" class="icon-lg text-indigo-600 mb-3"></i>
+            <div class="text-[13px] font-semibold text-slate-900">SharePoint drive</div>
+            <div class="text-[12px] text-slate-500 mt-1">Project files & deliverables live in SharePoint.</div>
+            <div class="text-[11px] text-slate-400 mt-3">Scopes: Files.ReadWrite.All</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workspace switcher empty -->
+    <div class="dm-card">
+      <div class="dm-card-header">
+        <div>
+          <div class="text-[14px] font-semibold text-slate-900">Workspaces</div>
+          <div class="text-[12px] text-slate-500">You can run multiple workspaces — one per design firm or business unit.</div>
+        </div>
+        <button class="btn-secondary"><i data-lucide="plus" class="icon-sm"></i> New workspace</button>
+      </div>
+      <div class="dm-card-body !p-0">
+        <div class="px-5 py-4 flex items-center gap-3 border-b border-slate-100">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[12px] font-bold flex items-center justify-center">HQ</div>
+          <div class="flex-1">
+            <div class="text-[13px] font-semibold text-slate-900">DesignersMeet HQ</div>
+            <div class="text-[12px] text-slate-500">12 members · Bengaluru · created today</div>
+          </div>
+          <span class="badge badge-success badge-dot">Active</span>
+          <button class="btn-ghost">Manage</button>
+        </div>
+        <div class="px-5 py-8 text-center bg-slate-50/40">
+          <div class="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center mx-auto mb-3 text-slate-400">
+            <i data-lucide="building-2" class="icon-lg"></i>
+          </div>
+          <div class="text-[13px] font-medium text-slate-700">No additional workspaces yet</div>
+          <div class="text-[12px] text-slate-500 mt-1">When you add a second design firm or studio, it'll appear here.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+    
+      </main>
+    </div>
+  </div>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

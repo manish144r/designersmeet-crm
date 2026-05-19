@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Settings · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-[232px] flex-shrink-0 border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col">
+      <div class="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="dm-brand">
+          <span class="dm-brand-glyph">D</span>
+          <span>DesignersMeet</span>
+        </div>
+        <button class="btn-icon" title="Collapse"><i data-lucide="panel-left-close" class="icon-sm"></i></button>
+      </div>
+      <div class="px-3 pt-3">
+        <div class="workspace-pill">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">HQ</div>
+            <div class="min-w-0">
+              <div class="text-[12px] font-semibold text-slate-900 truncate">DesignersMeet HQ</div>
+              <div class="text-[10px] text-slate-500 truncate">Bengaluru workspace</div>
+            </div>
+          </div>
+          <i data-lucide="chevrons-up-down" class="icon-sm text-slate-400"></i>
+        </div>
+      </div>
+      <nav class="px-2 pt-3 flex-1 overflow-y-auto">
+        <div class="nav-section-label">Workspace</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Contacts</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="hard-hat"></i><span>Vendors</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="git-branch"></i><span>Pipelines</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layers"></i><span>Projects</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="calendar"></i><span>Calendar</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="messages-square"></i><span>Conversations</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="clipboard-list"></i><span>Forms</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="zap"></i><span>Workflows</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="bar-chart-3"></i><span>Reports</span></div>
+          <div class="nav-item" data-active="true"><i data-lucide="settings"></i><span>Settings</span></div>
+        </div>
+        <div class="nav-section-label">Surfaces</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Outlook add-in</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams app</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layout-grid"></i><span>M365 launcher</span></div>
+        </div>
+      </nav>
+      <div class="px-3 py-3 border-t border-[#E5E7EB]">
+        <div class="flex items-center gap-2 px-1">
+          <div class="avatar avatar-a">MS</div>
+          <div class="min-w-0">
+            <div class="text-[12px] font-semibold text-slate-900 truncate">Manish</div>
+            <div class="text-[10px] text-slate-500 truncate">Workspace owner</div>
+          </div>
+          <button class="btn-icon ml-auto" title="Menu"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+    </aside>
+    
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      
+    <header class="app-topbar">
+      <nav class="flex items-center gap-2 text-[13px]"><span class="text-slate-500">Settings</span><i data-lucide="chevron-right" class="icon-sm text-slate-300"></i><span class="text-slate-900 font-medium">Integrations</span></nav>
+      <div class="dm-search flex-1 max-w-[480px] ml-auto mr-auto">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search contacts, projects, vendors…" />
+        <span class="absolute right-2 top-1/2 -translate-y-1/2"><kbd class="kbd">⌘K</kbd></span>
+      </div>
+      <div class="flex items-center gap-1 ml-auto">
+        
+        <button class="btn-icon" title="Help"><i data-lucide="circle-help" class="icon-sm"></i></button>
+        <button class="btn-icon relative" title="Notifications">
+          <i data-lucide="bell" class="icon-sm"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        </button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+          <div class="avatar avatar-a avatar-sm">MS</div>
+          <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+    
+      <main class="flex-1 overflow-auto bg-white">
+        
+  <div class="flex h-full">
+    <!-- Settings nav -->
+    <aside class="w-[220px] border-r border-slate-200 overflow-y-auto py-4 px-2">
+      <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 px-3 mt-3 mb-1">Workspace</div><div class="nav-item" data-active="false"><i data-lucide="settings"></i><span>General</span></div><div class="nav-item" data-active="false"><i data-lucide="building-2"></i><span>Workspaces</span></div><div class="nav-item" data-active="false"><i data-lucide="palette"></i><span>Branding</span></div><div class="nav-item" data-active="false"><i data-lucide="globe"></i><span>Locale & time</span></div>
+      <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 px-3 mt-3 mb-1">People</div><div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Users & roles</span></div><div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams</span></div><div class="nav-item" data-active="false"><i data-lucide="hard-hat"></i><span>Vendor portal</span></div>
+      <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 px-3 mt-3 mb-1">Identity</div><div class="nav-item" data-active="false"><i data-lucide="shield-check"></i><span>SSO providers</span></div><div class="nav-item" data-active="false"><i data-lucide="lock"></i><span>Sessions</span></div><div class="nav-item" data-active="false"><i data-lucide="scroll"></i><span>Audit log</span></div>
+      <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 px-3 mt-3 mb-1">Connections</div><div class="nav-item" data-active="true"><i data-lucide="puzzle"></i><span>Integrations</span></div><div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Email providers</span></div><div class="nav-item" data-active="false"><i data-lucide="webhook"></i><span>Webhooks</span></div><div class="nav-item" data-active="false"><i data-lucide="key"></i><span>API keys</span></div>
+      <div class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 px-3 mt-3 mb-1">Billing</div><div class="nav-item" data-active="false"><i data-lucide="credit-card"></i><span>Plan & usage</span></div><div class="nav-item" data-active="false"><i data-lucide="receipt"></i><span>Invoices</span></div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-1 overflow-auto">
+      <div class="px-8 py-6 max-w-[1100px]">
+        <div class="mb-6">
+          <h1 class="font-display text-[22px] font-semibold tracking-tight text-slate-900">Integrations</h1>
+          <p class="text-[13px] text-slate-500 mt-1">Connect Microsoft 365, Google Workspace, Shopify, Meta, and others. Your workflows and email actions resolve through these.</p>
+        </div>
+
+        <!-- SSO config callout -->
+        <div class="dm-card mb-6">
+          <div class="dm-card-header">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center"><i data-lucide="shield-check" class="icon-sm text-indigo-600"></i></div>
+              <div>
+                <div class="text-[14px] font-semibold text-slate-900">Single sign-on (SSO)</div>
+                <div class="text-[12px] text-slate-500">All three providers wired at launch · users can link multiple identities</div>
+              </div>
+            </div>
+            <button class="btn-secondary"><i data-lucide="settings" class="icon-sm"></i> Configure</button>
+          </div>
+          <div class="dm-card-body">
+            <div class="grid grid-cols-3 gap-3">
+              
+        <div class="border border-slate-200 rounded-lg p-4">
+          <div class="flex items-start justify-between mb-3">
+            <svg viewBox="0 0 21 21" class="w-5 h-5"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
+            <span class="badge badge-success badge-dot">Enabled</span>
+          </div>
+          <div class="text-[13px] font-semibold text-slate-900">Microsoft Entra ID</div>
+          <div class="text-[11px] text-slate-500 mt-0.5">Multi-tenant · admin consented</div>
+          <div class="text-[11px] text-slate-400 mt-2">Default for Outlook/Teams users</div>
+        </div>
+    
+              
+        <div class="border border-slate-200 rounded-lg p-4">
+          <div class="flex items-start justify-between mb-3">
+            <svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22z" fill="#FBBC04"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            <span class="badge badge-success badge-dot">Enabled</span>
+          </div>
+          <div class="text-[13px] font-semibold text-slate-900">Google Identity</div>
+          <div class="text-[11px] text-slate-500 mt-0.5">OAuth · openid email profile</div>
+          <div class="text-[11px] text-slate-400 mt-2">For Workspace tenants</div>
+        </div>
+    
+              
+        <div class="border border-slate-200 rounded-lg p-4">
+          <div class="flex items-start justify-between mb-3">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="#000"><path d="M17.05 12.04c-.03-2.99 2.44-4.43 2.55-4.5-1.39-2.04-3.56-2.32-4.33-2.35-1.84-.19-3.6 1.09-4.54 1.09-.95 0-2.39-1.07-3.93-1.04-2.02.03-3.88 1.18-4.92 2.99-2.1 3.64-.54 9.02 1.51 11.97 1 1.45 2.19 3.07 3.74 3.01 1.5-.06 2.07-.97 3.88-.97 1.81 0 2.31.97 3.89.94 1.61-.03 2.62-1.46 3.6-2.92 1.14-1.67 1.6-3.31 1.63-3.39-.04-.02-3.13-1.2-3.16-4.77zM14.16 3.18c.83-1.01 1.39-2.4 1.24-3.8-1.2.05-2.66.8-3.51 1.8-.77.89-1.45 2.32-1.27 3.69 1.33.1 2.7-.68 3.54-1.69z"/></svg>
+            <span class="badge badge-success badge-dot">Enabled</span>
+          </div>
+          <div class="text-[13px] font-semibold text-slate-900">Sign in with Apple</div>
+          <div class="text-[11px] text-slate-500 mt-0.5">Services ID configured</div>
+          <div class="text-[11px] text-slate-400 mt-2">Fallback for personal accounts</div>
+        </div>
+    
+            </div>
+          </div>
+        </div>
+
+        <!-- Workspaces -->
+        <div class="dm-card mb-6">
+          <div class="dm-card-header">
+            <div>
+              <div class="text-[14px] font-semibold text-slate-900">Workspaces</div>
+              <div class="text-[12px] text-slate-500">Multi-workspace is schema-ready · launch with one</div>
+            </div>
+            <button class="btn-secondary"><i data-lucide="plus" class="icon-sm"></i> New workspace</button>
+          </div>
+          <div class="dm-card-body !p-0">
+            <div class="px-5 py-3 flex items-center gap-3 border-b border-slate-100">
+              <div class="w-8 h-8 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[11px] font-bold flex items-center justify-center">HQ</div>
+              <div class="flex-1">
+                <div class="text-[13px] font-semibold text-slate-900">DesignersMeet HQ</div>
+                <div class="text-[11px] text-slate-500">12 members · Bengaluru · designersmeet.com</div>
+              </div>
+              <span class="badge badge-success badge-dot">Active</span>
+              <button class="btn-ghost">Manage</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Integration grid -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          
+        <div class="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0"><svg viewBox="0 0 21 21" class="w-6 h-6"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-[14px] font-semibold text-slate-900 truncate">Microsoft 365</div>
+                <span class="badge badge-success badge-dot">Connected</span>
+              </div>
+              <div class="text-[12px] text-slate-500 mt-0.5">Outlook · Calendar · SharePoint · Teams</div>
+              <div class="text-[11px] text-slate-400 mt-2 leading-relaxed">Mail.ReadWrite, Calendars.ReadWrite, Files.ReadWrite.All, Group.ReadWrite.All</div>
+              <div class="flex items-center gap-2 mt-3">
+                <button class='btn-secondary !text-[12px]'>Configure</button>
+                <button class='btn-ghost !text-[12px]'>Logs</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    
+          
+        <div class="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0"><div class="w-6 h-6 rounded-md bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center">R</div></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-[14px] font-semibold text-slate-900 truncate">Resend</div>
+                <span class="badge badge-success badge-dot">Connected</span>
+              </div>
+              <div class="text-[12px] text-slate-500 mt-0.5">Transactional email · mail.designersmeet.com</div>
+              <div class="text-[11px] text-slate-400 mt-2 leading-relaxed">SPF · DKIM · DMARC quarantine</div>
+              <div class="flex items-center gap-2 mt-3">
+                <button class='btn-secondary !text-[12px]'>Configure</button>
+                <button class='btn-ghost !text-[12px]'>Logs</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    
+          
+        <div class="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0"><svg viewBox="0 0 24 24" class="w-6 h-6"><circle cx="12" cy="12" r="11" fill="#25D366"/><path d="M17.5 14.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7 0-.3-.2-1.2-.4-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.4.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .2.2 2.1 3.2 5 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.5.2-.7.2-1.4.2-1.5-.1-.1-.3-.2-.6-.3z" fill="#FFF"/></svg></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-[14px] font-semibold text-slate-900 truncate">WhatsApp Cloud</div>
+                <span class="badge badge-success badge-dot">Connected</span>
+              </div>
+              <div class="text-[12px] text-slate-500 mt-0.5">Meta Cloud API · Business number</div>
+              <div class="text-[11px] text-slate-400 mt-2 leading-relaxed">2 templates approved · 5 pending</div>
+              <div class="flex items-center gap-2 mt-3">
+                <button class='btn-secondary !text-[12px]'>Configure</button>
+                <button class='btn-ghost !text-[12px]'>Logs</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    
+          
+        <div class="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0"><svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22z" fill="#FBBC04"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-[14px] font-semibold text-slate-900 truncate">Google Workspace</div>
+                <span class="badge badge-neutral">Available</span>
+              </div>
+              <div class="text-[12px] text-slate-500 mt-0.5">Gmail · Calendar (for vendor SSO)</div>
+              <div class="text-[11px] text-slate-400 mt-2 leading-relaxed">Activate when first Gmail-based vendor onboards</div>
+              <div class="flex items-center gap-2 mt-3">
+                <button class='btn-primary !text-[12px]'>Connect</button>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+    
+          
+        <div class="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0"><div class="w-6 h-6 rounded-md bg-[#95BF47] text-white flex items-center justify-center"><i data-lucide="shopping-bag" class="icon-sm"></i></div></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-[14px] font-semibold text-slate-900 truncate">Shopify</div>
+                <span class="badge badge-success badge-dot">Connected</span>
+              </div>
+              <div class="text-[12px] text-slate-500 mt-0.5">Admin GraphQL · Marketing activities</div>
+              <div class="text-[11px] text-slate-400 mt-2 leading-relaxed">1 store · 47 products · webhook health green</div>
+              <div class="flex items-center gap-2 mt-3">
+                <button class='btn-secondary !text-[12px]'>Configure</button>
+                <button class='btn-ghost !text-[12px]'>Logs</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    
+          
+        <div class="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0"><div class="w-6 h-6 rounded-md bg-gradient-to-br from-[#0866FF] to-[#5856D6] text-white flex items-center justify-center"><i data-lucide="facebook" class="icon-sm"></i></div></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-[14px] font-semibold text-slate-900 truncate">Meta (FB + IG)</div>
+                <span class="badge badge-warning badge-dot">In review</span>
+              </div>
+              <div class="text-[12px] text-slate-500 mt-0.5">Pages API · Instagram Graph</div>
+              <div class="text-[11px] text-slate-400 mt-2 leading-relaxed">Submitted May 12 · expected 14d</div>
+              <div class="flex items-center gap-2 mt-3">
+                <button class='btn-primary !text-[12px]'>Connect</button>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+    
+          
+        <div class="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0"><div class="w-6 h-6 rounded-md bg-[#635BFF] text-white text-[10px] font-bold flex items-center justify-center">S</div></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-[14px] font-semibold text-slate-900 truncate">Stripe</div>
+                <span class="badge badge-neutral">Wave 5</span>
+              </div>
+              <div class="text-[12px] text-slate-500 mt-0.5">Stripe Connect for vendor payouts</div>
+              <div class="text-[11px] text-slate-400 mt-2 leading-relaxed">Deferred to Wave 5 per roadmap</div>
+              <div class="flex items-center gap-2 mt-3">
+                <button class='btn-primary !text-[12px]'>Connect</button>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+    
+          
+        <div class="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0"><div class="w-6 h-6 rounded-md bg-[#0078D4] text-white flex items-center justify-center"><i data-lucide="workflow" class="icon-sm"></i></div></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-[14px] font-semibold text-slate-900 truncate">Power Automate</div>
+                <span class="badge badge-success badge-dot">Connected</span>
+              </div>
+              <div class="text-[12px] text-slate-500 mt-0.5">HTTP triggers · bidirectional webhooks</div>
+              <div class="text-[11px] text-slate-400 mt-2 leading-relaxed">3 flows subscribed · last fire 12m ago</div>
+              <div class="flex items-center gap-2 mt-3">
+                <button class='btn-secondary !text-[12px]'>Configure</button>
+                <button class='btn-ghost !text-[12px]'>Logs</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    
+        </div>
+      </div>
+    </div>
+  </div>
+    
+      </main>
+    </div>
+  </div>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Conversations · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-[232px] flex-shrink-0 border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col">
+      <div class="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="dm-brand">
+          <span class="dm-brand-glyph">D</span>
+          <span>DesignersMeet</span>
+        </div>
+        <button class="btn-icon" title="Collapse"><i data-lucide="panel-left-close" class="icon-sm"></i></button>
+      </div>
+      <div class="px-3 pt-3">
+        <div class="workspace-pill">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">HQ</div>
+            <div class="min-w-0">
+              <div class="text-[12px] font-semibold text-slate-900 truncate">DesignersMeet HQ</div>
+              <div class="text-[10px] text-slate-500 truncate">Bengaluru workspace</div>
+            </div>
+          </div>
+          <i data-lucide="chevrons-up-down" class="icon-sm text-slate-400"></i>
+        </div>
+      </div>
+      <nav class="px-2 pt-3 flex-1 overflow-y-auto">
+        <div class="nav-section-label">Workspace</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Contacts</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="hard-hat"></i><span>Vendors</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="git-branch"></i><span>Pipelines</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layers"></i><span>Projects</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="calendar"></i><span>Calendar</span></div>
+          <div class="nav-item" data-active="true"><i data-lucide="messages-square"></i><span>Conversations</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="clipboard-list"></i><span>Forms</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="zap"></i><span>Workflows</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="bar-chart-3"></i><span>Reports</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="settings"></i><span>Settings</span></div>
+        </div>
+        <div class="nav-section-label">Surfaces</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Outlook add-in</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams app</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layout-grid"></i><span>M365 launcher</span></div>
+        </div>
+      </nav>
+      <div class="px-3 py-3 border-t border-[#E5E7EB]">
+        <div class="flex items-center gap-2 px-1">
+          <div class="avatar avatar-a">MS</div>
+          <div class="min-w-0">
+            <div class="text-[12px] font-semibold text-slate-900 truncate">Manish</div>
+            <div class="text-[10px] text-slate-500 truncate">Workspace owner</div>
+          </div>
+          <button class="btn-icon ml-auto" title="Menu"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+    </aside>
+    
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      
+    <header class="app-topbar">
+      <nav class="flex items-center gap-2 text-[13px]"><span class="text-slate-500">Conversations</span><i data-lucide="chevron-right" class="icon-sm text-slate-300"></i><span class="text-slate-900 font-medium">Unified inbox</span></nav>
+      <div class="dm-search flex-1 max-w-[480px] ml-auto mr-auto">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search contacts, projects, vendors…" />
+        <span class="absolute right-2 top-1/2 -translate-y-1/2"><kbd class="kbd">⌘K</kbd></span>
+      </div>
+      <div class="flex items-center gap-1 ml-auto">
+        
+        <button class="btn-icon" title="Help"><i data-lucide="circle-help" class="icon-sm"></i></button>
+        <button class="btn-icon relative" title="Notifications">
+          <i data-lucide="bell" class="icon-sm"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        </button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+          <div class="avatar avatar-a avatar-sm">MS</div>
+          <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+    
+      <main class="flex-1 overflow-auto bg-white">
+        
+  <div class="flex h-full">
+    <!-- Inbox list -->
+    <aside class="w-[340px] border-r border-slate-200 flex flex-col">
+      <div class="px-4 py-3 border-b border-slate-200">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold text-[15px] text-slate-900">Inbox</h2>
+          <button class="btn-primary !text-[12px] !px-2.5 !py-1"><i data-lucide="pencil" class="icon-sm"></i> Compose</button>
+        </div>
+        <div class="dm-search">
+          <i data-lucide="search"></i>
+          <input placeholder="Search messages…" />
+        </div>
+        <div class="flex items-center gap-1 mt-3 text-[11px]">
+          <button class="badge badge-indigo">All <span class="text-indigo-400 ml-1">137</span></button>
+          <button class="badge badge-neutral">Unread <span class="text-slate-500 ml-1">12</span></button>
+          <button class="badge badge-neutral">Assigned to me <span class="text-slate-500 ml-1">8</span></button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto">
+          <div class="px-4 py-3 bg-indigo-50/60 border-l-2 border-l-indigo-600 hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+            <div class="flex items-start gap-2.5">
+              <div class="avatar avatar-d">PR</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[13px] font-semibold text-slate-900 truncate">Priya Raghavan</span>
+                  <span class="text-[10px] text-slate-400 flex-shrink-0">11:21</span>
+                </div>
+                <div class="text-[12px] font-semibold text-slate-700 truncate mt-0.5">RE: Lumen concept board v2</div>
+                <div class="text-[11.5px] text-slate-500 truncate mt-0.5">Looks gorgeous. Two small tweaks — the brass detail above…</div>
+                <div class="flex items-center gap-2 mt-1.5"><span class="channel-badge channel-email">email</span><span class="w-2 h-2 rounded-full bg-indigo-600 flex-shrink-0"></span></div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-3 border-l-2 border-l-transparent hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+            <div class="flex items-start gap-2.5">
+              <div class="avatar avatar-b">AS</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[13px] font-medium text-slate-900 truncate">Aurora Studio</span>
+                  <span class="text-[10px] text-slate-400 flex-shrink-0">10:02</span>
+                </div>
+                <div class="text-[12px] font-medium text-slate-700 truncate mt-0.5">Concept board v3 uploaded</div>
+                <div class="text-[11.5px] text-slate-500 truncate mt-0.5">Sharing v3 with the revisions we discussed yesterday. Brass…</div>
+                <div class="flex items-center gap-2 mt-1.5"><span class="channel-badge channel-email">email</span></div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-3 border-l-2 border-l-transparent hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+            <div class="flex items-start gap-2.5">
+              <div class="avatar avatar-e">VE</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[13px] font-semibold text-slate-900 truncate">Voltek Electricals</span>
+                  <span class="text-[10px] text-slate-400 flex-shrink-0">9:14</span>
+                </div>
+                <div class="text-[12px] font-semibold text-slate-700 truncate mt-0.5">Need MCB spec confirmation</div>
+                <div class="text-[11.5px] text-slate-500 truncate mt-0.5">Hi Manish, blocked on the MCB rating for the kitchen circuit…</div>
+                <div class="flex items-center gap-2 mt-1.5"><span class="channel-badge channel-whatsapp">whatsapp</span><span class="w-2 h-2 rounded-full bg-indigo-600 flex-shrink-0"></span></div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-3 border-l-2 border-l-transparent hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+            <div class="flex items-start gap-2.5">
+              <div class="avatar avatar-c">MK</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[13px] font-medium text-slate-900 truncate">Manjunath Karpenter Co</span>
+                  <span class="text-[10px] text-slate-400 flex-shrink-0">Yesterday</span>
+                </div>
+                <div class="text-[12px] font-medium text-slate-700 truncate mt-0.5">Carpentry shop drawings — v1</div>
+                <div class="text-[11.5px] text-slate-500 truncate mt-0.5">Attaching the first cut. Will revise after tomorrow's site visit.</div>
+                <div class="flex items-center gap-2 mt-1.5"><span class="channel-badge channel-email">email</span></div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-3 border-l-2 border-l-transparent hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+            <div class="flex items-start gap-2.5">
+              <div class="avatar avatar-f">SK</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[13px] font-medium text-slate-900 truncate">Suri Kapoor</span>
+                  <span class="text-[10px] text-slate-400 flex-shrink-0">Yesterday</span>
+                </div>
+                <div class="text-[12px] font-medium text-slate-700 truncate mt-0.5">Discovery call confirmation</div>
+                <div class="text-[11.5px] text-slate-500 truncate mt-0.5">Confirming 4pm today on Teams.</div>
+                <div class="flex items-center gap-2 mt-1.5"><span class="channel-badge channel-email">email</span></div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-3 border-l-2 border-l-transparent hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+            <div class="flex items-start gap-2.5">
+              <div class="avatar avatar-g">LR</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[13px] font-medium text-slate-900 truncate">Lakshmi & Ravi</span>
+                  <span class="text-[10px] text-slate-400 flex-shrink-0">May 16</span>
+                </div>
+                <div class="text-[12px] font-medium text-slate-700 truncate mt-0.5">Snag list — site visit 4</div>
+                <div class="text-[11.5px] text-slate-500 truncate mt-0.5">Punch list attached. Most items resolved!</div>
+                <div class="flex items-center gap-2 mt-1.5"><span class="channel-badge channel-email">email</span></div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-3 border-l-2 border-l-transparent hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+            <div class="flex items-start gap-2.5">
+              <div class="avatar avatar-h">DN</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[13px] font-medium text-slate-900 truncate">Deepa Nair</span>
+                  <span class="text-[10px] text-slate-400 flex-shrink-0">May 15</span>
+                </div>
+                <div class="text-[12px] font-medium text-slate-700 truncate mt-0.5">Re: Studio Saffron — Q3 newsletter</div>
+                <div class="text-[11.5px] text-slate-500 truncate mt-0.5">Loved the project highlight! Sharing internally.</div>
+                <div class="flex items-center gap-2 mt-1.5"><span class="channel-badge channel-email">email</span></div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="px-4 py-3 border-l-2 border-l-transparent hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+            <div class="flex items-start gap-2.5">
+              <div class="avatar avatar-a">FT</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[13px] font-medium text-slate-900 truncate">FabTextiles</span>
+                  <span class="text-[10px] text-slate-400 flex-shrink-0">May 14</span>
+                </div>
+                <div class="text-[12px] font-medium text-slate-700 truncate mt-0.5">Cane fabric — alt swatches</div>
+                <div class="text-[11.5px] text-slate-500 truncate mt-0.5">Sending two alternates. Option B has the warmer undertone…</div>
+                <div class="flex items-center gap-2 mt-1.5"><span class="channel-badge channel-whatsapp">whatsapp</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </aside>
+
+    <!-- Thread view -->
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div class="px-6 py-3 border-b border-slate-200 flex items-center gap-3">
+        <div class="flex-1">
+          <div class="text-[15px] font-semibold text-slate-900">RE: Lumen concept board v2</div>
+          <div class="text-[12px] text-slate-500 mt-0.5 flex items-center gap-2">
+            <span>3 participants</span>·
+            <span class="channel-badge channel-email">email</span>
+            <span class="channel-badge channel-note">internal note</span>
+          </div>
+        </div>
+        <button class="btn-secondary"><i data-lucide="user-plus" class="icon-sm"></i> Assign</button>
+        <button class="btn-secondary"><i data-lucide="tag" class="icon-sm"></i> Label</button>
+        <button class="btn-icon"><i data-lucide="archive" class="icon-sm"></i></button>
+        <button class="btn-icon"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+      </div>
+
+      <div class="flex-1 overflow-auto px-6 py-5 space-y-4 bg-slate-50/30">
+        
+        <div class="flex gap-3">
+          <div class="avatar avatar-a">MS</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12px] text-slate-500"><span class="font-medium text-slate-900">Manish</span> · Sent via Outlook · May 14 at 5:02 PM</div>
+            <div class="mt-1.5 border border-slate-200 border-l-2 border-l-indigo-500 bg-white rounded-md p-3 text-[13px] text-slate-700 leading-relaxed whitespace-pre-line">Hi Priya — sharing the latest concept board from Aurora. Let us know what jumps out; we can iterate before the Wednesday call.</div>
+          </div>
+        </div>
+    
+        
+        <div class="flex gap-3">
+          <div class="avatar avatar-d">PR</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12px] text-slate-500"><span class="font-medium text-slate-900">Priya Raghavan</span> · Received via Outlook · Yesterday at 4:21 PM</div>
+            <div class="mt-1.5 border border-slate-200 border-l-2 border-l-indigo-500 bg-white rounded-md p-3 text-[13px] text-slate-700 leading-relaxed whitespace-pre-line">Looks gorgeous! Two small tweaks — the brass detail above the bar feels heavy, and I'd like to see the cane chair fabric in a warmer tone. Otherwise approved — let's move to procurement after this round.</div>
+          </div>
+        </div>
+    
+        
+        <div class="flex gap-3">
+          <div class="avatar avatar-a">MS</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12px] text-slate-500"><span class="font-medium text-slate-900">Manish (internal note)</span> · Internal note · Today at 9:18 AM</div>
+            <div class="mt-1.5 border border-slate-200 border-l-2 border-l-amber-400 bg-amber-50/40 rounded-md p-3 text-[13px] text-slate-700 leading-relaxed whitespace-pre-line">@Anita — let's get Aurora to revise just the brass + fabric. Also flag for cross-sell after this project: Priya mentioned a Pune outlet.</div>
+          </div>
+        </div>
+    
+        
+        <div class="flex gap-3">
+          <div class="avatar avatar-b">AS</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12px] text-slate-500"><span class="font-medium text-slate-900">Aurora Studio</span> · Sent via Outlook · Today at 10:02 AM</div>
+            <div class="mt-1.5 border border-slate-200 border-l-2 border-l-indigo-500 bg-white rounded-md p-3 text-[13px] text-slate-700 leading-relaxed whitespace-pre-line">v3 uploaded — brass simplified, two cane fabric options from FabTextiles (slide 12). Holding on procurement pending your sign-off.</div>
+          </div>
+        </div>
+    
+      </div>
+
+      <!-- Reply composer -->
+      <div class="border-t border-slate-200 bg-white">
+        <div class="px-6 py-2 border-b border-slate-100 flex items-center gap-3 text-[12px]">
+          <span class="text-slate-500">Reply via</span>
+          <div class="flex items-center bg-slate-100 rounded-md p-0.5">
+            <button class="px-2.5 py-1 bg-white shadow-sm rounded text-slate-900 font-medium">📧 Email</button>
+            <button class="px-2.5 py-1 text-slate-500">💬 WhatsApp</button>
+            <button class="px-2.5 py-1 text-slate-500">🟡 Internal note</button>
+          </div>
+          <span class="text-slate-400 ml-auto">Sending as <span class="font-medium text-slate-700">manish@designersmeet.com</span> via Microsoft Graph</span>
+        </div>
+        <div class="px-6 py-3">
+          <textarea class="w-full text-[13.5px] resize-none focus:outline-none" rows="4" placeholder="Type your reply… (⌘+Enter to send)">Priya — v3 looks great. Going to share with the bar-fit vendors today and lock procurement Friday.
+
+Best,
+Manish</textarea>
+          <div class="flex items-center justify-between mt-2">
+            <div class="flex items-center gap-1">
+              <button class="btn-icon"><i data-lucide="paperclip" class="icon-sm"></i></button>
+              <button class="btn-icon"><i data-lucide="link" class="icon-sm"></i></button>
+              <button class="btn-icon"><i data-lucide="sparkles" class="icon-sm text-indigo-500"></i></button>
+              <button class="btn-icon"><i data-lucide="image" class="icon-sm"></i></button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btn-secondary !text-[12px]">Save draft</button>
+              <button class="btn-primary"><i data-lucide="send" class="icon-sm"></i> Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right context rail -->
+    <aside class="w-[300px] border-l border-slate-200 overflow-auto bg-slate-50/20">
+      <div class="p-5 border-b border-slate-200 bg-white">
+        <div class="flex items-center gap-3">
+          <div class="avatar avatar-d avatar-lg">PR</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[14px] font-semibold text-slate-900 truncate">Priya Raghavan</div>
+            <div class="text-[11px] text-slate-500 truncate">Founder · Lumen Café</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 mt-3">
+          <button class="btn-ghost !text-[11px] flex-1 justify-center"><i data-lucide="user" class="icon-sm"></i> Profile</button>
+          <button class="btn-ghost !text-[11px] flex-1 justify-center"><i data-lucide="phone" class="icon-sm"></i> Call</button>
+        </div>
+      </div>
+
+      <div class="p-5">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Active project</div>
+        <div class="dm-card !p-3 mb-4">
+          <div class="text-[13px] font-semibold text-slate-900">Brand Refresh — Lumen Café</div>
+          <div class="text-[11px] text-slate-500 mt-1">Design phase · 62%</div>
+          <div class="dm-progress mt-2"><div style="width:62%"></div></div>
+        </div>
+
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Open invoices</div>
+        <div class="dm-card !p-3 mb-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-[13px] font-semibold text-slate-900">INV-2026-0142</div>
+              <div class="text-[11px] text-slate-500">Due May 28</div>
+            </div>
+            <div class="text-[13px] font-semibold text-slate-900">₹ 4.6 L</div>
+          </div>
+        </div>
+
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Recent deliverables</div>
+        <div class="space-y-1.5 mb-4">
+          <div class="text-[12px] text-slate-700 flex items-center gap-2"><i data-lucide="file-text" class="icon-sm text-slate-400"></i> Concept board v3</div>
+          <div class="text-[12px] text-slate-700 flex items-center gap-2"><i data-lucide="file-text" class="icon-sm text-slate-400"></i> Material palette v2</div>
+          <div class="text-[12px] text-slate-700 flex items-center gap-2"><i data-lucide="file-text" class="icon-sm text-slate-400"></i> Brand mark refresh</div>
+        </div>
+
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Upcoming</div>
+        <div class="text-[12px] text-slate-700">
+          <div class="font-medium">Today 11:00 AM</div>
+          <div class="text-slate-500">Site walk-through · HSR Penthouse</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+    
+      </main>
+    </div>
+  </div>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

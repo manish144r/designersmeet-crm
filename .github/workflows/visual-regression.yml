@@ -1,0 +1,40 @@
+name: visual-regression
+
+# Design-lock Layer 3 — every page pixel-diffed vs brief/screenshots baseline.
+on:
+  pull_request:
+    paths:
+      - "packages/frontend/**"
+      - "brief/**"
+  workflow_dispatch:
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+
+      - name: Install
+        run: npm ci || npm install
+
+      - name: Install Playwright Chromium
+        working-directory: packages/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate tokens
+        run: node brief/style-dictionary.config.js
+
+      - name: Run visual regression
+        working-directory: packages/frontend
+        run: npx playwright test
+
+      - name: Upload diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vr-diffs
+          path: packages/frontend/.vr-out
+          retention-days: 7

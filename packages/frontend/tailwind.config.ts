@@ -1,42 +1,38 @@
 import type { Config } from "tailwindcss";
+import { tokens } from "./tailwind.tokens";
 
-// DesignersMeet design tokens — lifted from research/designersmeet-crm.html
+/**
+ * DesignersMeet Tailwind theme.
+ * Colours, radii, shadows and fonts come exclusively from tailwind.tokens.ts,
+ * which Style Dictionary generates from brief/tokens.json.
+ * NEVER hand-edit colour values here — change brief/tokens.json + run `npm run tokens`.
+ */
 const config: Config = {
-  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  content: ["./index.html", "./src/**/*.{ts,tsx}", "./.storybook/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        navy: {
-          DEFAULT: "#1E2761",
-          dark: "#151d4a",
-          light: "#2a3578",
+        ...tokens.colors,
+        // Aliases so Codex output reads naturally:
+        background: tokens.colors.background,
+        foreground: tokens.colors.foreground,
+        primary: {
+          DEFAULT: tokens.colors.primary,
+          hover: tokens.colors["primary-hover"],
+          active: tokens.colors["primary-active"],
+          tint: tokens.colors["primary-tint"],
+          tint2: tokens.colors["primary-tint-2"],
         },
-        gold: {
-          DEFAULT: "#FFD700",
-          hover: "#e6c200",
-        },
-        ice: {
-          DEFAULT: "#CADCFC",
-          dim: "#8ea4c8",
-        },
-        bg: "#0d1117",
-        card: "#161b22",
-        cardHover: "#1c2333",
-        borderc: "#30363d",
-        textc: "#e6edf3",
-        textDim: "#8b949e",
-        statusGreen: "#2ea043",
-        statusAmber: "#d29922",
-        statusRed: "#f85149",
-        statusBlue: "#58a6ff",
+        border: tokens.colors.border,
       },
-      fontFamily: {
-        sans: ["-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Helvetica", "Arial", "sans-serif"],
+      borderColor: {
+        DEFAULT: tokens.colors.border,
+        strong: tokens.colors["border-strong"],
+        subtle: tokens.colors["border-subtle"],
       },
-      boxShadow: {
-        card: "0 1px 0 rgba(255,255,255,0.04)",
-        focusGold: "0 0 0 2px rgba(255,215,0,.15)",
-      },
+      borderRadius: tokens.borderRadius,
+      boxShadow: tokens.boxShadow,
+      fontFamily: { sans: [...tokens.fontFamily.sans] },
     },
   },
   plugins: [],

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Spec sheet · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="min-h-screen bg-white">
+    <div class="max-w-[1200px] mx-auto px-8 py-10">
+      <div class="flex items-start justify-between mb-8 pb-6 border-b border-slate-200">
+        <div>
+          <div class="dm-brand mb-3"><span class="dm-brand-glyph">D</span><span>DesignersMeet</span></div>
+          <h1 class="font-display text-[32px] font-semibold tracking-tight text-slate-900">Vendor Platform — V1 mockup spec sheet</h1>
+          <p class="text-[14px] text-slate-500 mt-2">15 screens · indigo-600 accent · M365-native chrome · for vendor + project stakeholder review.</p>
+          <div class="flex items-center gap-4 mt-3 text-[12px] text-slate-500">
+            <span>Manish · DesignersMeet HQ</span><span>·</span>
+            <span>May 18, 2026</span><span>·</span>
+            <span>v0.1 draft</span><span>·</span>
+            <span>SPEC.md cross-reference</span>
+          </div>
+        </div>
+        <button onclick="window.print()" class="btn-primary"><i data-lucide="printer" class="icon-sm"></i> Print / save as PDF</button>
+      </div>
+
+      <!-- Design tokens summary -->
+      <div class="grid grid-cols-4 gap-4 mb-8">
+        <div class="border border-slate-200 rounded-lg p-4">
+          <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Surfaces</div>
+          <div class="flex items-center gap-2 mt-2">
+            <div class="w-8 h-8 rounded-md bg-white border border-slate-200"></div>
+            <div class="w-8 h-8 rounded-md bg-slate-50 border border-slate-200"></div>
+            <div class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200"></div>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-2">#FFFFFF · #FAFAFA · #F8FAFC</div>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-4">
+          <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Accent</div>
+          <div class="flex items-center gap-2 mt-2">
+            <div class="w-8 h-8 rounded-md bg-indigo-600"></div>
+            <div class="w-8 h-8 rounded-md bg-indigo-100"></div>
+            <div class="w-8 h-8 rounded-md bg-indigo-50"></div>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-2">Indigo-600 · #4F46E5</div>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-4">
+          <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Status</div>
+          <div class="flex items-center gap-2 mt-2">
+            <div class="w-8 h-8 rounded-md bg-emerald-500"></div>
+            <div class="w-8 h-8 rounded-md bg-amber-500"></div>
+            <div class="w-8 h-8 rounded-md bg-red-500"></div>
+            <div class="w-8 h-8 rounded-md bg-sky-500"></div>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-2">success · warning · danger · info</div>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-4">
+          <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Typography</div>
+          <div class="font-display text-[22px] font-semibold text-slate-900 mt-1 leading-none">Aa</div>
+          <div class="text-[11px] text-slate-500 mt-2">Inter · 12 / 14 / 16 / 20 / 24 / 32</div>
+        </div>
+      </div>
+
+      <h2 class="font-display text-[18px] font-semibold text-slate-900 mb-4">Screen inventory</h2>
+      <div class="grid grid-cols-3 gap-4">
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">01-signin.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Sign in</div>
+                <div class="text-[10px] text-slate-400 font-mono">01</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">SSO trio (Microsoft, Google, Apple) + SAML/OIDC fallback. White card, indigo CTA.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">02-onboarding.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Onboarding</div>
+                <div class="text-[10px] text-slate-400 font-mono">02</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">4-step setup wizard. Workspace switcher empty state, M365 connect cards.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">03-dashboard.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Dashboard</div>
+                <div class="text-[10px] text-slate-400 font-mono">03</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">4 KPIs (pipeline value, on-track projects, vendor utilization, deliverable cycle) + pipeline chart, activity feed, upcoming deliveries table, today's bookings.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">04-contacts.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Contacts list</div>
+                <div class="text-[10px] text-slate-400 font-mono">04</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">Virtual-scroll table, saved-filter chips, bulk actions, type pills (Client/Vendor/Lead).</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">05-contact-detail.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Contact detail</div>
+                <div class="text-[10px] text-slate-400 font-mono">05</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">Tabbed shell (Profile/Timeline/Conversations/Opps/Projects/Files). Properties grid + timeline + right rail.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">06-vendors.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Vendors list</div>
+                <div class="text-[10px] text-slate-400 font-mono">06</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">Vendor-specific columns: regions, tier, rating, NDA/MSA status.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">07-vendor-detail.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Vendor detail</div>
+                <div class="text-[10px] text-slate-400 font-mono">07</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">Skills, rate card, project history, compliance card (NDA/MSA/GST/Insurance), portfolio thumbs.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">08-projects-board.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Projects board</div>
+                <div class="text-[10px] text-slate-400 font-mono">08</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">7-column kanban (Brief→Handover) — the differentiator. Vendor avatars + milestone progress on every card.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">09-project-detail.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Project detail</div>
+                <div class="text-[10px] text-slate-400 font-mono">09</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">Milestone bar, deliverable card grid with version history, next-up tasks, assigned vendors, threaded comments.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">10-pipelines.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Pipelines kanban</div>
+                <div class="text-[10px] text-slate-400 font-mono">10</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">5-stage Sales pipeline. Stage totals at top of each column.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">11-calendar.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Calendar</div>
+                <div class="text-[10px] text-slate-400 font-mono">11</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">Week view + public booking page mockup in right rail. M365 calendar overlay.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">12-conversations.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Conversations inbox</div>
+                <div class="text-[10px] text-slate-400 font-mono">12</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">Three-pane: list / thread / context. Channel-aware reply composer (email/WhatsApp/note).</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">13-workflows.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Workflows builder</div>
+                <div class="text-[10px] text-slate-400 font-mono">13</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">V1 rule-based linear: trigger → filter → ordered actions. Right inspector configures each step.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">14-forms.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Forms builder</div>
+                <div class="text-[10px] text-slate-400 font-mono">14</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">Drag-and-drop field types (left) → canvas (center) → field inspector (right). Workflow trigger callout.</div>
+            </div>
+          </div>
+        
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div class="aspect-[16/10] bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center p-4">
+              <div class="dm-brand"><span class="dm-brand-glyph">D</span><span class="text-[11px] text-slate-400">15-settings.html</span></div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <div class="text-[13px] font-semibold text-slate-900">Settings · Integrations</div>
+                <div class="text-[10px] text-slate-400 font-mono">15</div>
+              </div>
+              <div class="text-[11.5px] text-slate-600 leading-snug">SSO summary, workspaces card, 8-tile integration grid (M365, Resend, WhatsApp, Google, Shopify, Meta, Stripe, Power Automate).</div>
+            </div>
+          </div>
+        </div>
+
+      <div class="mt-10 pt-6 border-t border-slate-200 grid grid-cols-3 gap-6 text-[12px] text-slate-600">
+        <div>
+          <div class="font-semibold text-slate-900 mb-1">Wave 1 (Days 1–5)</div>
+          <div>Auth, scaffold, vendor CRUD, email provider stub, Dashboard placeholder.</div>
+        </div>
+        <div>
+          <div class="font-semibold text-slate-900 mb-1">Wave 2 (Days 6–12)</div>
+          <div>Pipelines, Calendar, Contact detail, Conversations (email), Forms V1.</div>
+        </div>
+        <div>
+          <div class="font-semibold text-slate-900 mb-1">Wave 3 (Days 13–21)</div>
+          <div>Projects + Deliverables + Vendor portal + Workflows + WhatsApp.</div>
+        </div>
+      </div>
+
+      <div class="mt-8 text-[11px] text-slate-400 text-center">
+        DesignersMeet Vendor Platform · Mockups generated May 18, 2026 · Single source of truth: outputs/designersmeet-vendor-platform/SPEC.md
+      </div>
+    </div>
+  </div>
+    
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

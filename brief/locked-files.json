@@ -1,0 +1,30 @@
+{
+  "purpose": "Brand/brief conformance lock. These paths are the canonical DesignersMeet brief + design-lock toolchain. Do not modify without an explicit [brand-change] commit message token.",
+  "locked": [
+    "brief/mockups/",
+    "brief/tokens.json",
+    "brief/tokens.css",
+    "brief/spec.md",
+    "brief/generators/",
+    "brief/screenshots/",
+    "brief/style-dictionary.config.js",
+    "brief/locked-files.json",
+    "brief/DESIGN-LOCK.md",
+    "packages/frontend/tailwind.config.ts",
+    "packages/frontend/tailwind.tokens.ts",
+    "packages/frontend/src/styles/tokens.css",
+    "packages/frontend/eslint.config.js"
+  ],
+  "canonical": {
+    "bg": "#FFFFFF",
+    "primary": "#4F46E5",
+    "sidebar": "#FAFAFA",
+    "text": "#0F172A",
+    "font": "Inter"
+  },
+  "enforcedBy": ".husky/pre-commit",
+  "overrideToken": "[brand-change]",
+  "restoredOn": "2026-05-19",
+  "lockedOn": "2026-05-19",
+  "source": "recovered:designersmeet-mockups (session-outputs)"
+}

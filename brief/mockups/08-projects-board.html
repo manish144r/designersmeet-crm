@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Projects board · DesignersMeet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-[232px] flex-shrink-0 border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col">
+      <div class="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="dm-brand">
+          <span class="dm-brand-glyph">D</span>
+          <span>DesignersMeet</span>
+        </div>
+        <button class="btn-icon" title="Collapse"><i data-lucide="panel-left-close" class="icon-sm"></i></button>
+      </div>
+      <div class="px-3 pt-3">
+        <div class="workspace-pill">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">HQ</div>
+            <div class="min-w-0">
+              <div class="text-[12px] font-semibold text-slate-900 truncate">DesignersMeet HQ</div>
+              <div class="text-[10px] text-slate-500 truncate">Bengaluru workspace</div>
+            </div>
+          </div>
+          <i data-lucide="chevrons-up-down" class="icon-sm text-slate-400"></i>
+        </div>
+      </div>
+      <nav class="px-2 pt-3 flex-1 overflow-y-auto">
+        <div class="nav-section-label">Workspace</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users"></i><span>Contacts</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="hard-hat"></i><span>Vendors</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="git-branch"></i><span>Pipelines</span></div>
+          <div class="nav-item" data-active="true"><i data-lucide="layers"></i><span>Projects</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="calendar"></i><span>Calendar</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="messages-square"></i><span>Conversations</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="clipboard-list"></i><span>Forms</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="zap"></i><span>Workflows</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="bar-chart-3"></i><span>Reports</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="settings"></i><span>Settings</span></div>
+        </div>
+        <div class="nav-section-label">Surfaces</div>
+        <div class="space-y-0.5">
+          <div class="nav-item" data-active="false"><i data-lucide="mail"></i><span>Outlook add-in</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="users-round"></i><span>Teams app</span></div>
+          <div class="nav-item" data-active="false"><i data-lucide="layout-grid"></i><span>M365 launcher</span></div>
+        </div>
+      </nav>
+      <div class="px-3 py-3 border-t border-[#E5E7EB]">
+        <div class="flex items-center gap-2 px-1">
+          <div class="avatar avatar-a">MS</div>
+          <div class="min-w-0">
+            <div class="text-[12px] font-semibold text-slate-900 truncate">Manish</div>
+            <div class="text-[10px] text-slate-500 truncate">Workspace owner</div>
+          </div>
+          <button class="btn-icon ml-auto" title="Menu"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+        </div>
+      </div>
+    </aside>
+    
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+      
+    <header class="app-topbar">
+      <nav class="flex items-center gap-2 text-[13px]"><span class="text-slate-500">Projects</span><i data-lucide="chevron-right" class="icon-sm text-slate-300"></i><span class="text-slate-900 font-medium">Board</span></nav>
+      <div class="dm-search flex-1 max-w-[480px] ml-auto mr-auto">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search contacts, projects, vendors…" />
+        <span class="absolute right-2 top-1/2 -translate-y-1/2"><kbd class="kbd">⌘K</kbd></span>
+      </div>
+      <div class="flex items-center gap-1 ml-auto">
+        
+        <button class="btn-icon" title="Help"><i data-lucide="circle-help" class="icon-sm"></i></button>
+        <button class="btn-icon relative" title="Notifications">
+          <i data-lucide="bell" class="icon-sm"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        </button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+          <div class="avatar avatar-a avatar-sm">MS</div>
+          <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+    
+      <main class="flex-1 overflow-auto bg-white">
+        
+  <div class="flex flex-col h-full">
+    <div class="px-8 pt-6 pb-4 flex items-center justify-between">
+      <div>
+        <h1 class="font-display text-[22px] font-semibold tracking-tight text-slate-900">Projects</h1>
+        <p class="text-[13px] text-slate-500 mt-0.5">13 active · 9 on track · 3 at risk · 1 in handover this week</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex items-center bg-white border border-slate-300 rounded-md">
+          <button class="px-2.5 py-1.5 text-indigo-600 bg-indigo-50 rounded-l-md flex items-center gap-1.5 text-[12px] font-medium"><i data-lucide="kanban" class="icon-sm"></i> Board</button>
+          <button class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-50 flex items-center gap-1.5 text-[12px]"><i data-lucide="list" class="icon-sm"></i> List</button>
+          <button class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-50 flex items-center gap-1.5 text-[12px]"><i data-lucide="calendar-days" class="icon-sm"></i> Timeline</button>
+        </div>
+        <button class="btn-secondary"><i data-lucide="filter" class="icon-sm"></i> Filter</button>
+        <button class="btn-secondary"><i data-lucide="layout-template" class="icon-sm"></i> Templates</button>
+        <button class="btn-primary"><i data-lucide="plus" class="icon-sm"></i> New project</button>
+      </div>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="px-8 pb-3 flex items-center gap-2 border-b border-slate-200 bg-slate-50/40">
+      <button class="badge badge-indigo">Active <span class="text-indigo-400 ml-1">13</span></button>
+      <button class="badge badge-neutral">My projects <span class="text-slate-400 ml-1">5</span></button>
+      <button class="badge badge-neutral">Anita M. <span class="text-slate-400 ml-1">4</span></button>
+      <button class="badge badge-neutral">Rohit <span class="text-slate-400 ml-1">4</span></button>
+      <button class="badge badge-warning">At risk <span class="text-amber-600 ml-1">3</span></button>
+      <button class="badge badge-neutral">+ Add filter</button>
+      <div class="flex-1"></div>
+      <div class="text-[12px] text-slate-500 flex items-center gap-2">
+        <span>Group by</span>
+        <button class="btn-ghost !text-[12px] !py-1">Status <i data-lucide="chevron-down" class="icon-sm text-slate-400"></i></button>
+      </div>
+    </div>
+
+    <!-- Kanban -->
+    <div class="flex-1 overflow-x-auto scroll-clean">
+      <div class="flex gap-4 p-6 min-w-min">
+        
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500" style="background:var(--accent)"></span>
+                <span>Brief</span>
+                <span class="text-slate-400 font-normal">3</span>
+              </div>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="plus" class="icon-sm"></i></button>
+            </div>
+            <div class="kanban-col-body">
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Brand Refresh — Café Espresso 2</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jun 14</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Anita M.</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>0/8</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:0%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">AS</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Whitefield Townhouse</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jun 28</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Manish</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>0/6</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:0%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">MS</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Suri Family Home</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jul 02</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Rohit</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>0/4</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:0%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><span class="text-[11px] text-slate-400">No vendors yet</span></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-info-500" style="background:var(--accent)"></span>
+                <span>Concept</span>
+                <span class="text-slate-400 font-normal">2</span>
+              </div>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="plus" class="icon-sm"></i></button>
+            </div>
+            <div class="kanban-col-body">
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Brand Refresh — Lumen Café</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jun 30</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Manish</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>4/12</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:33%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">AS</div><div class="avatar avatar-sm avatar-c">RB</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Koramangala Bar Lounge</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jul 18</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Anita M.</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>2/9</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:22%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">AS</div><div class="avatar avatar-sm avatar-c">LP</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500" style="background:var(--accent)"></span>
+                <span>Design</span>
+                <span class="text-slate-400 font-normal">3</span>
+              </div>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="plus" class="icon-sm"></i></button>
+            </div>
+            <div class="kanban-col-body">
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">HSR Penthouse</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jul 22</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Rohit</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>9/14</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:64%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">AS</div><div class="avatar avatar-sm avatar-c">VE</div><div class="avatar avatar-sm avatar-e">FT</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">JP Nagar Bungalow</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Aug 04</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Anita M.</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>6/11</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:54%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">MK</div><div class="avatar avatar-sm avatar-c">MN</div><div class="avatar avatar-sm avatar-e">PP</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Indiranagar Loft Reno</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jun 18</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Manish</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>11/13</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:84%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">MK</div><div class="avatar avatar-sm avatar-c">FT</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-warning-500" style="background:var(--accent)"></span>
+                <span>Procurement</span>
+                <span class="text-slate-400 font-normal">2</span>
+              </div>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="plus" class="icon-sm"></i></button>
+            </div>
+            <div class="kanban-col-body">
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Whitefield Villa</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jul 30</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Manish</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>14/18</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:77%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">AS</div><div class="avatar avatar-sm avatar-c">MN</div><div class="avatar avatar-sm avatar-e">PS</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Hennur Apartment</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jul 12</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Rohit</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>8/10</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:80%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">MK</div><div class="avatar avatar-sm avatar-c">FT</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-warning-500" style="background:var(--accent)"></span>
+                <span>Install</span>
+                <span class="text-slate-400 font-normal">2</span>
+              </div>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="plus" class="icon-sm"></i></button>
+            </div>
+            <div class="kanban-col-body">
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">MG Road Boutique</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>May 30</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Anita M.</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>20/22</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:90%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">MK</div><div class="avatar avatar-sm avatar-c">VE</div><div class="avatar avatar-sm avatar-e">LP</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Banashankari Duplex</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>Jun 06</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Rohit</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>18/21</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:85%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">MK</div><div class="avatar avatar-sm avatar-c">PP</div><div class="avatar avatar-sm avatar-e">AC</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-success-500" style="background:var(--accent)"></span>
+                <span>Handover</span>
+                <span class="text-slate-400 font-normal">1</span>
+              </div>
+              <button class="btn-icon !w-6 !h-6"><i data-lucide="plus" class="icon-sm"></i></button>
+            </div>
+            <div class="kanban-col-body">
+              <div class="kanban-card">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="text-[13px] font-semibold text-slate-900 leading-snug">Sarjapur Cottage</div>
+                  <button class="btn-icon !w-6 !h-6"><i data-lucide="more-horizontal" class="icon-sm"></i></button>
+                </div>
+                <div class="flex items-center gap-2 mb-2.5 text-[11px] text-slate-500">
+                  <i data-lucide="calendar" class="icon-sm"></i> <span>May 22</span>
+                  <span class="text-slate-300">·</span>
+                  <i data-lucide="user" class="icon-sm"></i> <span>Manish</span>
+                </div>
+                <div class="mb-2.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Milestones</span><span>24/24</span>
+                  </div>
+                  <div class="dm-progress" style="height:4px"><div style="width:100%"></div></div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="avatar-stack flex"><div class="avatar avatar-sm avatar-b">FT</div><div class="avatar avatar-sm avatar-c">GF</div></div>
+                  <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <i data-lucide="message-square" class="icon-sm"></i> <span>3</span>
+                    <i data-lucide="paperclip" class="icon-sm"></i> <span>7</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+    
+      </main>
+    </div>
+  </div>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>
