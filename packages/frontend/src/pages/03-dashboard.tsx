@@ -29,11 +29,13 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
   label: string;
@@ -336,6 +338,8 @@ function StatusPill({
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] flex-shrink-0 flex-col border-r border-border bg-sidebar">
@@ -465,6 +469,7 @@ export default function Dashboard() {
                 <Button
                   type="button"
                   className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+                  onClick={() => useUIStore.getState().openCreate("projects")}
                 >
                   <Plus className={iconClass} aria-hidden="true" />
                   New project
@@ -614,6 +619,7 @@ export default function Dashboard() {
                     type="button"
                     variant="ghost"
                     className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
+                    onClick={() => navigate("/dashboard")}
                   >
                     See all
                   </Button>
@@ -649,6 +655,7 @@ export default function Dashboard() {
                     type="button"
                     variant="ghost"
                     className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
+                    onClick={() => navigate("/projects")}
                   >
                     View all projects
                   </Button>
@@ -711,6 +718,7 @@ export default function Dashboard() {
                     type="button"
                     variant="ghost"
                     className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
+                    onClick={() => navigate("/calendar")}
                   >
                     Calendar
                   </Button>

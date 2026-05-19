@@ -1,11 +1,16 @@
 /* Generated from brief/mockups/01-signin.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
+import { useState } from "react";
 import { Layers, Mail, ShieldCheck, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "../auth/AuthProvider.js";
 
 export default function DesignersMeetSignIn() {
+  const { signIn } = useAuth();
+  const [workEmail, setWorkEmail] = useState("");
+
   return (
     <div className="min-h-screen bg-white text-foreground antialiased">
       <div className="flex min-h-screen">
@@ -38,7 +43,7 @@ export default function DesignersMeetSignIn() {
               </div>
 
               <div className="space-y-2.5">
-                <Button className="h-auto w-full justify-center gap-2 rounded-md bg-primary py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90">
+                <Button className="h-auto w-full justify-center gap-2 rounded-md bg-primary py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90" onClick={() => signIn("microsoft")}>
                   <svg viewBox="0 0 21 21" className="size-4" aria-hidden="true">
                     <rect x="1" y="1" width="9" height="9" className="fill-orange-600" />
                     <rect x="11" y="1" width="9" height="9" className="fill-lime-500" />
@@ -51,6 +56,7 @@ export default function DesignersMeetSignIn() {
                 <Button
                   variant="outline"
                   className="h-auto w-full justify-center gap-2 rounded-md border-slate-200 bg-white py-2.5 text-[14px] font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                  onClick={() => signIn("google")}
                 >
                   <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
                     <path
@@ -76,6 +82,7 @@ export default function DesignersMeetSignIn() {
                 <Button
                   variant="outline"
                   className="h-auto w-full justify-center gap-2 rounded-md border-slate-200 bg-white py-2.5 text-[14px] font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                  onClick={() => signIn("apple")}
                 >
                   <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
                     <path d="M17.05 12.04c-.03-2.99 2.44-4.43 2.55-4.5-1.39-2.04-3.56-2.32-4.33-2.35-1.84-.19-3.6 1.09-4.54 1.09-.95 0-2.39-1.07-3.93-1.04-2.02.03-3.88 1.18-4.92 2.99-2.1 3.64-.54 9.02 1.51 11.97 1 1.45 2.19 3.07 3.74 3.01 1.5-.06 2.07-.97 3.88-.97 1.81 0 2.31.97 3.89.94 1.61-.03 2.62-1.46 3.6-2.92 1.14-1.67 1.6-3.31 1.63-3.39-.04-.02-3.13-1.2-3.16-4.77zM14.16 3.18c.83-1.01 1.39-2.4 1.24-3.8-1.2.05-2.66.8-3.51 1.8-.77.89-1.45 2.32-1.27 3.69 1.33.1 2.7-.68 3.54-1.69z" />
@@ -97,12 +104,15 @@ export default function DesignersMeetSignIn() {
                     type="email"
                     placeholder="you@yourcompany.com"
                     className="mt-1.5 h-10 rounded-md border-slate-200 bg-white text-[14px] text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-300"
+                    value={workEmail}
+                    onChange={(event) => setWorkEmail(event.target.value)}
                   />
                 </label>
 
                 <Button
                   variant="outline"
                   className="h-auto w-full justify-center gap-2 rounded-md border-slate-200 bg-white py-2.5 text-[14px] font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                  onClick={() => signIn("microsoft")}
                 >
                   <ShieldCheck className="size-4" aria-hidden="true" />
                   Continue with SAML / OIDC
