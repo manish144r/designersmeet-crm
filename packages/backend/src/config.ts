@@ -37,6 +37,26 @@ const Env = z.object({
   SENTRY_DSN: z.string().optional(),
   DEMO_BYPASS_EMAIL: z.string().default("vendor@designersmeet.demo"),
 
+  // ── Integration feature flags (default OFF; build runs with no external
+  //    deps; demo mode forces all off; smoke tests skip cleanly w/o creds) ──
+  GRAPH_ENABLED: z.coerce.boolean().default(false),
+  GRAPH_ACCESS_TOKEN: z.string().optional(),
+  SHOPIFY_ENABLED: z.coerce.boolean().default(false),
+  META_ENABLED: z.coerce.boolean().default(false),
+  META_ACCESS_TOKEN: z.string().optional(),
+  META_PAGE_ID: z.string().optional(),
+  STRIPE_ENABLED: z.coerce.boolean().default(false),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  EMAIL_PROVIDER: z
+    .enum(["msgraph", "gmail", "imap_smtp", "resend", "ses", "sendgrid", "postmark", "mailgun"])
+    .default("resend"),
+  EMAIL_ENABLED: z.coerce.boolean().default(false),
+  EMAIL_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default("no-reply@designersmeet.com"),
+  SMTP_URL: z.string().optional(),
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+  APPLE_OAUTH_CLIENT_ID: z.string().optional(),
+
   SHOPIFY_STORE_DOMAIN: z.string().optional(),
   SHOPIFY_API_SECRET: z.string().optional(),
   SHOPIFY_WEBHOOK_SECRET: z.string().optional(),

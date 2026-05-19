@@ -1,0 +1,37 @@
+{
+  "_type": "mockoon_export",
+  "name": "Microsoft Graph mock",
+  "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "routes": [
+    {
+      "uuid": "r1-graph-me",
+      "documentation": "Graph /me — returns minimal user profile",
+      "method": "get",
+      "endpoint": "me",
+      "responses": [
+        {
+          "uuid": "resp-me-200",
+          "statusCode": 200,
+          "label": "OK",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\"id\":\"user-001\",\"displayName\":\"Test User\",\"mail\":\"test@contoso.com\"}"
+        }
+      ]
+    },
+    {
+      "uuid": "r2-graph-sendmail",
+      "documentation": "Graph POST /me/sendMail — accepts and returns 202",
+      "method": "post",
+      "endpoint": "me/sendMail",
+      "responses": [
+        {
+          "uuid": "resp-sendmail-202",
+          "statusCode": 202,
+          "label": "Accepted",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": ""
+        }
+      ]
+    }
+  ]
+}

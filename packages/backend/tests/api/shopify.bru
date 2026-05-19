@@ -1,0 +1,22 @@
+meta {
+  name: Shopify Admin listProducts
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://{{SHOPIFY_STORE_DOMAIN}}/admin/api/2024-10/graphql.json
+  body: json
+  auth: none
+}
+
+headers {
+  X-Shopify-Access-Token: {{SHOPIFY_ADMIN_TOKEN}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "query": "{ products(first: 5) { edges { node { id title handle status } } } }"
+  }
+}

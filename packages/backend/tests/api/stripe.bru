@@ -1,0 +1,20 @@
+meta {
+  name: Stripe createPaymentIntent
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://api.stripe.com/v1/payment_intents
+  body: formUrlEncoded
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{STRIPE_SECRET_KEY}}
+}
+
+body:form-urlencoded {
+  amount: 1000
+  currency: aud
+}

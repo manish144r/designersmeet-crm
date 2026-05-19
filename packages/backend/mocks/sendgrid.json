@@ -1,0 +1,40 @@
+{
+  "_type": "mockoon_export",
+  "name": "SendGrid v3 mail/send mock",
+  "uuid": "d4e5f6a7-b8c9-0123-defa-123456789013",
+  "routes": [
+    {
+      "uuid": "r1-sendgrid-send",
+      "documentation": "SendGrid POST /v3/mail/send — returns 202 on success",
+      "method": "post",
+      "endpoint": "v3/mail/send",
+      "responses": [
+        {
+          "uuid": "resp-send-202",
+          "statusCode": 202,
+          "label": "Accepted",
+          "headers": [
+            { "key": "Content-Type", "value": "application/json" },
+            { "key": "X-Message-Id", "value": "mock-msg-id-001" }
+          ],
+          "body": ""
+        }
+      ]
+    },
+    {
+      "uuid": "r2-sendgrid-profile",
+      "documentation": "SendGrid GET /v3/user/profile — status check",
+      "method": "get",
+      "endpoint": "v3/user/profile",
+      "responses": [
+        {
+          "uuid": "resp-profile-200",
+          "statusCode": 200,
+          "label": "OK",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\"username\":\"mock_user\",\"email\":\"mock@sendgrid.example.com\",\"first_name\":\"Mock\",\"last_name\":\"User\"}"
+        }
+      ]
+    }
+  ]
+}

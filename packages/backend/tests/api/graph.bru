@@ -1,0 +1,39 @@
+meta {
+  name: Graph sendMail
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{GRAPH_BASE_URL}}/me/sendMail
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{GRAPH_ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "message": {
+      "subject": "Bruno test email",
+      "body": {
+        "contentType": "HTML",
+        "content": "<p>Sent from Bruno integration test</p>"
+      },
+      "toRecipients": [
+        {
+          "emailAddress": {
+            "address": "{{TEST_RECIPIENT_EMAIL}}"
+          }
+        }
+      ]
+    },
+    "saveToSentItems": true
+  }
+}
+
+vars:pre-request {
+  GRAPH_BASE_URL: https://graph.microsoft.com/v1.0
+}
