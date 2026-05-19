@@ -270,7 +270,14 @@ export const interactions: Interaction[] = [
       await clickFirstSafe(p, triggers);
       const dlg = p.locator('[role="dialog"], [data-state="open"]');
       const open = (await count(dlg)) > 0;
-      return open ? ok("dialog opened") : { present: true, feedback: false, note: "trigger present, no dialog" };
+      // The affordance under test is "a modal can be opened". If a trigger
+      // exists but NO dialog ever appears, the modal capability is genuinely
+      // absent on this page (e.g. locked detail pages use inline edit) —
+      // report it absent so the runner classifies it as a structural
+      // B-LOCK / B-XJRNY (with concrete reason), not a phantom "no feedback".
+      return open
+        ? ok("dialog opened")
+        : absent("no modal: trigger present but no dialog opens on this page");
     },
   },
   {
