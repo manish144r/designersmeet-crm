@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/06-vendors.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import { useState, type ChangeEventHandler, type MouseEventHandler, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -37,6 +37,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useList } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
+import { useNavigate } from "react-router-dom";
 
 type NavItem = {
   label: string;
@@ -45,6 +48,7 @@ type NavItem = {
 };
 
 type Vendor = {
+  id: string;
   initials: string;
   name: string;
   skills: string;
@@ -84,141 +88,6 @@ const savedViews = [
   { label: "NDA expiring < 30d", count: "2" },
 ];
 
-const vendors: Vendor[] = [
-  {
-    initials: "AS",
-    name: "Aurora Studio",
-    skills: "Concept · 3D viz · Brand",
-    regions: ["KA", "TN"],
-    tier: "Tier-1",
-    rating: "4.9",
-    reviews: "12",
-    agreement: "Signed",
-    status: "Active",
-  },
-  {
-    initials: "MK",
-    name: "Manjunath Karpenter Co",
-    skills: "Carpentry · Modular",
-    regions: ["KA"],
-    tier: "Tier-1",
-    rating: "4.7",
-    reviews: "8",
-    agreement: "Signed",
-    status: "Active",
-  },
-  {
-    initials: "VE",
-    name: "Voltek Electricals",
-    skills: "Electrical · Smart home",
-    regions: ["KA"],
-    tier: "Tier-2",
-    rating: "4.5",
-    reviews: "6",
-    agreement: "Signed",
-    status: "Active",
-  },
-  {
-    initials: "RB",
-    name: "Render Boutique",
-    skills: "3D · VR walk-throughs",
-    regions: ["KA", "MH"],
-    tier: "Tier-1",
-    rating: "4.8",
-    reviews: "4",
-    agreement: "Signed",
-    status: "Active",
-  },
-  {
-    initials: "FT",
-    name: "FabTextiles",
-    skills: "Soft furnishings · Drapery",
-    regions: ["KA", "TN"],
-    tier: "Tier-2",
-    rating: "4.6",
-    reviews: "11",
-    agreement: "Signed",
-    status: "Active",
-  },
-  {
-    initials: "MN",
-    name: "Marble & Stone Mart",
-    skills: "Stone · Marble · Granite",
-    regions: ["KA"],
-    tier: "Tier-2",
-    rating: "4.4",
-    reviews: "9",
-    agreement: "Signed",
-    status: "Active",
-  },
-  {
-    initials: "PP",
-    name: "Plumbline Pros",
-    skills: "Plumbing · Sanitaryware",
-    regions: ["KA"],
-    tier: "Tier-3",
-    rating: "4.2",
-    reviews: "3",
-    agreement: "Signed",
-    status: "Active",
-  },
-  {
-    initials: "LP",
-    name: "Light & Form",
-    skills: "Lighting · Fixtures",
-    regions: ["KA", "MH"],
-    tier: "Tier-1",
-    rating: "4.7",
-    reviews: "5",
-    agreement: "Signed",
-    status: "Active",
-  },
-  {
-    initials: "WB",
-    name: "Woodbarn Joinery",
-    skills: "Joinery · Veneers",
-    regions: ["KA"],
-    tier: "Tier-2",
-    rating: "4.3",
-    reviews: "4",
-    agreement: "Signed",
-    status: "Paused",
-  },
-  {
-    initials: "AC",
-    name: "AC Climate Solutions",
-    skills: "HVAC · Climate",
-    regions: ["KA"],
-    tier: "Tier-3",
-    rating: "4.1",
-    reviews: "2",
-    agreement: "Pending",
-    status: "Onboarding",
-  },
-  {
-    initials: "PS",
-    name: "Patel Steel Fab",
-    skills: "Metalwork · Steel",
-    regions: ["KA", "MH"],
-    tier: "Tier-2",
-    rating: "4.5",
-    reviews: "6",
-    agreement: "Signed",
-    status: "Active",
-  },
-  {
-    initials: "GF",
-    name: "Green Foliage Co",
-    skills: "Landscaping · Planters",
-    regions: ["KA"],
-    tier: "Tier-2",
-    rating: "4.6",
-    reviews: "3",
-    agreement: "Signed",
-    status: "Active",
-  },
-];
-
 const iconClass = "size-4 shrink-0";
 
 const badgeClass =
@@ -233,10 +102,12 @@ function IconButton({
   title,
   children,
   className,
+  onClick,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   return (
     <Button
@@ -245,6 +116,7 @@ function IconButton({
       size="icon"
       title={title}
       aria-label={title}
+      onClick={onClick}
       className={cn(
         "h-[30px] w-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -281,10 +153,14 @@ function SearchField({
   placeholder,
   className,
   shortcut,
+  value,
+  onChange,
 }: {
   placeholder: string;
   className?: string;
   shortcut?: string;
+  value?: string;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
 }) {
   return (
     <div
@@ -299,6 +175,8 @@ function SearchField({
       />
       <Input
         placeholder={placeholder}
+        value={value}
+        onChange={onChange}
         className={cn(
           "h-full border-0 bg-transparent py-0 pl-8 text-[13px] text-foreground shadow-none placeholder:text-muted focus:border-transparent focus:ring-0",
           shortcut ? "pr-14" : "pr-3",
@@ -379,6 +257,11 @@ function AgreementStatus({ agreement }: { agreement: Vendor["agreement"] }) {
 }
 
 export default function Vendors() {
+  const [q, setQ] = useState("");
+  const navigate = useNavigate();
+  const { data } = useList("vendors", { name: q });
+  const vendors = (data?.data ?? []) as Vendor[];
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -508,6 +391,7 @@ export default function Vendors() {
                 </Button>
                 <Button
                   type="button"
+                  onClick={() => useUIStore.getState().openCreate("vendors")}
                   className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
                 >
                   <Plus className={iconClass} aria-hidden="true" />
@@ -534,7 +418,12 @@ export default function Vendors() {
             </div>
 
             <div className="flex items-center gap-2 border-b border-border bg-subtle/40 px-8 py-3">
-              <SearchField placeholder="Filter vendors…" className="w-[280px]" />
+              <SearchField
+                placeholder="Filter vendors…"
+                className="w-[280px]"
+                value={q}
+                onChange={(event) => setQ(event.target.value)}
+              />
               <Button
                 type="button"
                 variant="secondary"
@@ -586,6 +475,17 @@ export default function Vendors() {
                     <th className={cn(tableHeadClass, "w-8")}>
                       <input
                         type="checkbox"
+                        onChange={(event) => {
+                          const checked = event.currentTarget.checked;
+                          const selectedVendorIds =
+                            useUIStore.getState().selection.vendors ?? [];
+                          vendors.forEach((vendor) => {
+                            const selected = selectedVendorIds.includes(vendor.id);
+                            if (selected !== checked) {
+                              useUIStore.getState().toggleSelected("vendors", vendor.id);
+                            }
+                          });
+                        }}
                         className="size-4 rounded border-border-strong accent-foreground"
                       />
                     </th>
@@ -603,10 +503,18 @@ export default function Vendors() {
                     const isLast = index === vendors.length - 1;
 
                     return (
-                      <tr key={vendor.name} className="hover:bg-hover">
+                      <tr
+                        key={vendor.name}
+                        onClick={() => navigate("/vendors/" + vendor.id)}
+                        className="hover:bg-hover"
+                      >
                         <td className={cn(tableCellClass, isLast && "border-border")}>
                           <input
                             type="checkbox"
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={() =>
+                              useUIStore.getState().toggleSelected("vendors", vendor.id)
+                            }
                             className="size-4 rounded border-border-strong accent-foreground"
                           />
                         </td>
@@ -648,7 +556,13 @@ export default function Vendors() {
                           <StatusBadge status={vendor.status} />
                         </td>
                         <td className={cn(tableCellClass, "text-right", isLast && "border-border")}>
-                          <IconButton title={`${vendor.name} actions`}>
+                          <IconButton
+                            title={`${vendor.name} actions`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              useUIStore.getState().openEdit("vendors", vendor.id);
+                            }}
+                          >
                             <MoreHorizontal className={iconClass} aria-hidden="true" />
                           </IconButton>
                         </td>

@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/08-projects-board.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -40,6 +40,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useList } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
+import { useNavigate } from "react-router-dom";
 
 type NavItem = {
   label: string;
@@ -48,6 +51,7 @@ type NavItem = {
 };
 
 type ProjectCardData = {
+  id: string;
   title: string;
   due: string;
   owner: string;
@@ -55,6 +59,10 @@ type ProjectCardData = {
   progressClass: string;
   vendors?: string[];
   noVendors?: boolean;
+};
+
+type ProjectRow = ProjectCardData & {
+  status: string;
 };
 
 type ProjectColumn = {
@@ -84,153 +92,13 @@ const surfaceNavItems: NavItem[] = [
   { label: "M365 launcher", icon: LayoutGrid },
 ];
 
-const projectColumns: ProjectColumn[] = [
-  {
-    title: "Brief",
-    count: "3",
-    dotClass: "bg-secondary",
-    cards: [
-      {
-        title: "Brand Refresh — Café Espresso 2",
-        due: "Jun 14",
-        owner: "Anita M.",
-        milestones: "0/8",
-        progressClass: "w-0",
-        vendors: ["AS"],
-      },
-      {
-        title: "Whitefield Townhouse",
-        due: "Jun 28",
-        owner: "Manish",
-        milestones: "0/6",
-        progressClass: "w-0",
-        vendors: ["MS"],
-      },
-      {
-        title: "Suri Family Home",
-        due: "Jul 02",
-        owner: "Rohit",
-        milestones: "0/4",
-        progressClass: "w-0",
-        noVendors: true,
-      },
-    ],
-  },
-  {
-    title: "Concept",
-    count: "2",
-    dotClass: "bg-info",
-    cards: [
-      {
-        title: "Brand Refresh — Lumen Café",
-        due: "Jun 30",
-        owner: "Manish",
-        milestones: "4/12",
-        progressClass: "w-[33%]",
-        vendors: ["AS", "RB"],
-      },
-      {
-        title: "Koramangala Bar Lounge",
-        due: "Jul 18",
-        owner: "Anita M.",
-        milestones: "2/9",
-        progressClass: "w-[22%]",
-        vendors: ["AS", "LP"],
-      },
-    ],
-  },
-  {
-    title: "Design",
-    count: "3",
-    dotClass: "bg-secondary",
-    cards: [
-      {
-        title: "HSR Penthouse",
-        due: "Jul 22",
-        owner: "Rohit",
-        milestones: "9/14",
-        progressClass: "w-[64%]",
-        vendors: ["AS", "VE", "FT"],
-      },
-      {
-        title: "JP Nagar Bungalow",
-        due: "Aug 04",
-        owner: "Anita M.",
-        milestones: "6/11",
-        progressClass: "w-[54%]",
-        vendors: ["MK", "MN", "PP"],
-      },
-      {
-        title: "Indiranagar Loft Reno",
-        due: "Jun 18",
-        owner: "Manish",
-        milestones: "11/13",
-        progressClass: "w-[84%]",
-        vendors: ["MK", "FT"],
-      },
-    ],
-  },
-  {
-    title: "Procurement",
-    count: "2",
-    dotClass: "bg-warning",
-    cards: [
-      {
-        title: "Whitefield Villa",
-        due: "Jul 30",
-        owner: "Manish",
-        milestones: "14/18",
-        progressClass: "w-[77%]",
-        vendors: ["AS", "MN", "PS"],
-      },
-      {
-        title: "Hennur Apartment",
-        due: "Jul 12",
-        owner: "Rohit",
-        milestones: "8/10",
-        progressClass: "w-[80%]",
-        vendors: ["MK", "FT"],
-      },
-    ],
-  },
-  {
-    title: "Install",
-    count: "2",
-    dotClass: "bg-warning",
-    cards: [
-      {
-        title: "MG Road Boutique",
-        due: "May 30",
-        owner: "Anita M.",
-        milestones: "20/22",
-        progressClass: "w-[90%]",
-        vendors: ["MK", "VE", "LP"],
-      },
-      {
-        title: "Banashankari Duplex",
-        due: "Jun 06",
-        owner: "Rohit",
-        milestones: "18/21",
-        progressClass: "w-[85%]",
-        vendors: ["MK", "PP", "AC"],
-      },
-    ],
-  },
-  {
-    title: "Handover",
-    count: "1",
-    dotClass: "bg-success",
-    cards: [
-      {
-        title: "Sarjapur Cottage",
-        due: "May 22",
-        owner: "Manish",
-        milestones: "24/24",
-        progressClass: "w-full",
-        vendors: ["FT", "GF"],
-      },
-    ],
-  },
+const projectColumnMeta = [
+  { title: "Brief", dotClass: "bg-secondary" },
+  { title: "Concept", dotClass: "bg-info" },
+  { title: "Design", dotClass: "bg-secondary" },
+  { title: "Procurement", dotClass: "bg-warning" },
+  { title: "Install", dotClass: "bg-warning" },
+  { title: "Handover", dotClass: "bg-success" },
 ];
 
 const iconClass = "size-4 shrink-0";
@@ -239,10 +107,12 @@ function IconButton({
   title,
   children,
   className,
+  onClick,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   return (
     <Button
@@ -251,6 +121,7 @@ function IconButton({
       size="icon"
       title={title}
       aria-label={title}
+      onClick={onClick}
       className={cn(
         "size-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -367,13 +238,25 @@ function FilterBadge({
 }
 
 function ProjectCard({ project }: { project: ProjectCardData }) {
+  const navigate = useNavigate();
+
   return (
-    <Card className="cursor-grab rounded-md border-border bg-background p-3 transition-colors hover:border-border-strong hover:shadow-card">
+    <Card
+      onClick={() => navigate("/projects/" + project.id)}
+      className="cursor-grab rounded-md border-border bg-background p-3 transition-colors hover:border-border-strong hover:shadow-card"
+    >
       <div className="mb-2 flex items-start justify-between">
         <div className="text-[13px] font-semibold leading-snug text-foreground">
           {project.title}
         </div>
-        <IconButton title="Project menu" className="size-6">
+        <IconButton
+          title="Project menu"
+          className="size-6"
+          onClick={(event) => {
+            event.stopPropagation();
+            useUIStore.getState().openEdit("projects", project.id);
+          }}
+        >
           <MoreHorizontal className={iconClass} aria-hidden="true" />
         </IconButton>
       </div>
@@ -435,7 +318,11 @@ function KanbanColumn({ column }: { column: ProjectColumn }) {
           <span>{column.title}</span>
           <span className="font-normal text-muted">{column.count}</span>
         </div>
-        <IconButton title={`Add ${column.title} project`} className="size-6">
+        <IconButton
+          title={`Add ${column.title} project`}
+          className="size-6"
+          onClick={() => useUIStore.getState().openCreate("projects")}
+        >
           <Plus className={iconClass} aria-hidden="true" />
         </IconButton>
       </div>
@@ -450,6 +337,19 @@ function KanbanColumn({ column }: { column: ProjectColumn }) {
 }
 
 export default function ProjectsBoard() {
+  const { data } = useList<ProjectRow>("projects");
+  const rows = data?.data ?? [];
+  const projectColumns: ProjectColumn[] = projectColumnMeta.map((column) => {
+    const cards = rows.filter((row) => row.status === column.title);
+
+    return {
+      title: column.title,
+      count: String(cards.length),
+      dotClass: column.dotClass,
+      cards,
+    };
+  });
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -604,6 +504,7 @@ export default function ProjectsBoard() {
                 </Button>
                 <Button
                   type="button"
+                  onClick={() => useUIStore.getState().openCreate("projects")}
                   className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
                 >
                   <Plus className={iconClass} aria-hidden="true" />
