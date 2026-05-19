@@ -11,6 +11,22 @@ export interface ModalState {
   recordId: string | null;
 }
 
+const SIDEBAR_KEY = "dm.sidebarCollapsed";
+function readSidebarPref(): boolean {
+  try {
+    return typeof window !== "undefined" && window.localStorage.getItem(SIDEBAR_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeSidebarPref(v: boolean): void {
+  try {
+    window.localStorage.setItem(SIDEBAR_KEY, v ? "1" : "0");
+  } catch {
+    /* storage unavailable (private mode / SSR) — in-memory only */
+  }
+}
+
 interface UIState {
   // — existing —
   sidebarCollapsed: boolean;
@@ -18,6 +34,7 @@ interface UIState {
   density: Density;
   search: string;
   toggleSidebar: () => void;
+  setSidebarCollapsed: (v: boolean) => void;
   setCommandPalette: (open: boolean) => void;
   setDensity: (d: Density) => void;
   setSearch: (s: string) => void;
@@ -41,11 +58,20 @@ interface UIState {
 const NO_MODAL: ModalState = { kind: null, resource: null, recordId: null };
 
 export const useUIStore = create<UIState>((set) => ({
-  sidebarCollapsed: false,
+  sidebarCollapsed: readSidebarPref(),
   commandPaletteOpen: false,
   density: "comfortable",
   search: "",
-  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  toggleSidebar: () =>
+    set((s) => {
+      const next = !s.sidebarCollapsed;
+      writeSidebarPref(next);
+      return { sidebarCollapsed: next };
+    }),
+  setSidebarCollapsed: (v) => {
+    writeSidebarPref(v);
+    set({ sidebarCollapsed: v });
+  },
   setCommandPalette: (open) => set({ commandPaletteOpen: open }),
   setDensity: (density) => set({ density }),
   setSearch: (search) => set({ search }),

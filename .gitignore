@@ -16,3 +16,4 @@ brief/.codex-log/
 packages/frontend/.vr-out/
 packages/frontend/test-results/
 packages/frontend/storybook-static/
+packages/frontend/tests/ux-results/

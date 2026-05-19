@@ -4,6 +4,9 @@ import { defineConfig, devices } from "@playwright/test";
 // pixel-diffs every page vs the locked brief/screenshots baseline at 1440x900.
 export default defineConfig({
   testDir: "./tests",
+  // The persona UX matrix has its own config (playwright.ux.config.ts) and
+  // targets a remote URL — never let the local VR harness pick it up.
+  testIgnore: [/runner\.spec\.ts/],
   timeout: 60_000,
   fullyParallel: false,
   reporter: [["list"]],

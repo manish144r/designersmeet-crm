@@ -459,3 +459,46 @@
     border-radius: 999px;
   }
 }
+
+/* ── Sidebar collapse (behaviour layer; see lib/sidebarCollapse.tsx) ──
+   Layout-only, zero colour literals (every colour is a token var, so the
+   no-raw-color guard passes). Default state (no attribute or "false")
+   changes NOTHING — the locked expanded design stays 0.00% in VR. Only
+   data-sidebar-collapsed="true" drawer-hides the primary nav sidebar. */
+aside[class*="w-[232px]"][class*="bg-sidebar"] {
+  transition:
+    width 0.2s ease,
+    min-width 0.2s ease,
+    opacity 0.18s ease,
+    transform 0.2s ease;
+}
+html[data-sidebar-collapsed="true"] aside[class*="w-[232px]"][class*="bg-sidebar"] {
+  width: 0 !important;
+  min-width: 0 !important;
+  opacity: 0;
+  transform: translateX(-8px);
+  overflow: hidden;
+  pointer-events: none;
+}
+.dm-sidebar-expand {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  z-index: 10000;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  background: var(--bg-sidebar);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: background 0.08s ease, color 0.08s ease;
+}
+.dm-sidebar-expand:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
