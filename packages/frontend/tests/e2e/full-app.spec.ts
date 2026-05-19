@@ -26,13 +26,15 @@ async function createViaModal(
   values: Record<string, string>,
 ) {
   await page.getByRole("button", { name: newBtn }).first().click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText(dialogTitle)).toBeVisible();
+  // CrmModals (app-root radix dialog) opens from a Zustand state change.
+  const heading = page.getByText(dialogTitle).last();
+  await heading.waitFor({ state: "visible", timeout: 8000 });
+  const dialog = page.getByRole("dialog").last();
   for (const [label, val] of Object.entries(values)) {
-    await dialog.getByLabel(label, { exact: false }).fill(val);
+    await dialog.getByLabel(label, { exact: false }).first().fill(val);
   }
-  await dialog.getByRole("button", { name: /create/i }).click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await dialog.getByRole("button", { name: /^create$/i }).click();
+  await expect(page.getByText(dialogTitle).last()).toBeHidden({ timeout: 8000 });
 }
 
 test.describe("CRUD vertical (demo mode)", () => {

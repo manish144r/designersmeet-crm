@@ -117,9 +117,15 @@ function RecordForm({ resource, recordId }: { resource: string; recordId: string
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       {spec.fields.map((f) => (
-        <label key={f.name} className="flex flex-col gap-1 text-[13px] text-secondary">
+        <label
+          key={f.name}
+          htmlFor={`crm-field-${f.name}`}
+          className="flex flex-col gap-1 text-[13px] text-secondary"
+        >
           {f.label}
           <Input
+            id={`crm-field-${f.name}`}
+            aria-label={f.label}
             type={f.type ?? "text"}
             value={form[f.name] ?? ""}
             onChange={(e) => setForm((s) => ({ ...s, [f.name]: e.target.value }))}
