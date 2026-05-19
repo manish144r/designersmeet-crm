@@ -1,6 +1,7 @@
-// Generic TanStack Query CRUD hooks for any CRM resource.
-// In demo mode (no backend) they resolve from src/lib/demoData.ts so the
-// static deploy works; otherwise they hit /api/<resource> via the api client.
+// Generic TanStack Query CRUD + domain hooks for any CRM resource.
+// DEMO_MODE (default, static surge deploy): resolves from the mutable
+// demoStore so every wired button performs real, persistent-for-session CRUD.
+// Otherwise: hits /api/<resource> (+ /api/domain/*) via the api client.
 import {
   useQuery,
   useMutation,
@@ -8,18 +9,13 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 import { api } from "../api/client.js";
-import { demoData, DEMO_MODE } from "../lib/demoData.js";
+import { DEMO_MODE, demoStore } from "../lib/demoData.js";
 
 export interface PageEnvelope<T> {
   data: T[];
   page: number;
   pageSize: number;
   total: number;
-}
-
-function demoPage<T>(resource: string): PageEnvelope<T> {
-  const rows = (demoData[resource] ?? []) as T[];
-  return { data: rows, page: 1, pageSize: rows.length || 1, total: rows.length };
 }
 
 export function useList<T = unknown>(
@@ -32,7 +28,7 @@ export function useList<T = unknown>(
   return useQuery({
     queryKey: [resource, params],
     queryFn: async () => {
-      if (DEMO_MODE) return demoPage<T>(resource);
+      if (DEMO_MODE) return demoStore.list(resource, params) as PageEnvelope<T>;
       return api.get<PageEnvelope<T>>(`/${resource}${qs ? `?${qs}` : ""}`);
     },
   });
@@ -43,7 +39,7 @@ export function useItem<T = unknown>(resource: string, id?: string) {
     queryKey: [resource, id],
     enabled: !!id,
     queryFn: async () => {
-      if (DEMO_MODE) return (demoData[resource] ?? []).find((r) => r.id === id) as T;
+      if (DEMO_MODE) return demoStore.get(resource, id) as T;
       return api.get<T>(`/${resource}/${id}`);
     },
   });
@@ -53,7 +49,7 @@ export function useCreate<T = unknown>(resource: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body: Partial<T>) => {
-      if (DEMO_MODE) return { ...body, id: `demo-${Date.now()}` } as T;
+      if (DEMO_MODE) return demoStore.create(resource, body as Record<string, unknown>) as T;
       return api.post<T>(`/${resource}`, body);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [resource] }),
@@ -64,7 +60,8 @@ export function useUpdate<T = unknown>(resource: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<T> }) => {
-      if (DEMO_MODE) return { id, ...patch } as T;
+      if (DEMO_MODE)
+        return demoStore.update(resource, id, patch as Record<string, unknown>) as T;
       return api.patch<T>(`/${resource}/${id}`, patch);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [resource] }),
@@ -75,9 +72,60 @@ export function useRemove(resource: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      if (DEMO_MODE) return true;
+      if (DEMO_MODE) return demoStore.remove(resource, id);
       return api.delete<void>(`/${resource}/${id}`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [resource] }),
+  });
+}
+
+// ── Domain (non-CRUD) hooks — mirror packages/backend/src/crm/domain.ts ────
+export function useMoveProjectStage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      if (DEMO_MODE) return demoStore.moveProjectStage(id, status);
+      return api.post(`/domain/projects/${id}/stage`, { status });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["projects"] }),
+  });
+}
+
+export function useBookSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: Record<string, unknown>) => {
+      if (DEMO_MODE) return demoStore.bookSlot(body);
+      return api.post(`/domain/calendar/book`, body);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["calendar-events"] }),
+  });
+}
+
+export function useMergeConversations() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sourceId, targetId }: { sourceId: string; targetId: string }) => {
+      if (DEMO_MODE) return demoStore.mergeConversations(sourceId, targetId);
+      return api.post(`/domain/conversations/merge`, { sourceId, targetId });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
+  });
+}
+
+export function useSubmitForm() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      slug,
+      payload,
+    }: {
+      slug: string;
+      payload: Record<string, unknown>;
+    }) => {
+      if (DEMO_MODE) return demoStore.submitForm(slug, payload);
+      return api.post(`/domain/forms/${slug}/submit`, { payload });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["form-submissions"] }),
   });
 }

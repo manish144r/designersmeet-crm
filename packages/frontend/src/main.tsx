@@ -6,6 +6,7 @@ import { App } from "./App.js";
 import { AuthProvider } from "./auth/AuthProvider.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { DemoInteractionLayer } from "./lib/demoInteractions.js";
+import { CrmModals } from "./components/CrmModals.js";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <AuthProvider>
           <BrowserRouter>
             <DemoInteractionLayer />
+            <CrmModals />
             <App />
           </BrowserRouter>
         </AuthProvider>

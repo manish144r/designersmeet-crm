@@ -25,7 +25,10 @@ async function request<T>(
     if (token) authHeaders["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`/api${path}`, {
+  // Same-origin /api in dev (Vite proxy) + demo; VITE_API_URL prefixes the
+  // deployed Render backend when the static frontend is hosted elsewhere.
+  const base = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+  const res = await fetch(`${base}/api${path}`, {
     ...rest,
     headers: {
       "Content-Type": "application/json",
