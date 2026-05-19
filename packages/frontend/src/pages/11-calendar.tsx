@@ -35,6 +35,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useList } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
   label: string;
@@ -356,20 +358,29 @@ function CalendarEventBlock({ event }: { event: CalendarEvent }) {
   );
 }
 
-function CalendarGridRow({ row }: { row: TimeRow }) {
+function CalendarGridRow({ row, _ev }: { row: TimeRow; _ev: unknown[] }) {
   return (
     <div className="grid grid-cols-[60px_repeat(7,1fr)]">
       <div className="border-r border-border-subtle py-1 pr-2 text-right text-[10px] text-muted">
         {row.label}
       </div>
-      {row.events.map((event, index) => (
-        <div
-          key={`${row.label}-${index}`}
-          className="relative h-[60px] border-b border-r border-border-subtle"
-        >
-          {event ? <CalendarEventBlock event={event} /> : null}
-        </div>
-      ))}
+      {row.events.map((event, index) => {
+        const timeLabel = row.label;
+        const col = index;
+        const dataEvent = _ev.find(
+          (e: any) => e.time === timeLabel && e.dayIndex === col,
+        ) as CalendarEvent | undefined;
+        const renderEvent = _ev.length > 0 ? dataEvent : event;
+
+        return (
+          <div
+            key={`${row.label}-${index}`}
+            className="relative h-[60px] border-b border-r border-border-subtle"
+          >
+            {renderEvent ? <CalendarEventBlock event={renderEvent} /> : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -410,6 +421,8 @@ function TimeButton({ time }: { time: string }) {
 }
 
 export default function Calendar() {
+  const _ev = useList("calendar-events").data?.data ?? [];
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -511,6 +524,7 @@ export default function Calendar() {
                 <div className="flex items-center gap-4">
                   <Button
                     type="button"
+                    onClick={() => useUIStore.getState().openCreate("calendar-events")}
                     className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                   >
                     <Plus className={iconClass} aria-hidden="true" />
@@ -595,7 +609,7 @@ export default function Calendar() {
                 </div>
 
                 {calendarRows.map((row) => (
-                  <CalendarGridRow key={row.label} row={row} />
+                  <CalendarGridRow key={row.label} row={row} _ev={_ev} />
                 ))}
               </div>
             </div>

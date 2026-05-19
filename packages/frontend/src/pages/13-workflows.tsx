@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/13-workflows.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -42,6 +42,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useList, useUpdate } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
   label: string;
@@ -53,11 +55,20 @@ type WorkflowStatus = "Live" | "Paused" | "Draft";
 type BadgeTone = "success" | "warning" | "neutral";
 
 type WorkflowItem = {
+  id: string;
   name: string;
   trigger: string;
   runs: string;
   status: WorkflowStatus;
   active?: boolean;
+};
+
+type WorkflowRun = {
+  id: string;
+  workflow_id: string;
+  time: string;
+  label: string;
+  tone: BadgeTone;
 };
 
 type WorkflowStep = {
@@ -85,58 +96,6 @@ const surfaceNavItems: NavItem[] = [
   { label: "Outlook add-in", icon: Mail },
   { label: "Teams app", icon: UsersRound },
   { label: "M365 launcher", icon: LayoutGrid },
-];
-
-const workflows: WorkflowItem[] = [
-  {
-    name: "Vendor onboarding sequence",
-    trigger: "Form submitted",
-    runs: "12 runs · 30d",
-    status: "Live",
-    active: true,
-  },
-  {
-    name: "Won opportunity → project",
-    trigger: "Pipeline stage = Won",
-    runs: "34 runs · 30d",
-    status: "Live",
-  },
-  {
-    name: "Deliverable approved → next ms",
-    trigger: "Deliverable approved",
-    runs: "22 runs · 30d",
-    status: "Live",
-  },
-  {
-    name: "Vendor NDA expiring (30d)",
-    trigger: "Daily cron",
-    runs: "4 runs · 30d",
-    status: "Live",
-  },
-  {
-    name: "Client status digest (weekly)",
-    trigger: "Sunday 6 PM",
-    runs: "8 runs · 30d",
-    status: "Live",
-  },
-  {
-    name: "Booking → SMS reminder",
-    trigger: "Booking created",
-    runs: "18 runs · 30d",
-    status: "Paused",
-  },
-  {
-    name: "Tag added: Hot lead",
-    trigger: "Tag applied",
-    runs: "0 runs · 30d",
-    status: "Draft",
-  },
-  {
-    name: "Shopify order → vendor fee",
-    trigger: "Webhook: orders/paid",
-    runs: "0 runs · 30d",
-    status: "Draft",
-  },
 ];
 
 const workflowSteps: WorkflowStep[] = [
@@ -185,14 +144,6 @@ const variablesAvailable = [
   "{{vendor.regions}}",
   "{{onboarding_link}}",
 ];
-
-const lastRuns = [
-  ["4h ago", "success", "success"],
-  ["1d ago", "success", "success"],
-  ["2d ago", "success", "success"],
-  ["3d ago", "success", "success"],
-  ["5d ago", "retried", "warning"],
-] as const;
 
 const iconClass = "size-4 shrink-0";
 const iconLargeClass = "size-5 shrink-0 stroke-[1.75]";
@@ -348,9 +299,10 @@ function Badge({
   );
 }
 
-function WorkflowCard({ workflow }: { workflow: WorkflowItem }) {
+function WorkflowCard({ workflow, onClick }: { workflow: WorkflowItem; onClick?: () => void }) {
   return (
     <Card
+      onClick={onClick}
       className={cn(
         "cursor-pointer rounded-md px-3 py-2.5 hover:bg-hover",
         workflow.active ? "border-border-strong bg-subtle/60" : "border-border bg-background",
@@ -406,6 +358,14 @@ function WorkflowActionNode({ step }: { step: WorkflowStep }) {
 }
 
 export default function Workflows() {
+  const [selectedWfId, setSelectedWfId] = useState("wf1");
+  const workflowsKey = "workflows";
+  const { data } = useList<WorkflowItem>(workflowsKey);
+  const workflows = data?.data ?? [];
+  const _r = useList<WorkflowRun>("workflow-runs").data?.data ?? [];
+  const lastRuns = _r.filter((x: any) => x.workflow_id === selectedWfId);
+  const updateWorkflow = useUpdate(workflowsKey);
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -507,7 +467,7 @@ export default function Workflows() {
               <div className="border-b border-border px-4 py-3">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-[15px] font-semibold text-foreground">Workflows</h2>
-                  <Button className="h-auto gap-1.5 px-2.5 py-1 text-[12px]">
+                  <Button onClick={() => useUIStore.getState().openCreate(workflowsKey)} className="h-auto gap-1.5 px-2.5 py-1 text-[12px]">
                     <Plus className={iconClass} aria-hidden="true" />
                     New
                   </Button>
@@ -517,7 +477,7 @@ export default function Workflows() {
 
               <div className="flex-1 space-y-1 overflow-y-auto p-2">
                 {workflows.map((workflow) => (
-                  <WorkflowCard key={workflow.name} workflow={workflow} />
+                  <WorkflowCard key={workflow.name} workflow={workflow} onClick={() => setSelectedWfId(workflow.id)} />
                 ))}
               </div>
             </aside>
@@ -560,12 +520,13 @@ export default function Workflows() {
                   <Button
                     type="button"
                     variant="secondary"
+                    onClick={() => updateWorkflow.mutate({ id: selectedWfId, patch: { status: "paused" } })}
                     className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                   >
                     <Pause className={iconClass} aria-hidden="true" />
                     Pause
                   </Button>
-                  <Button className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px]">
+                  <Button onClick={() => updateWorkflow.mutate({ id: selectedWfId, patch: {} })} className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px]">
                     <Save className={iconClass} aria-hidden="true" />
                     Save
                   </Button>
@@ -706,7 +667,7 @@ export default function Workflows() {
                     Last 5 runs
                   </div>
                   <div className="space-y-1.5 text-[12px]">
-                    {lastRuns.map(([time, label, tone]) => (
+                    {lastRuns.map(({ time, label, tone }) => (
                       <div key={`${time}-${label}`} className="flex items-center justify-between">
                         <span className="text-secondary">{time}</span>
                         <Badge tone={tone}>{label}</Badge>
