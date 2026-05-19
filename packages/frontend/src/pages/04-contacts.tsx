@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/04-contacts.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import { useState, type ChangeEventHandler, type MouseEventHandler, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -37,11 +37,26 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useList, useRemove } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
+import { useNavigate } from "react-router-dom";
 
 type NavItem = {
   label: string;
   icon: LucideIcon;
   active?: boolean;
+};
+
+type Contact = {
+  id: string;
+  initials: string;
+  name: string;
+  email: string;
+  type: string;
+  project: string;
+  tag: string;
+  owner: string;
+  lastContact: string;
 };
 
 const workspaceNavItems: NavItem[] = [
@@ -73,129 +88,6 @@ const savedFilters = [
   { label: "+ Saved filter" },
 ];
 
-const contacts = [
-  {
-    initials: "PR",
-    name: "Priya Raghavan",
-    email: "priya@lumencafe.in",
-    type: "Client",
-    project: "HSR Penthouse",
-    tag: "Hot lead",
-    owner: "Anita M.",
-    lastContact: "2d ago",
-  },
-  {
-    initials: "AS",
-    name: "Aurora Studio",
-    email: "hello@aurorastudio.in",
-    type: "Vendor",
-    project: "3 active projects",
-    tag: "Tier-1 partner",
-    owner: "Manish",
-    lastContact: "5h ago",
-  },
-  {
-    initials: "SK",
-    name: "Suri Kapoor",
-    email: "suri@example.com",
-    type: "Lead",
-    project: "—",
-    tag: "Discovery scheduled",
-    owner: "Manish",
-    lastContact: "Today",
-  },
-  {
-    initials: "MK",
-    name: "Manjunath Karpenter Co",
-    email: "manju@mkcarp.com",
-    type: "Vendor",
-    project: "2 active projects",
-    tag: "Carpentry",
-    owner: "Rohit",
-    lastContact: "1d ago",
-  },
-  {
-    initials: "VE",
-    name: "Voltek Electricals",
-    email: "ops@voltek.in",
-    type: "Vendor",
-    project: "1 active project",
-    tag: "Electrical",
-    owner: "Rohit",
-    lastContact: "4h ago",
-  },
-  {
-    initials: "LR",
-    name: "Lakshmi & Ravi",
-    email: "lakshmi.ravi@gmail.com",
-    type: "Client",
-    project: "JP Nagar Bungalow",
-    tag: "Repeat client",
-    owner: "Anita M.",
-    lastContact: "3d ago",
-  },
-  {
-    initials: "RB",
-    name: "Render Boutique",
-    email: "studio@renderboutique.co",
-    type: "Vendor",
-    project: "Whitefield Villa",
-    tag: "3D + VR",
-    owner: "Manish",
-    lastContact: "6h ago",
-  },
-  {
-    initials: "DN",
-    name: "Deepa Nair",
-    email: "deepa.nair@kestrel.in",
-    type: "Client",
-    project: "Brand Refresh — Lumen Café",
-    tag: "Approved concept",
-    owner: "Manish",
-    lastContact: "Today",
-  },
-  {
-    initials: "FT",
-    name: "FabTextiles",
-    email: "orders@fabtextiles.in",
-    type: "Vendor",
-    project: "Indiranagar Loft Reno",
-    tag: "Soft furnishings",
-    owner: "Anita M.",
-    lastContact: "1w ago",
-  },
-  {
-    initials: "AK",
-    name: "Arjun Kapoor",
-    email: "arjun.k@signalpoint.com",
-    type: "Lead",
-    project: "—",
-    tag: "Cold inbound",
-    owner: "Rohit",
-    lastContact: "2d ago",
-  },
-  {
-    initials: "MN",
-    name: "Marble & Stone Mart",
-    email: "sales@msmart.in",
-    type: "Vendor",
-    project: "JP Nagar Bungalow",
-    tag: "Stone supplier",
-    owner: "Anita M.",
-    lastContact: "4d ago",
-  },
-  {
-    initials: "PG",
-    name: "Priti Goyal",
-    email: "priti@studiosaffron.in",
-    type: "Client",
-    project: "—",
-    tag: "Past client",
-    owner: "Anita M.",
-    lastContact: "1w ago",
-  },
-];
-
 const iconClass = "size-4 shrink-0";
 const badgeClass =
   "inline-flex items-center gap-1 rounded-full bg-border-subtle px-2 py-0.5 text-[11px] font-medium leading-[18px] tracking-normal text-secondary";
@@ -210,11 +102,13 @@ function IconButton({
   children,
   className,
   disabled,
+  onClick,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
   disabled?: boolean;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   return (
     <Button
@@ -223,6 +117,7 @@ function IconButton({
       size="icon"
       title={title}
       disabled={disabled}
+      onClick={onClick}
       className={cn(
         "h-[30px] w-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -259,10 +154,14 @@ function SearchField({
   placeholder,
   className,
   shortcut,
+  value,
+  onChange,
 }: {
   placeholder: string;
   className?: string;
   shortcut?: string;
+  value?: string;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
 }) {
   return (
     <div
@@ -277,6 +176,8 @@ function SearchField({
       />
       <Input
         placeholder={placeholder}
+        value={value}
+        onChange={onChange}
         className={cn(
           "h-full border-0 bg-transparent py-0 pl-8 text-[13px] text-foreground shadow-none placeholder:text-muted focus:border-transparent focus:ring-0",
           shortcut ? "pr-14" : "pr-3",
@@ -316,6 +217,14 @@ function SidebarNavItem({ item }: { item: NavItem }) {
 }
 
 export default function Contacts() {
+  const [q, setQ] = useState("");
+  const navigate = useNavigate();
+  const selectedContacts = useUIStore((state) => state.selection.contacts);
+  const toggleSelected = useUIStore((state) => state.toggleSelected);
+  const { data } = useList<Contact>("contacts", { name: q });
+  const contacts = data?.data ?? [];
+  const selectedContactIds = selectedContacts ?? [];
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -445,6 +354,7 @@ export default function Contacts() {
                 </Button>
                 <Button
                   type="button"
+                  onClick={() => useUIStore.getState().openCreate("contacts")}
                   className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary"
                 >
                   <Plus className={iconClass} aria-hidden="true" />
@@ -471,7 +381,12 @@ export default function Contacts() {
             </div>
 
             <div className="flex items-center gap-2 border-b border-border bg-background px-8 py-3">
-              <SearchField placeholder="Filter contacts…" className="w-[280px]" />
+              <SearchField
+                placeholder="Filter contacts…"
+                className="w-[280px]"
+                value={q}
+                onChange={(event) => setQ(event.target.value)}
+              />
               <Button
                 type="button"
                 variant="secondary"
@@ -545,6 +460,19 @@ export default function Contacts() {
                     <th className={cn(tableHeadClass, "w-8")}>
                       <input
                         type="checkbox"
+                        checked={
+                          contacts.length > 0 &&
+                          contacts.every((contact) => selectedContactIds.includes(contact.id))
+                        }
+                        onChange={(event) => {
+                          const checked = event.currentTarget.checked;
+                          contacts.forEach((contact) => {
+                            const selected = selectedContactIds.includes(contact.id);
+                            if (selected !== checked) {
+                              toggleSelected("contacts", contact.id);
+                            }
+                          });
+                        }}
                         className="size-4 rounded border-border-strong accent-foreground"
                       />
                     </th>
@@ -562,10 +490,17 @@ export default function Contacts() {
                     const isLast = index === contacts.length - 1;
 
                     return (
-                      <tr key={`${contact.name}-${contact.email}`} className="hover:bg-hover">
+                      <tr
+                        key={`${contact.name}-${contact.email}`}
+                        onClick={() => navigate("/contacts/" + contact.id)}
+                        className="hover:bg-hover"
+                      >
                         <td className={cn(tableCellClass, isLast && "border-border")}>
                           <input
                             type="checkbox"
+                            checked={selectedContactIds.includes(contact.id)}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={() => toggleSelected("contacts", contact.id)}
                             className="size-4 rounded border-border-strong accent-foreground"
                           />
                         </td>
@@ -594,7 +529,12 @@ export default function Contacts() {
                           <span className="text-muted">{contact.lastContact}</span>
                         </td>
                         <td className={cn(tableCellClass, "text-right", isLast && "border-border")}>
-                          <IconButton>
+                          <IconButton
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              useUIStore.getState().openEdit("contacts", contact.id);
+                            }}
+                          >
                             <MoreHorizontal className={iconClass} aria-hidden="true" />
                           </IconButton>
                         </td>
