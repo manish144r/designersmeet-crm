@@ -1,6 +1,7 @@
 /* Generated from brief/mockups/09-project-detail.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
+import { useParams } from "react-router-dom";
 import {
   AtSign,
   BarChart3,
@@ -41,6 +42,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { useItem, useList, useUpdate } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
   label: string;
@@ -258,10 +261,12 @@ function IconButton({
   title,
   children,
   className,
+  onClick,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   return (
     <Button
@@ -270,6 +275,7 @@ function IconButton({
       size="icon"
       title={title}
       aria-label={title}
+      onClick={onClick}
       className={cn(
         "size-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -508,20 +514,28 @@ function Topbar() {
   );
 }
 
-function MilestoneBar() {
+function isDoneStatus(status: string) {
+  return status === "done" || status === "approved";
+}
+
+function MilestoneBar({
+  rows = milestones,
+}: {
+  rows?: ReadonlyArray<{ label: string; status: string }>;
+}) {
   return (
     <div className="mt-5 grid grid-cols-7 gap-2">
-      {milestones.map((milestone) => (
+      {rows.map((milestone) => (
         <div key={milestone.label} className="flex flex-col items-center gap-2 text-center">
           <div
             className={cn(
               "flex size-7 items-center justify-center rounded-full",
-              milestone.status === "done" && "bg-success text-background",
+              isDoneStatus(milestone.status) && "bg-success text-background",
               milestone.status === "active" && "bg-primary text-background ring-4 ring-primary-tint",
               milestone.status === "pending" && "border border-border-strong bg-background text-muted",
             )}
           >
-            {milestone.status === "done" ? <Check className={iconClass} aria-hidden="true" /> : null}
+            {isDoneStatus(milestone.status) ? <Check className={iconClass} aria-hidden="true" /> : null}
             {milestone.status === "active" ? (
               <span className="size-1.5 rounded-full bg-background" />
             ) : null}
@@ -531,7 +545,7 @@ function MilestoneBar() {
             className={cn(
               "text-[11px] leading-tight",
               milestone.status === "active" ? "font-semibold text-foreground" : null,
-              milestone.status === "done" ? "text-foreground" : null,
+              isDoneStatus(milestone.status) ? "text-foreground" : null,
               milestone.status === "pending" ? "text-muted" : null,
             )}
           >
@@ -655,6 +669,15 @@ function VendorRow({ vendor }: { vendor: (typeof vendors)[number] }) {
 }
 
 export default function ProjectDetail() {
+  const params = useParams();
+  const pid = params.id ?? "pj4";
+  const p = useItem("projects", pid).data as any;
+  const allStages = useList<any>("project-stages").data?.data ?? [];
+  const stageRows = allStages
+    .filter((s: any) => s.project_id === pid)
+    .sort((a: any, b: any) => a.order - b.order);
+  const updateStage = useUpdate<any>("project-stages");
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <AppSidebar />
@@ -672,7 +695,7 @@ export default function ProjectDetail() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <h1 className="font-display text-[22px] font-semibold tracking-normal text-foreground">
-                      Brand Refresh — Lumen Café
+                      {p?.name ?? "Brand Refresh — Lumen Café"}
                     </h1>
                     <StatusPill variant="info">Design</StatusPill>
                     <Badge variant="success" dot>
@@ -705,18 +728,24 @@ export default function ProjectDetail() {
                   </Button>
                   <Button
                     type="button"
+                    onClick={() =>
+                      updateStage.mutate({
+                        id: stageRows[0]?.id ?? "pjs1",
+                        patch: { status: "approved" },
+                      })
+                    }
                     className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
                   >
                     <CheckCircle className={iconClass} data-icon="inline-start" aria-hidden="true" />
                     Mark milestone done
                   </Button>
-                  <IconButton title="More actions">
+                  <IconButton title="More actions" onClick={() => useUIStore.getState().openEdit("projects", pid)}>
                     <MoreHorizontal className={iconClass} aria-hidden="true" />
                   </IconButton>
                 </div>
               </div>
 
-              <MilestoneBar />
+              <MilestoneBar rows={stageRows.length > 0 ? stageRows : milestones} />
 
               <Tabs defaultValue="overview" className="mt-5">
                 <TabsList>

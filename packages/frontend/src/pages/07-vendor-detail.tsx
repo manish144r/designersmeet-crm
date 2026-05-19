@@ -1,6 +1,7 @@
 /* Generated from brief/mockups/07-vendor-detail.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import { useState, type MouseEventHandler, type ReactNode } from "react";
+import { useParams } from "react-router-dom";
 import {
   BarChart3,
   Bell,
@@ -39,6 +40,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useItem } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
   label: string;
@@ -209,10 +212,12 @@ function IconButton({
   title,
   children,
   className,
+  onClick,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   return (
     <Button
@@ -221,6 +226,7 @@ function IconButton({
       size="icon"
       title={title}
       aria-label={title}
+      onClick={onClick}
       className={cn(
         "h-[30px] w-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -383,6 +389,11 @@ function PortfolioPlaceholder() {
 }
 
 export default function VendorDetail() {
+  const params = useParams();
+  const vid = params.id ?? "vn1";
+  const v = useItem("vendors", vid).data as any;
+  const [activeTab, setActiveTab] = useState(profileTabs[0]?.label ?? "Profile");
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] flex-shrink-0 flex-col border-r border-border bg-sidebar">
@@ -491,7 +502,7 @@ export default function VendorDetail() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <h1 className="font-display text-[24px] font-semibold tracking-normal text-foreground">
-                        Aurora Studio
+                        {v?.name ?? "Aurora Studio"}
                       </h1>
                       <Badge>Tier-1 partner</Badge>
                       <Badge variant="success" dot>
@@ -499,7 +510,7 @@ export default function VendorDetail() {
                       </Badge>
                       <div className="ml-2 flex items-center gap-1">
                         <Star className="size-4 shrink-0 fill-current text-warning" aria-hidden="true" />
-                        <span className="text-[13px] font-semibold text-foreground">4.9</span>
+                        <span className="text-[13px] font-semibold text-foreground">{v?.rating ?? "4.9"}</span>
                         <span className="text-[12px] text-muted">· 12 projects</span>
                       </div>
                     </div>
@@ -550,7 +561,7 @@ export default function VendorDetail() {
                       <UserPlus className={iconClass} aria-hidden="true" />
                       Assign to project
                     </Button>
-                    <IconButton title="More">
+                    <IconButton title="More" onClick={() => useUIStore.getState().openEdit("vendors", vid)}>
                       <MoreHorizontal className={iconClass} aria-hidden="true" />
                     </IconButton>
                   </div>
@@ -560,11 +571,12 @@ export default function VendorDetail() {
                   {profileTabs.map((tab) => (
                     <div
                       key={tab.label}
+                      onClick={() => setActiveTab(tab.label)}
                       className={cn(
                         "-mb-px flex cursor-pointer items-center border-b-2 border-transparent px-3.5 py-2.5 text-[13px] font-medium text-secondary hover:text-foreground",
-                        tab.active && "border-primary text-foreground",
+                        activeTab === tab.label && "border-primary text-foreground",
                       )}
-                      data-active={tab.active ? "true" : undefined}
+                      data-active={activeTab === tab.label ? "true" : undefined}
                     >
                       {tab.label}
                       {tab.count ? <Badge className="ml-1">{tab.count}</Badge> : null}
@@ -583,6 +595,7 @@ export default function VendorDetail() {
                       <Button
                         type="button"
                         variant="ghost"
+                        onClick={() => useUIStore.getState().openEdit("vendors", vid)}
                         className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground"
                       >
                         <Pencil className={iconClass} aria-hidden="true" />

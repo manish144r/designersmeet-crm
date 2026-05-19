@@ -1,6 +1,7 @@
 /* Generated from brief/mockups/05-contact-detail.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Archive,
   BarChart3,
@@ -43,6 +44,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { useItem } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
   label: string;
@@ -150,10 +153,12 @@ function IconButton({
   title,
   children,
   className,
+  onClick,
 }: {
   title: string;
   children: ReactNode;
   className?: string;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   return (
     <Button
@@ -162,6 +167,7 @@ function IconButton({
       size="icon"
       title={title}
       aria-label={title}
+      onClick={onClick}
       className={cn(
         "h-[30px] w-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -384,6 +390,10 @@ function Topbar() {
 }
 
 function ContactProfileHeader() {
+  const params = useParams();
+  const cid = params.id ?? "ct1";
+  const c = useItem("contacts", cid).data as any;
+
   return (
     <div className="border-b border-border-subtle px-8 pb-4 pt-6">
       <div className="flex items-start gap-4">
@@ -391,7 +401,7 @@ function ContactProfileHeader() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="font-display text-[24px] font-semibold tracking-tight text-foreground">
-              Priya Raghavan
+              {c?.name ?? "Priya Raghavan"}
             </h1>
             <Badge>Client</Badge>
             <Badge variant="success" dot>
@@ -403,7 +413,7 @@ function ContactProfileHeader() {
           </div>
           <div className="mt-3 flex items-center gap-4 text-[12px] text-secondary">
             <span className="flex items-center gap-1.5">
-              <Mail className="size-4 text-muted" aria-hidden="true" /> priya@lumencafe.in
+              <Mail className="size-4 text-muted" aria-hidden="true" /> {c?.email ?? "priya@lumencafe.in"}
             </span>
             <span className="flex items-center gap-1.5">
               <Phone className="size-4 text-muted" aria-hidden="true" /> +91 98450 12345
@@ -440,7 +450,7 @@ function ContactProfileHeader() {
             <Plus className={iconClass} aria-hidden="true" />
             Log activity
           </Button>
-          <IconButton title="More actions">
+          <IconButton title="More actions" onClick={() => useUIStore.getState().openEdit("contacts", cid)}>
             <MoreHorizontal className={iconClass} aria-hidden="true" />
           </IconButton>
         </div>
@@ -491,6 +501,9 @@ const propertyRows: Array<Array<{ label: string; value: ReactNode }>> = [
 ];
 
 function PropertiesCard() {
+  const params = useParams();
+  const cid = params.id ?? "ct1";
+
   return (
     <Card>
       <CardHeader>
@@ -498,6 +511,7 @@ function PropertiesCard() {
         <Button
           type="button"
           variant="ghost"
+          onClick={() => useUIStore.getState().openEdit("contacts", cid)}
           className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
         >
           <Pencil className={iconClass} aria-hidden="true" />
@@ -587,6 +601,8 @@ function StatusPill({ children }: { children: ReactNode }) {
 }
 
 function ActiveProjectCard() {
+  const navigate = useNavigate();
+
   return (
     <Card>
       <CardHeader>
@@ -609,6 +625,7 @@ function ActiveProjectCard() {
           <Button
             type="button"
             variant="ghost"
+            onClick={() => navigate("/projects")}
             className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
           >
             Open project →
