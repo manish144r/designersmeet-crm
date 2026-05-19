@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App.js";
 import { AuthProvider } from "./auth/AuthProvider.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
+import { DemoInteractionLayer } from "./lib/demoInteractions.js";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -19,6 +20,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
+            <DemoInteractionLayer />
             <App />
           </BrowserRouter>
         </AuthProvider>
