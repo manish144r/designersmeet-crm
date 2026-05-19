@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/12-conversations.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Archive,
   BarChart3,
@@ -43,6 +43,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useList, useCreate, useUpdate } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
   label: string;
@@ -53,6 +55,7 @@ type NavItem = {
 type Channel = "email" | "whatsapp" | "note";
 
 type InboxItem = {
+  id: string;
   initials: string;
   name: string;
   time: string;
@@ -91,103 +94,6 @@ const surfaceNavItems: NavItem[] = [
   { label: "M365 launcher", icon: LayoutGrid },
 ];
 
-const inboxItems: InboxItem[] = [
-  {
-    initials: "PR",
-    name: "Priya Raghavan",
-    time: "11:21",
-    subject: "RE: Lumen concept board v2",
-    preview: "Looks gorgeous. Two small tweaks — the brass detail above…",
-    channel: "email",
-    active: true,
-    unread: true,
-  },
-  {
-    initials: "AS",
-    name: "Aurora Studio",
-    time: "10:02",
-    subject: "Concept board v3 uploaded",
-    preview: "Sharing v3 with the revisions we discussed yesterday. Brass…",
-    channel: "email",
-  },
-  {
-    initials: "VE",
-    name: "Voltek Electricals",
-    time: "9:14",
-    subject: "Need MCB spec confirmation",
-    preview: "Hi Manish, blocked on the MCB rating for the kitchen circuit…",
-    channel: "whatsapp",
-    unread: true,
-  },
-  {
-    initials: "MK",
-    name: "Manjunath Karpenter Co",
-    time: "Yesterday",
-    subject: "Carpentry shop drawings — v1",
-    preview: "Attaching the first cut. Will revise after tomorrow's site visit.",
-    channel: "email",
-  },
-  {
-    initials: "SK",
-    name: "Suri Kapoor",
-    time: "Yesterday",
-    subject: "Discovery call confirmation",
-    preview: "Confirming 4pm today on Teams.",
-    channel: "email",
-  },
-  {
-    initials: "LR",
-    name: "Lakshmi & Ravi",
-    time: "May 16",
-    subject: "Snag list — site visit 4",
-    preview: "Punch list attached. Most items resolved!",
-    channel: "email",
-  },
-  {
-    initials: "DN",
-    name: "Deepa Nair",
-    time: "May 15",
-    subject: "Re: Studio Saffron — Q3 newsletter",
-    preview: "Loved the project highlight! Sharing internally.",
-    channel: "email",
-  },
-  {
-    initials: "FT",
-    name: "FabTextiles",
-    time: "May 14",
-    subject: "Cane fabric — alt swatches",
-    preview: "Sending two alternates. Option B has the warmer undertone…",
-    channel: "whatsapp",
-  },
-];
-
-const threadMessages: ThreadMessage[] = [
-  {
-    initials: "MS",
-    sender: "Manish",
-    meta: "Sent via Outlook · May 14 at 5:02 PM",
-    body: "Hi Priya — sharing the latest concept board from Aurora. Let us know what jumps out; we can iterate before the Wednesday call.",
-  },
-  {
-    initials: "PR",
-    sender: "Priya Raghavan",
-    meta: "Received via Outlook · Yesterday at 4:21 PM",
-    body: "Looks gorgeous! Two small tweaks — the brass detail above the bar feels heavy, and I'd like to see the cane chair fabric in a warmer tone. Otherwise approved — let's move to procurement after this round.",
-  },
-  {
-    initials: "MS",
-    sender: "Manish (internal note)",
-    meta: "Internal note · Today at 9:18 AM",
-    body: "@Anita — let's get Aurora to revise just the brass + fabric. Also flag for cross-sell after this project: Priya mentioned a Pune outlet.",
-    tone: "note",
-  },
-  {
-    initials: "AS",
-    sender: "Aurora Studio",
-    meta: "Sent via Outlook · Today at 10:02 AM",
-    body: "v3 uploaded — brass simplified, two cane fabric options from FabTextiles (slide 12). Holding on procurement pending your sign-off.",
-  },
-];
 
 const iconClass = "size-4 shrink-0";
 
@@ -206,10 +112,12 @@ function IconButton({
   title,
   children,
   className,
+  onClick,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
+  onClick?: () => void;
 }) {
   return (
     <Button
@@ -218,6 +126,7 @@ function IconButton({
       size="icon"
       title={title}
       aria-label={title}
+      onClick={onClick}
       className={cn(
         "size-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -349,9 +258,10 @@ function ChannelBadge({ channel, children }: { channel: Channel; children: React
   );
 }
 
-function InboxRow({ item }: { item: InboxItem }) {
+function InboxRow({ item, onClick }: { item: InboxItem; onClick?: () => void }) {
   return (
     <div
+      onClick={onClick}
       className={cn(
         "cursor-pointer border-b border-border-subtle border-l-2 px-4 py-3 hover:bg-hover",
         item.active ? "border-l-foreground bg-background" : "border-l-transparent",
@@ -414,6 +324,14 @@ function ThreadMessageItem({ message }: { message: ThreadMessage }) {
 }
 
 export default function Conversations() {
+  const [selectedConvId, setSelectedConvId] = useState("cv1");
+  const { data } = useList<InboxItem>("conversations");
+  const inboxItems = data?.data ?? [];
+  const _m = useList<ThreadMessage & { conversation_id: string }>("messages").data?.data ?? [];
+  const threadMessages = _m.filter((x: any) => x.conversation_id === selectedConvId);
+  const createMessage = useCreate("messages");
+  const updateConversation = useUpdate("conversations");
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -520,7 +438,7 @@ export default function Conversations() {
               <div className="border-b border-border px-4 py-3">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-[15px] font-semibold text-foreground">Inbox</h2>
-                  <Button className="h-auto gap-1.5 bg-primary px-2.5 py-1 text-[12px] text-background hover:bg-primary-hover">
+                  <Button onClick={() => useUIStore.getState().openCreate("conversations")} className="h-auto gap-1.5 bg-primary px-2.5 py-1 text-[12px] text-background hover:bg-primary-hover">
                     <Pencil className={iconClass} aria-hidden="true" />
                     Compose
                   </Button>
@@ -539,7 +457,7 @@ export default function Conversations() {
 
               <div className="flex-1 overflow-y-auto">
                 {inboxItems.map((item) => (
-                  <InboxRow key={`${item.name}-${item.subject}`} item={item} />
+                  <InboxRow key={`${item.name}-${item.subject}`} item={item} onClick={() => setSelectedConvId(item.id)} />
                 ))}
               </div>
             </aside>
@@ -560,6 +478,7 @@ export default function Conversations() {
                 <Button
                   type="button"
                   variant="secondary"
+                  onClick={() => updateConversation.mutate({ id: selectedConvId, patch: { assigned_user_id: "u1" } })}
                   className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                 >
                   <UserPlus className={iconClass} aria-hidden="true" />
@@ -573,7 +492,7 @@ export default function Conversations() {
                   <Tag className={iconClass} aria-hidden="true" />
                   Label
                 </Button>
-                <IconButton title="Archive">
+                <IconButton title="Archive" onClick={() => updateConversation.mutate({ id: selectedConvId, patch: { status: "closed" } })}>
                   <Archive className={iconClass} aria-hidden="true" />
                 </IconButton>
                 <IconButton title="More">
@@ -642,7 +561,7 @@ export default function Conversations() {
                       >
                         Save draft
                       </Button>
-                      <Button className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
+                      <Button onClick={() => createMessage.mutate({ conversation_id: selectedConvId, direction: "outbound", body: "" })} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
                         <Send className={iconClass} aria-hidden="true" />
                         Send
                       </Button>
