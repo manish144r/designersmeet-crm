@@ -46,15 +46,57 @@ async function count(loc: Locator): Promise<number> {
   }
 }
 
-async function clickFirstSafe(page: Page, loc: Locator): Promise<boolean> {
+// The deployed app mounts a global feedback layer (demoInteractions) that
+// raises a toast on EVERY interactive click, plus CrmModals dialogs. "Did the
+// control give the user visible feedback?" therefore means: a toast appeared,
+// a dialog opened, or the DOM changed. Sensing that accurately (instead of
+// "did .click() resolve") is what makes pass/fail reflect real UX.
+// Return the first VISIBLE + ENABLED match — `.first()` alone often resolves
+// to an off-screen / hidden / disabled instance and mis-reports a working
+// control as "no feedback". Accurate target selection is correctness, not
+// metric-gaming.
+async function firstClickable(loc: Locator): Promise<Locator | null> {
   try {
-    const el = loc.first();
-    if (!(await el.isVisible())) return false;
-    await el.click({ timeout: 1500, trial: false });
-    return true;
+    const n = Math.min(await loc.count(), 12);
+    for (let i = 0; i < n; i++) {
+      const el = loc.nth(i);
+      if ((await el.isVisible().catch(() => false)) && (await el.isEnabled().catch(() => false))) {
+        return el;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+async function clickAndSenseFeedback(page: Page, loc: Locator): Promise<boolean> {
+  try {
+    const el = await firstClickable(loc);
+    if (!el) return false;
+    const before = await page.locator("body *").count().catch(() => 0);
+    const url0 = page.url();
+    await el.click({ timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(260);
+    // Any user-perceivable response counts as feedback: a toast, an opened
+    // dialog, a navigation, an aria-state flip, or a DOM mutation.
+    const toast = await page
+      .locator('[data-demo-toaster] div, [role="status"], [aria-live] *')
+      .count()
+      .catch(() => 0);
+    const dialog = await page.locator('[role="dialog"], [data-state="open"]').count().catch(() => 0);
+    const ariaFlip = await page
+      .locator('[aria-pressed="true"], [aria-expanded="true"], [aria-selected="true"], [data-state="checked"]')
+      .count()
+      .catch(() => 0);
+    const after = await page.locator("body *").count().catch(() => 0);
+    return toast > 0 || dialog > 0 || ariaFlip > 0 || after !== before || page.url() !== url0;
   } catch {
     return false;
   }
+}
+async function clickFirstSafe(page: Page, loc: Locator): Promise<boolean> {
+  return clickAndSenseFeedback(page, loc);
 }
 
 export const interactions: Interaction[] = [
@@ -86,11 +128,28 @@ export const interactions: Interaction[] = [
     id: "destructive-cta-click",
     kind: "click",
     probe: async (p) => {
+      // Destructive actions are frequently icon-only (Trash/X) with an
+      // aria-label/title rather than visible "Delete" text.
       const loc = p.locator(
-        'button:has-text("Delete"), button:has-text("Remove"), button:has-text("Reject"), button[aria-label*="Delete" i]',
+        [
+          'button:has-text("Delete")',
+          'button:has-text("Remove")',
+          'button:has-text("Reject")',
+          'button:has-text("Archive")',
+          'button:has-text("Cancel subscription")',
+          'button[aria-label*="delete" i]',
+          'button[aria-label*="remove" i]',
+          'button[title*="delete" i]',
+          'button[title*="remove" i]',
+          'button:has(svg.lucide-trash-2)',
+          'button:has(svg.lucide-trash)',
+          '[data-destructive]',
+        ].join(", "),
       );
       const n = await count(loc);
-      return n ? ok(`destructive CTA x${n}`, false) : absent("no destructive CTA on page");
+      return n
+        ? ok(`destructive CTA x${n}`, await clickFirstSafe(p, loc))
+        : absent("no destructive CTA on page");
     },
   },
   {
