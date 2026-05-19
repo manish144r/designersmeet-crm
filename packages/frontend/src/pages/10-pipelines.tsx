@@ -35,6 +35,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useList } from "../hooks/useResource.js";
+import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
   label: string;
@@ -56,6 +58,19 @@ type PipelineColumn = {
   total: string;
   dotClass: string;
   cards: OpportunityCard[];
+};
+
+type PipelineStageRow = {
+  pipeline_id?: string;
+  order?: number;
+  title?: string;
+  count?: string;
+  total?: string;
+  dotClass?: string;
+};
+
+type PipelineRow = {
+  name?: string;
 };
 
 const workspaceNavItems: NavItem[] = [
@@ -297,6 +312,28 @@ function KanbanColumn({ column }: { column: PipelineColumn }) {
 }
 
 export default function Pipelines() {
+  const _st = useList<PipelineStageRow>("pipeline-stages").data?.data ?? [];
+  const _pp = useList<PipelineRow>("pipelines").data?.data ?? [];
+  const _pl1Stages = _st
+    .filter((stage) => stage.pipeline_id === "pl1")
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const _pipelineColumns =
+    _pl1Stages.length > 0
+      ? pipelineColumns.map((column, index) => {
+          const stage = _pl1Stages[index];
+
+          return stage
+            ? {
+                ...column,
+                title: stage.title ?? column.title,
+                count: stage.count ?? column.count,
+                total: stage.total ?? column.total,
+                dotClass: stage.dotClass ?? column.dotClass,
+              }
+            : column;
+        })
+      : pipelineColumns;
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -361,7 +398,7 @@ export default function Pipelines() {
           <nav className="flex items-center gap-2 text-[13px]">
             <span className="text-muted">Pipelines</span>
             <ChevronRight className="size-4 text-disabled" aria-hidden="true" />
-            <span className="font-medium text-foreground">Sales</span>
+            <span className="font-medium text-foreground">{_pp[0]?.name ?? "Sales"}</span>
           </nav>
 
           <SearchField placeholder="Search contacts, projects, vendors…" shortcut="⌘K" className="ml-auto mr-auto max-w-[480px] flex-1" />
@@ -405,7 +442,7 @@ export default function Pipelines() {
                   <Filter className={iconClass} aria-hidden="true" />
                   Filter
                 </Button>
-                <Button type="button" className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
+                <Button type="button" onClick={() => useUIStore.getState().openCreate("pipelines")} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
                   <Plus className={iconClass} aria-hidden="true" />
                   New opportunity
                 </Button>
@@ -422,8 +459,8 @@ export default function Pipelines() {
 
             <div className="flex-1 overflow-x-auto">
               <div className="flex min-w-min gap-4 p-6">
-                {pipelineColumns.map((column) => (
-                  <KanbanColumn key={column.title} column={column} />
+                {pipelineColumns.map((column, index) => (
+                  <KanbanColumn key={column.title} column={_pipelineColumns[index] ?? column} />
                 ))}
               </div>
             </div>

@@ -53,6 +53,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useItem, useUpdate } from "../hooks/useResource.js";
 
 type NavItem = {
   label: string;
@@ -149,30 +150,6 @@ const fieldSections: FieldSection[] = [
       { label: "Section break", icon: Minus },
     ],
   },
-];
-
-const formFields: FormField[] = [
-  { label: "Studio / company name", meta: "Required", required: true, kind: "input", value: "Aurora Studio" },
-  { label: "Primary contact email", meta: "Required", required: true, kind: "input", value: "hello@aurorastudio.in" },
-  { label: "WhatsApp number", meta: "Required", kind: "input", value: "+91 80 4123 5678" },
-  {
-    label: "Skills / disciplines",
-    meta: "Required \u00b7 1\u20136 selections",
-    active: true,
-    kind: "badges",
-    badges: ["Concept design", "3D visualization"],
-    addLabel: "+ Add skill",
-  },
-  {
-    label: "Regions you serve",
-    meta: "Required",
-    kind: "badges",
-    badges: ["Karnataka", "Tamil Nadu"],
-    addLabel: "+ Add region",
-  },
-  { label: "Years in business", meta: "Optional", kind: "input", value: "8" },
-  { label: "Portfolio link", meta: "Required", kind: "input", value: "https://aurorastudio.in/work" },
-  { label: "Upload latest case studies (PDF)", meta: "Optional \u00b7 max 25MB", kind: "upload" },
 ];
 
 const inspectorOptions = [
@@ -347,6 +324,32 @@ function FormFieldCard({ field }: { field: FormField }) {
 }
 
 export default function Forms() {
+  const _f = useItem("forms", "fm1").data as any;
+  const updateForm = useUpdate("forms");
+  const formFields: FormField[] = _f?.schema_json ?? [
+    { label: "Studio / company name", meta: "Required", required: true, kind: "input", value: "Aurora Studio" },
+    { label: "Primary contact email", meta: "Required", required: true, kind: "input", value: "hello@aurorastudio.in" },
+    { label: "WhatsApp number", meta: "Required", kind: "input", value: "+91 80 4123 5678" },
+    {
+      label: "Skills / disciplines",
+      meta: "Required \u00b7 1\u20136 selections",
+      active: true,
+      kind: "badges",
+      badges: ["Concept design", "3D visualization"],
+      addLabel: "+ Add skill",
+    },
+    {
+      label: "Regions you serve",
+      meta: "Required",
+      kind: "badges",
+      badges: ["Karnataka", "Tamil Nadu"],
+      addLabel: "+ Add region",
+    },
+    { label: "Years in business", meta: "Optional", kind: "input", value: "8" },
+    { label: "Portfolio link", meta: "Required", kind: "input", value: "https://aurorastudio.in/work" },
+    { label: "Upload latest case studies (PDF)", meta: "Optional \u00b7 max 25MB", kind: "upload" },
+  ];
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -393,7 +396,7 @@ export default function Forms() {
           <nav className="flex items-center gap-2 text-[13px]">
             <span className="text-muted">Forms</span>
             <ChevronRight className="size-4 text-disabled" aria-hidden="true" />
-            <span className="font-medium text-foreground">Vendor onboarding form</span>
+            <span className="font-medium text-foreground">{_f?.name ?? "Vendor onboarding form"}</span>
           </nav>
           <SearchField placeholder="Search contacts, projects, vendors..." shortcut={"\u2318K"} className="ml-auto mr-auto max-w-[480px] flex-1" />
           <div className="ml-auto flex items-center gap-1">
@@ -432,16 +435,16 @@ export default function Forms() {
               <div className="flex items-center justify-between border-b border-border px-6 py-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h1 className="text-[16px] font-semibold text-foreground">Vendor onboarding form</h1>
+                    <h1 className="text-[16px] font-semibold text-foreground">{_f?.name ?? "Vendor onboarding form"}</h1>
                     <Badge tone="success">Published</Badge>
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-muted">
                     <LinkIcon className={iconClass} aria-hidden="true" />
-                    <code className="rounded bg-border-subtle px-1.5 py-0.5 font-mono text-[11px] text-secondary">forms.designersmeet.com/vendor-onboarding</code>
+                    <code className="rounded bg-border-subtle px-1.5 py-0.5 font-mono text-[11px] text-secondary">{_f?.publicUrl ?? "forms.designersmeet.com/vendor-onboarding"}</code>
                     <IconButton title="Copy link" className="size-5">
                       <Copy className={iconClass} aria-hidden="true" />
                     </IconButton>
-                    <span>{"\u00b7"} 47 submissions {"\u00b7"} last 2h ago</span>
+                    <span>{"\u00b7"} {_f?.submissions ?? "47 submissions"} {"\u00b7"} {_f?.lastSubmission ?? "last 2h ago"}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -451,8 +454,8 @@ export default function Forms() {
                     <ModeButton icon={Code}>Embed</ModeButton>
                     <ModeButton icon={Zap} last>Logic</ModeButton>
                   </div>
-                  <Button type="button" variant="secondary" className="h-[34px] gap-1.5 px-3.5 py-[7px] text-[13px]">Save draft</Button>
-                  <Button type="button" className="h-[34px] gap-1.5 px-3.5 py-[7px] text-[13px]">
+                  <Button type="button" variant="secondary" className="h-[34px] gap-1.5 px-3.5 py-[7px] text-[13px]" onClick={() => updateForm.mutate({ id: "fm1", patch: {} })}>Save draft</Button>
+                  <Button type="button" className="h-[34px] gap-1.5 px-3.5 py-[7px] text-[13px]" onClick={() => updateForm.mutate({ id: "fm1", patch: {} })}>
                     <Check className={iconClass} aria-hidden="true" />
                     Publish
                   </Button>
