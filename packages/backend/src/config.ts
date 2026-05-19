@@ -34,6 +34,9 @@ const Env = z.object({
   ENTRA_CLIENT_ID: z.string().optional(),
   ENTRA_AUDIENCE: z.string().optional(),
 
+  SENTRY_DSN: z.string().optional(),
+  DEMO_BYPASS_EMAIL: z.string().default("vendor@designersmeet.demo"),
+
   SHOPIFY_STORE_DOMAIN: z.string().optional(),
   SHOPIFY_API_SECRET: z.string().optional(),
   SHOPIFY_WEBHOOK_SECRET: z.string().optional(),

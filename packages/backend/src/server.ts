@@ -2,6 +2,7 @@ import type { Server } from "http";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { createApp } from "./crm/app.js";
+import { initSentry } from "./sentry.js";
 
 let httpServer: Server | undefined;
 
@@ -23,6 +24,8 @@ function gracefulShutdown(signal: string) {
 
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+void initSentry();
 
 const app = createApp();
 httpServer = app.listen(config.BACKEND_PORT, () => {

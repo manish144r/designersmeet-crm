@@ -8,7 +8,10 @@ import { errorHandler } from "../middleware/errorHandler.js";
 import { authMiddleware } from "../auth/authMiddleware.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { crmRouter } from "./router.js";
+import { domainRouter } from "./domain.js";
 import { integrationStatuses } from "../integrations/registry.js";
+
+const metrics = { requests: 0, errors: 0, startedAt: Date.now() };
 
 export function createApp(): Express {
   const app = express();
@@ -40,20 +43,51 @@ export function createApp(): Express {
   );
   app.use(morgan("dev"));
   app.use(express.json({ limit: "2mb" }));
-
-  app.get("/health", (_req, res) => {
-    res.json({
-      status: "ok",
-      app: "designersmeet-crm",
-      data_provider: config.DATA_PROVIDER,
-      auth_mode: config.AUTH_MODE,
-      time: new Date().toISOString(),
+  app.use((_req, res, next) => {
+    metrics.requests += 1;
+    res.on("finish", () => {
+      if (res.statusCode >= 500) metrics.errors += 1;
     });
+    next();
+  });
+
+  const healthBody = () => ({
+    status: "ok",
+    app: "designersmeet-crm",
+    data_provider: config.DATA_PROVIDER,
+    auth_mode: config.AUTH_MODE,
+    time: new Date().toISOString(),
+  });
+  // Liveness (/health kept for back-compat with render.yaml + existing tests).
+  app.get("/health", (_req, res) => res.json(healthBody()));
+  app.get("/healthz", (_req, res) => res.json(healthBody()));
+  // Readiness — the in-memory store is always ready; a real DB provider would
+  // ping its connection here.
+  app.get("/readyz", (_req, res) =>
+    res.json({ status: "ready", data_provider: config.DATA_PROVIDER }),
+  );
+  // Prometheus-style plaintext metrics.
+  app.get("/metrics", (_req, res) => {
+    res.type("text/plain").send(
+      [
+        "# HELP dm_http_requests_total Total HTTP requests received",
+        "# TYPE dm_http_requests_total counter",
+        `dm_http_requests_total ${metrics.requests}`,
+        "# HELP dm_http_errors_total Total HTTP 5xx responses",
+        "# TYPE dm_http_errors_total counter",
+        `dm_http_errors_total ${metrics.errors}`,
+        "# HELP dm_uptime_seconds Process uptime",
+        "# TYPE dm_uptime_seconds gauge",
+        `dm_uptime_seconds ${Math.floor((Date.now() - metrics.startedAt) / 1000)}`,
+        "",
+      ].join("\n"),
+    );
   });
 
   // All /api routes auth-gated (AUTH_MODE=dev injects a stub user;
   // AUTH_MODE=entra validates the MSAL/Entra JWT).
   app.use("/api", authMiddleware);
+  app.use("/api", domainRouter());
   app.use("/api", crmRouter());
   app.get(
     "/api/integrations",

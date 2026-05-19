@@ -71,6 +71,152 @@ describe("CRM API (dev auth bypass)", () => {
   });
 });
 
+describe("CRUD router — full lifecycle + envelope", () => {
+  it("paginates, filters and sorts the list", async () => {
+    const r = await fetch(`${base}/api/vendors?page=1&pageSize=2&sort=name&order=asc`);
+    expect(r.status).toBe(200);
+    const { data } = await j(r);
+    expect(data.page).toBe(1);
+    expect(data.pageSize).toBe(2);
+    expect(data.data.length).toBeLessThanOrEqual(2);
+    const f = await fetch(`${base}/api/vendors?name=Northwood`);
+    const fb = await j(f);
+    expect(fb.data.data.every((v: { name: string }) => /northwood/i.test(v.name))).toBe(true);
+  });
+
+  it("updates (PATCH) then deletes a row, 404 after", async () => {
+    const c = await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Temp Client", email: "temp@c.co" }),
+    });
+    const { data } = await j(c);
+    const u = await fetch(`${base}/api/clients/${data.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company: "Renamed Pvt Ltd" }),
+    });
+    expect(u.status).toBe(200);
+    expect((await j(u)).data.company).toBe("Renamed Pvt Ltd");
+    const del = await fetch(`${base}/api/clients/${data.id}`, { method: "DELETE" });
+    expect(del.status).toBe(204);
+    const gone = await fetch(`${base}/api/clients/${data.id}`);
+    expect(gone.status).toBe(404);
+  });
+
+  it("returns the {error,code,details} envelope on validation failure", async () => {
+    const r = await fetch(`${base}/api/vendors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "x" }),
+    });
+    expect(r.status).toBe(400);
+    const b = await j(r);
+    expect(b.code).toBe("VALIDATION_ERROR");
+    expect(b.error).toBe("ValidationError");
+    expect(Array.isArray(b.details)).toBe(true);
+  });
+
+  it("404 on missing single resource has HTTP_404 code", async () => {
+    const r = await fetch(`${base}/api/vendors/does-not-exist`);
+    expect(r.status).toBe(404);
+    expect((await j(r)).code).toBe("HTTP_404");
+  });
+});
+
+describe("health / readiness / metrics", () => {
+  it("healthz + readyz respond", async () => {
+    expect((await fetch(`${base}/healthz`)).status).toBe(200);
+    const ready = await fetch(`${base}/readyz`);
+    expect(ready.status).toBe(200);
+    expect((await j(ready)).status).toBe("ready");
+  });
+  it("metrics exposes prometheus counters", async () => {
+    const r = await fetch(`${base}/metrics`);
+    expect(r.status).toBe(200);
+    const t = await r.text();
+    expect(t).toContain("dm_http_requests_total");
+    expect(t).toContain("dm_uptime_seconds");
+  });
+});
+
+describe("domain endpoints", () => {
+  it("moves a project to a new stage", async () => {
+    const list = await j(await fetch(`${base}/api/projects`));
+    const id = list.data.data[0].id;
+    const r = await fetch(`${base}/api/domain/projects/${id}/stage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "install" }),
+    });
+    expect(r.status).toBe(200);
+    expect((await j(r)).data.status).toBe("install");
+  });
+
+  it("rejects an invalid stage value", async () => {
+    const list = await j(await fetch(`${base}/api/projects`));
+    const id = list.data.data[0].id;
+    const r = await fetch(`${base}/api/domain/projects/${id}/stage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "not-a-stage" }),
+    });
+    expect(r.status).toBe(400);
+  });
+
+  it("books a calendar slot", async () => {
+    const r = await fetch(`${base}/api/domain/calendar/book`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Discovery call",
+        start_at: "2027-01-01T10:00:00Z",
+        end_at: "2027-01-01T10:30:00Z",
+      }),
+    });
+    expect(r.status).toBe(201);
+    expect((await j(r)).data.status).toBe("confirmed");
+  });
+
+  it("ingests a public form submission and upserts a contact", async () => {
+    const r = await fetch(`${base}/api/domain/forms/vendor-onboarding/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payload: { "Business name": "Banjara Woodworks" },
+        contact: { first_name: "Kiran", primary_email: "kiran@banjara.co" },
+      }),
+    });
+    expect(r.status).toBe(201);
+    expect((await j(r)).data.form_id).toBeTruthy();
+  });
+
+  it("merges two conversation threads", async () => {
+    const a = await j(
+      await fetch(`${base}/api/conversations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact_id: "ct1", subject: "Target" }),
+      }),
+    );
+    const b = await j(
+      await fetch(`${base}/api/conversations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact_id: "ct1", subject: "Source" }),
+      }),
+    );
+    const r = await fetch(`${base}/api/domain/conversations/merge`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sourceId: b.data.id, targetId: a.data.id }),
+    });
+    expect(r.status).toBe(200);
+    const gone = await fetch(`${base}/api/conversations/${b.data.id}`);
+    expect(gone.status).toBe(404);
+  });
+});
+
 describe("integration adapters — happy path", () => {
   it("m365 sends stub mail + status ok", async () => {
     expect((await m365.outlook.sendMail("a@b.c", "hi", "<p>x</p>")).sent).toBe(true);

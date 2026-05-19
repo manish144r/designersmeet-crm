@@ -16,7 +16,12 @@ declare module "express-serve-static-core" {
   }
 }
 
-const DEV_USER = { sub: "dev-user", email: "dev@designersmeet.local", name: "Dev Admin", roles: ["admin"] as AppRole[] };
+const DEV_USER = {
+  sub: "demo-user",
+  email: config.DEMO_BYPASS_EMAIL,
+  name: "Demo Vendor Admin",
+  roles: ["admin"] as AppRole[],
+};
 
 // ─── JWKS singleton ──────────────────────────────────────────────────────
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
