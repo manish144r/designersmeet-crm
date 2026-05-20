@@ -62,4 +62,24 @@ export const stores: Record<ResourceName, Collection<{ id?: string }>> = {
   "form-submissions": new Collection([
     { id: "fs1", form_id: "f2", contact_id: "ct3", payload_json: { Project: "Loft reno", Scope: "Full design" }, submitted_at: now },
   ]),
+  // Wave B — seeded sparse so the demo UI lands non-empty without leaking real secrets.
+  "api-keys": new Collection([
+    { id: "ak1", name: "Build pipeline", prefix: "dm_live_a3f7b921", hashed_key: "***", scope: "write", created_by: "u1", created_at: now, last_used_at: now, expires_at: null, revoked_at: null },
+    { id: "ak2", name: "Read-only metrics", prefix: "dm_live_c81d402e", hashed_key: "***", scope: "read", created_by: "u1", created_at: now, last_used_at: null, expires_at: "2027-01-01T00:00:00Z", revoked_at: null },
+  ]),
+  sessions: new Collection([
+    { id: "ss1", user_id: "u1", device: "Chrome 130 · macOS", ip: "203.0.113.42", started_at: now, last_active_at: now, expires_at: "2026-05-22T00:00:00Z", revoked_at: null },
+    { id: "ss2", user_id: "u1", device: "Safari · iOS 18.2", ip: "203.0.113.81", started_at: now, last_active_at: now, expires_at: "2026-05-22T00:00:00Z", revoked_at: null },
+  ]),
+  "sso-providers": new Collection([
+    { id: "sp1", type: "entra", client_id: "", tenant_id: "", redirect_uri: "https://designersmeet-preview.surge.sh/auth/callback", jwks_url: "https://login.microsoftonline.com/common/discovery/v2.0/keys", enabled: false, created_at: now },
+    { id: "sp2", type: "google", client_id: "", tenant_id: "", redirect_uri: "https://designersmeet-preview.surge.sh/auth/callback", jwks_url: "https://www.googleapis.com/oauth2/v3/certs", enabled: false, created_at: now },
+    { id: "sp3", type: "apple", client_id: "", tenant_id: "", redirect_uri: "https://designersmeet-preview.surge.sh/auth/callback", jwks_url: "https://appleid.apple.com/auth/keys", enabled: false, created_at: now },
+  ]),
+  "email-providers": new Collection([
+    { id: "ep1", provider: "resend", sender: "no-reply@designersmeet.com", api_key_set: false, config_json: { region: "us-east-1" }, is_default: true, created_at: now },
+  ]),
+  "webhook-subscriptions": new Collection([
+    { id: "wh1", url: "https://hooks.example.com/dm", events: ["order.created", "project.stage_moved"], signing_secret: "***", enabled: true, last_fired_at: null, last_status: null, created_at: now },
+  ]),
 };

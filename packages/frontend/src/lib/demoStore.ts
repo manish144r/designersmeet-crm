@@ -292,6 +292,76 @@ export const demoStore = {
     return ensure("vendors").find((v) => v.id === DEFAULT_VENDOR_ID);
   },
 
+  // ── Wave B (2026-05-20) ──────────────────────────────────────────────────
+  // Mirror the backend waveBRouter semantics so the static demo behaves
+  // identically when the frontend is later flipped to VITE_DEMO_MODE=false.
+  // Plaintext secrets (api-key + webhook signing) are returned ONCE on create
+  // and never re-echoed via list.
+
+  mintApiKey(name: string, scope: "read" | "write" | "admin" = "read", expires_at: string | null = null) {
+    const tag = scope === "admin" ? "adm" : scope === "write" ? "live" : "ro";
+    const body = Array.from(crypto.getRandomValues(new Uint8Array(18)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const plaintext = `dm_${tag}_${body}`;
+    const prefix = plaintext.slice(0, 16);
+    // Real hash; we discard it after store since list always replies "***".
+    // Hash is precomputed here purely so the demo writes the same shape the
+    // backend would.
+    const row = this.create("api-keys", {
+      name,
+      prefix,
+      hashed_key: "***",
+      scope,
+      created_by: "u1",
+      last_used_at: null,
+      expires_at,
+      revoked_at: null,
+    });
+    return { row, plaintext_once: plaintext };
+  },
+
+  revokeApiKey(id: string) {
+    return this.update("api-keys", id, { revoked_at: new Date().toISOString() });
+  },
+
+  revokeSession(id: string) {
+    return this.update("sessions", id, { revoked_at: new Date().toISOString() });
+  },
+
+  createWebhookSubscription(url: string, events: string[], enabled = true) {
+    const secretBytes = Array.from(crypto.getRandomValues(new Uint8Array(24)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const signing_secret = `whsec_${secretBytes}`;
+    const row = this.create("webhook-subscriptions", {
+      url,
+      events,
+      signing_secret: "***",
+      enabled,
+      last_fired_at: null,
+      last_status: null,
+    });
+    return { row, signing_secret_once: signing_secret };
+  },
+
+  testEmailProvider(id: string, to: string) {
+    const row = this.get("email-providers", id);
+    if (!row) return { sent: false, message: "Email provider not found" };
+    const sent = Boolean(row.api_key_set);
+    pushAuditEvent("test_send", "email-providers", id, { to, sent });
+    return {
+      provider: row.provider,
+      to,
+      from: row.sender,
+      sent,
+      message: sent
+        ? `Test queued to ${row.provider}`
+        : "Provider has no API key configured — set api_key_set via the form first.",
+      attempted_at: new Date().toISOString(),
+    };
+  },
+
   // ── locale prefs (single-row, localStorage-backed) ───────────────────────
   getLocale(): DemoRow {
     const rows = ensure("locale_prefs");

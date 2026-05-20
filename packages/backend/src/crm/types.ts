@@ -142,6 +142,69 @@ export const FormSubmissionSchema = z.object({
   submitted_at: z.string().optional(),
 });
 
+// ── Wave B (2026-05-20) ─────────────────────────────────────────────────────
+// Five identity/connections entities promoted from "Coming in Phase 2" to
+// real CRUD. Same generic-router treatment as the other 14 resources.
+// Special endpoints (api-key plaintext-once, email-provider test-send) live in
+// crm/router.ts as targeted overrides BEFORE the generic CRUD mounts.
+export const ApiKeySchema = z.object({
+  id: Id.optional(),
+  name: z.string().min(1),
+  prefix: z.string().default(""), // first 8 chars of plaintext (e.g. "dm_live_")
+  hashed_key: z.string().default(""), // sha256(plaintext)
+  scope: z.enum(["read", "write", "admin"]).default("read"),
+  created_by: z.string().default("u1"),
+  created_at: z.string().optional(),
+  last_used_at: z.string().nullable().default(null),
+  expires_at: z.string().nullable().default(null),
+  revoked_at: z.string().nullable().default(null),
+});
+
+export const SessionSchema = z.object({
+  id: Id.optional(),
+  user_id: z.string().default("u1"),
+  device: z.string().default(""),
+  ip: z.string().default(""),
+  started_at: z.string().optional(),
+  last_active_at: z.string().optional(),
+  expires_at: z.string().optional(),
+  revoked_at: z.string().nullable().default(null),
+});
+
+export const SsoProviderSchema = z.object({
+  id: Id.optional(),
+  type: z.enum(["entra", "google", "okta", "apple"]).default("entra"),
+  client_id: z.string().default(""),
+  tenant_id: z.string().default(""),
+  redirect_uri: z.string().default(""),
+  jwks_url: z.string().default(""),
+  enabled: z.boolean().default(false),
+  created_at: z.string().optional(),
+});
+
+// EmailProvider: config_json is opaque — sender + (encrypted) api_key.
+// "encrypted" in memory mode = stripped on read (write-only secret).
+export const EmailProviderSchema = z.object({
+  id: Id.optional(),
+  provider: z.enum(["brevo", "resend", "ses", "postmark", "smtp", "msgraph"]).default("resend"),
+  sender: z.string().default(""),
+  api_key_set: z.boolean().default(false), // never returns plaintext
+  config_json: z.record(z.any()).default({}),
+  is_default: z.boolean().default(false),
+  created_at: z.string().optional(),
+});
+
+export const WebhookSubscriptionSchema = z.object({
+  id: Id.optional(),
+  url: z.string().url(),
+  events: z.array(z.string()).default([]),
+  signing_secret: z.string().default(""), // generated server-side on create
+  enabled: z.boolean().default(true),
+  last_fired_at: z.string().nullable().default(null),
+  last_status: z.string().nullable().default(null),
+  created_at: z.string().optional(),
+});
+
 export const RESOURCES = {
   vendors: VendorSchema,
   clients: ClientSchema,
@@ -157,6 +220,12 @@ export const RESOURCES = {
   "workflow-runs": WorkflowRunSchema,
   forms: FormSchema,
   "form-submissions": FormSubmissionSchema,
+  // Wave B
+  "api-keys": ApiKeySchema,
+  sessions: SessionSchema,
+  "sso-providers": SsoProviderSchema,
+  "email-providers": EmailProviderSchema,
+  "webhook-subscriptions": WebhookSubscriptionSchema,
 } as const;
 
 export type ResourceName = keyof typeof RESOURCES;

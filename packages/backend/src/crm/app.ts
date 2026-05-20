@@ -9,7 +9,9 @@ import { authMiddleware } from "../auth/authMiddleware.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { crmRouter } from "./router.js";
 import { domainRouter } from "./domain.js";
+import { waveBRouter } from "./waveBRouter.js";
 import { integrationStatuses } from "../integrations/registry.js";
+import { meta } from "../integrations/meta/index.js";
 
 const metrics = { requests: 0, errors: 0, startedAt: Date.now() };
 
@@ -88,11 +90,51 @@ export function createApp(): Express {
   // AUTH_MODE=entra validates the MSAL/Entra JWT).
   app.use("/api", authMiddleware);
   app.use("/api", domainRouter());
+  // Wave B overrides mount BEFORE the generic CRUD so the targeted routes
+  // (api-keys POST with plaintext-once, sessions DELETE-as-revoke, etc.) win.
+  app.use("/api", waveBRouter());
   app.use("/api", crmRouter());
   app.get(
     "/api/integrations",
     asyncHandler(async (_req, res) => {
       res.json({ data: await integrationStatuses() });
+    }),
+  );
+
+  // Wave B integration endpoints — credentials present = real call,
+  // credentials absent = Configure-state hint with env vars to set.
+  app.get(
+    "/api/integrations/meta/insights",
+    asyncHandler(async (req, res) => {
+      if (!config.META_ACCESS_TOKEN) {
+        return res.status(501).json({
+          error: "provider_not_configured",
+          message: "Set META_ACCESS_TOKEN in secrets.env to enable Meta Page Insights",
+          env_required: ["META_ACCESS_TOKEN", "META_PAGE_ID (optional)"],
+        });
+      }
+      const pageId =
+        (typeof req.query.page_id === "string" && req.query.page_id) ||
+        config.META_PAGE_ID ||
+        "me";
+      const metric =
+        typeof req.query.metric === "string" && req.query.metric
+          ? req.query.metric
+          : "page_impressions";
+      try {
+        const result = await meta.facebook.pageInsights(pageId, metric);
+        return res.json({
+          data: result.data,
+          page_id: pageId,
+          metric,
+          connected: true,
+        });
+      } catch (err) {
+        return res.status(502).json({
+          error: "meta_api_error",
+          message: String(err),
+        });
+      }
     }),
   );
 

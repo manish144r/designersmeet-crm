@@ -268,4 +268,28 @@ export const demoFixtures: Record<string, DemoRow[]> = {
     { id: "vd2", vendor_id: "vn1", project_id: "pj4", title: "Material palette PDF", status: "approved", submitted_at: "2026-05-17T15:30:00Z" },
     { id: "vd3", vendor_id: "vn1", project_id: "pj6", title: "3D walkthrough — HSR", status: "in_review", submitted_at: "2026-05-18T09:14:00Z" },
   ],
+
+  // ── Wave B (2026-05-20) ────────────────────────────────────────────────
+  // Five identity/connections resources. Sparse seeds so the demo lands
+  // non-empty without leaking real secrets. Same keys as backend Collection
+  // store — keeps demo-mode UI and live-backend UI byte-identical.
+  "api-keys": [
+    { id: "ak1", name: "Build pipeline", prefix: "dm_live_a3f7b921", hashed_key: "***", scope: "write", created_by: "u1", created_at: "2026-05-01T00:00:00Z", last_used_at: "2026-05-20T09:14:00Z", expires_at: null, revoked_at: null },
+    { id: "ak2", name: "Read-only metrics", prefix: "dm_live_c81d402e", hashed_key: "***", scope: "read", created_by: "u1", created_at: "2026-04-12T00:00:00Z", last_used_at: null, expires_at: "2027-01-01T00:00:00Z", revoked_at: null },
+  ],
+  sessions: [
+    { id: "ss1", user_id: "u1", device: "Chrome 130 · macOS", ip: "203.0.113.42", started_at: "2026-05-20T08:00:00Z", last_active_at: "2026-05-20T17:51:00Z", expires_at: "2026-05-22T00:00:00Z", revoked_at: null },
+    { id: "ss2", user_id: "u1", device: "Safari · iOS 18.2", ip: "203.0.113.81", started_at: "2026-05-19T19:11:00Z", last_active_at: "2026-05-20T16:02:00Z", expires_at: "2026-05-22T00:00:00Z", revoked_at: null },
+  ],
+  "sso-providers": [
+    { id: "sp1", type: "entra", client_id: "", tenant_id: "", redirect_uri: "https://designersmeet-preview.surge.sh/auth/callback", jwks_url: "https://login.microsoftonline.com/common/discovery/v2.0/keys", enabled: false, created_at: "2026-05-01T00:00:00Z" },
+    { id: "sp2", type: "google", client_id: "", tenant_id: "", redirect_uri: "https://designersmeet-preview.surge.sh/auth/callback", jwks_url: "https://www.googleapis.com/oauth2/v3/certs", enabled: false, created_at: "2026-05-01T00:00:00Z" },
+    { id: "sp3", type: "apple", client_id: "", tenant_id: "", redirect_uri: "https://designersmeet-preview.surge.sh/auth/callback", jwks_url: "https://appleid.apple.com/auth/keys", enabled: false, created_at: "2026-05-01T00:00:00Z" },
+  ],
+  "email-providers": [
+    { id: "ep1", provider: "resend", sender: "no-reply@designersmeet.com", api_key_set: false, config_json: { region: "us-east-1" }, is_default: true, created_at: "2026-05-01T00:00:00Z" },
+  ],
+  "webhook-subscriptions": [
+    { id: "wh1", url: "https://hooks.example.com/dm", events: ["order.created", "project.stage_moved"], signing_secret: "***", enabled: true, last_fired_at: null, last_status: null, created_at: "2026-05-01T00:00:00Z" },
+  ],
 };

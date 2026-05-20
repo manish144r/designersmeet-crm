@@ -76,6 +76,13 @@ import {
   usePreferences,
 } from "@/hooks/usePreferences";
 import { downloadInvoicePdf } from "@/lib/invoicePdf";
+import {
+  ApiKeysSlot,
+  SessionsSlot,
+  SsoProvidersSlot,
+  EmailProvidersSlot,
+  WebhooksSlot,
+} from "@/components/settings-wave-b";
 
 type NavItem = {
   label: string;
@@ -145,7 +152,7 @@ const settingsSections: SettingsSection[] = [
     label: "Identity",
     items: [
       { label: "SSO providers", icon: ShieldCheck },
-      { label: "Sessions", icon: Lock, phase2: true },
+      { label: "Sessions", icon: Lock },
       { label: "Audit log", icon: Scroll },
     ],
   },
@@ -153,9 +160,9 @@ const settingsSections: SettingsSection[] = [
     label: "Connections",
     items: [
       { label: "Integrations", icon: Puzzle },
-      { label: "Email providers", icon: Mail, phase2: true },
-      { label: "Webhooks", icon: Webhook, phase2: true },
-      { label: "API keys", icon: Key, phase2: true },
+      { label: "Email providers", icon: Mail },
+      { label: "Webhooks", icon: Webhook },
+      { label: "API keys", icon: Key },
     ],
   },
   {
@@ -1807,7 +1814,15 @@ export default function Settings() {
               ) : activeItem === "Users & roles" ? (
                 <UsersRolesPanel />
               ) : activeItem === "SSO providers" ? (
-                <SsoProvidersPanel />
+                <SsoProvidersSlot />
+              ) : activeItem === "API keys" ? (
+                <ApiKeysSlot />
+              ) : activeItem === "Sessions" ? (
+                <SessionsSlot />
+              ) : activeItem === "Email providers" ? (
+                <EmailProvidersSlot />
+              ) : activeItem === "Webhooks" ? (
+                <WebhooksSlot />
               ) : activeItem === "Audit log" ? (
                 <AuditLogPanel />
               ) : activeItem === "Locale & time" ? (
