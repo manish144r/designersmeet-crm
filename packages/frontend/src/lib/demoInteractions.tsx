@@ -33,6 +33,65 @@ const NAV_ROUTES: Record<string, string> = {
   "spec sheet": "/spec",
 };
 
+// Phase-2 nav items rendered in the locked sidebars but not yet implemented.
+// They were decorative pre-2026-05-20 (clicking did nothing meaningful — toast
+// only). We mark them aria-disabled / data-disabled at runtime so the
+// D-DECORATIVE probe accepts them as INTENTIONALLY inert, and surface a
+// "Coming in Phase 2" toast that explains why instead of echoing the label.
+const PHASE2_LABELS = new Set([
+  "outlook add-in",
+  "teams app",
+  "m365 launcher",
+  "reports",
+]);
+
+function applyPhase2Markers() {
+  const labels = Array.from(PHASE2_LABELS);
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>('[class~="cursor-pointer"], button, [role="button"]'))) {
+    const text = (el.textContent ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+    if (labels.includes(text) && el.getAttribute("data-disabled") !== "true") {
+      el.setAttribute("data-disabled", "true");
+      el.setAttribute("aria-disabled", "true");
+      if (!el.getAttribute("title")) el.setAttribute("title", "Coming in Phase 2");
+    }
+  }
+}
+
+// Selection-on-click coherence layer.
+//
+// Several locked pages render LISTS of selectable sibling items with
+// `cursor-pointer` (calendar dates, conversation threads, workflow rows,
+// kanban-style filter chips). The Codex translation includes per-item
+// `data-active="true|false"` markers + active-vs-default styling but ships
+// no onClick handler, so clicking one item does not move the active state
+// from the previously-selected sibling. The D-DECORATIVE probe correctly
+// flags these as "sub-nav stuck".
+//
+// This layer is the brand-lock-safe fix: on click of any cursor-pointer
+// item inside a group of ≥3 sibling cursor-pointer items, flip data-active
+// on the clicked element and clear it on its siblings in the same parent.
+// The styling treatment for active is ALREADY in the locked CSS — we just
+// move the marker. No DOM is added/removed.
+function findGroupSiblings(el: Element): Element[] {
+  const parent = el.parentElement;
+  if (!parent) return [];
+  const siblings = Array.from(parent.children).filter((c) => {
+    if (c === el) return true;
+    const cls = c.getAttribute("class") || "";
+    return cls.includes("cursor-pointer") && c.children.length <= 5;
+  });
+  return siblings.length >= 3 ? siblings : [];
+}
+
+function flipActiveWithinGroup(el: Element) {
+  const siblings = findGroupSiblings(el);
+  if (!siblings.length) return false;
+  for (const s of siblings) {
+    s.setAttribute("data-active", s === el ? "true" : "false");
+  }
+  return true;
+}
+
 interface Toast {
   id: number;
   text: string;
@@ -75,12 +134,25 @@ export function DemoInteractionLayer() {
   }, []);
 
   useEffect(() => {
+    // Mark Phase-2 nav items on first render and re-mark as lazy pages mount.
+    applyPhase2Markers();
+    const obs = new MutationObserver(() => applyPhase2Markers());
+    obs.observe(document.body, { childList: true, subtree: true });
+
     function onClick(ev: MouseEvent) {
       const target = isInteractive(ev.target as Element | null);
       if (!target) return;
 
       const label = labelOf(target);
       const key = label.toLowerCase();
+
+      // Intentionally inert (Phase 2) — show explanatory toast, do nothing.
+      if (PHASE2_LABELS.has(key) || target.getAttribute("data-disabled") === "true") {
+        ev.preventDefault();
+        push(`${label}: coming in Phase 2`);
+        return;
+      }
+
       const route = NAV_ROUTES[key];
 
       if (route && window.location.pathname !== route) {
@@ -88,6 +160,11 @@ export function DemoInteractionLayer() {
         navigate(route);
         push(`Navigated to ${label}`);
         return;
+      }
+
+      // Selectable list coherence — flip data-active on the clicked item.
+      if ((target.getAttribute("class") || "").includes("cursor-pointer")) {
+        flipActiveWithinGroup(target);
       }
 
       // Real anchors that point somewhere meaningful: let them be.
@@ -100,7 +177,10 @@ export function DemoInteractionLayer() {
     }
 
     document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      obs.disconnect();
+    };
   }, [navigate, push]);
 
   return (
