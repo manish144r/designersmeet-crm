@@ -45,6 +45,14 @@ export function useItem<T = unknown>(resource: string, id?: string) {
   });
 }
 
+// Wave-A: every mutation also invalidates `audit_events` so the Settings >
+// Audit log panel updates live without polling. Cheap — single extra query
+// invalidation per mutation.
+function invalidateMutated(qc: ReturnType<typeof useQueryClient>, resource: string) {
+  qc.invalidateQueries({ queryKey: [resource] });
+  if (resource !== "audit_events") qc.invalidateQueries({ queryKey: ["audit_events"] });
+}
+
 export function useCreate<T = unknown>(resource: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -52,7 +60,7 @@ export function useCreate<T = unknown>(resource: string) {
       if (DEMO_MODE) return demoStore.create(resource, body as Record<string, unknown>) as T;
       return api.post<T>(`/${resource}`, body);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [resource] }),
+    onSuccess: () => invalidateMutated(qc, resource),
   });
 }
 
@@ -64,7 +72,7 @@ export function useUpdate<T = unknown>(resource: string) {
         return demoStore.update(resource, id, patch as Record<string, unknown>) as T;
       return api.patch<T>(`/${resource}/${id}`, patch);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [resource] }),
+    onSuccess: () => invalidateMutated(qc, resource),
   });
 }
 
@@ -75,7 +83,7 @@ export function useRemove(resource: string) {
       if (DEMO_MODE) return demoStore.remove(resource, id);
       return api.delete<void>(`/${resource}/${id}`);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [resource] }),
+    onSuccess: () => invalidateMutated(qc, resource),
   });
 }
 

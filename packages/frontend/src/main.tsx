@@ -8,6 +8,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { DemoInteractionLayer } from "./lib/demoInteractions.js";
 import { SidebarCollapseLayer } from "./lib/sidebarCollapse.js";
 import { CrmModals } from "./components/CrmModals.js";
+import { HeaderDropdowns } from "./components/HeaderDropdowns.js";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -22,6 +23,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
+            {/* HeaderDropdowns must mount FIRST so its capture-phase click
+                listener registers before DemoInteractionLayer's — both run in
+                capture, and HeaderDropdowns calls stopPropagation on matched
+                triggers (workspace tile + view toggle button) to suppress the
+                generic toast/nav fallback. */}
+            <HeaderDropdowns />
             <DemoInteractionLayer />
             <SidebarCollapseLayer />
             <CrmModals />

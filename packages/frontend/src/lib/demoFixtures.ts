@@ -208,4 +208,64 @@ export const demoFixtures: Record<string, DemoRow[]> = {
   // shows a count string only, the rendered form is a preview mock). Genuinely
   // empty.
   "form-submissions": [],
+
+  // ── Wave-A Phase-2 panels (added 2026-05-20). These resources are NEW —
+  // they have no literal in the locked pages and are introduced specifically
+  // to back the Settings > Phase-2 panels (Audit, Workspaces, Teams, Locale,
+  // Plan & usage, Invoices, Vendor portal). The seed values are synthesized
+  // (not lifted from a page literal) and intentionally inhabit the same
+  // Bengaluru tone as the rest of the demo.
+  workspaces: [
+    { id: "ws-default", name: "DesignersMeet HQ", slug: "designersmeet", created_at: "2024-08-01T00:00:00Z", members_count: 12, region: "Bengaluru", active: true },
+    { id: "ws-au", name: "DesignersMeet AU", slug: "dm-au", created_at: "2026-02-12T00:00:00Z", members_count: 4, region: "Sydney", active: false },
+  ],
+  teams: [
+    { id: "tm1", name: "Concept", color: "var(--color-foreground)", members: ["u1", "u2"], created_at: "2025-01-04T00:00:00Z", workspace_id: "ws-default" },
+    { id: "tm2", name: "Site Ops", color: "var(--color-info)", members: ["u3"], created_at: "2025-01-04T00:00:00Z", workspace_id: "ws-default" },
+    { id: "tm3", name: "Vendor Mgmt", color: "var(--color-success)", members: ["u1", "u3"], created_at: "2025-01-04T00:00:00Z", workspace_id: "ws-default" },
+  ],
+  users: [
+    { id: "u1", name: "Manish Sharma", email: "manish@designersmeet.com", role: "Owner" },
+    { id: "u2", name: "Priya Iyer", email: "priya@designersmeet.com", role: "Admin" },
+    { id: "u3", name: "Ravi Kumar", email: "ravi@designersmeet.com", role: "Member" },
+    { id: "u4", name: "Anita M.", email: "anita@designersmeet.com", role: "Admin" },
+  ],
+  audit_events: [],
+  plan: [
+    {
+      id: "plan-current",
+      name: "Studio",
+      seats_used: 8, seats_total: 12,
+      projects_used: 13, projects_limit: 50,
+      storage_gb_used: 18.4, storage_gb_limit: 100,
+      ai_credits_used: 6_420, ai_credits_cap: 25_000,
+      renews_on: "2026-06-15",
+      workspace_id: "ws-default",
+    },
+  ],
+  invoices: [
+    { id: "in-2026-05", period: "2026-05", amount: 8_900, currency: "INR", status: "due", issued_at: "2026-05-01T00:00:00Z", paid_at: null, line_items: [
+      { label: "Studio plan · monthly", amount: 7_900 },
+      { label: "Add-on · AI credits (+5k)", amount: 1_000 },
+    ] },
+    { id: "in-2026-04", period: "2026-04", amount: 7_900, currency: "INR", status: "paid", issued_at: "2026-04-01T00:00:00Z", paid_at: "2026-04-03T00:00:00Z", line_items: [
+      { label: "Studio plan · monthly", amount: 7_900 },
+    ] },
+    { id: "in-2026-03", period: "2026-03", amount: 7_900, currency: "INR", status: "paid", issued_at: "2026-03-01T00:00:00Z", paid_at: "2026-03-02T00:00:00Z", line_items: [
+      { label: "Studio plan · monthly", amount: 7_900 },
+    ] },
+    { id: "in-2026-02", period: "2026-02", amount: 9_400, currency: "INR", status: "paid", issued_at: "2026-02-01T00:00:00Z", paid_at: "2026-02-04T00:00:00Z", line_items: [
+      { label: "Studio plan · monthly", amount: 7_900 },
+      { label: "Pro-rata · seat bump", amount: 1_500 },
+    ] },
+    { id: "in-2026-01", period: "2026-01", amount: 7_900, currency: "INR", status: "overdue", issued_at: "2026-01-01T00:00:00Z", paid_at: null, line_items: [
+      { label: "Studio plan · monthly", amount: 7_900 },
+    ] },
+  ],
+  // Deliverables vendors can see in /vendor (filtered to their assigned projects).
+  vendor_deliverables: [
+    { id: "vd1", vendor_id: "vn1", project_id: "pj4", title: "Concept board v3", status: "submitted", submitted_at: "2026-05-19T10:02:00Z" },
+    { id: "vd2", vendor_id: "vn1", project_id: "pj4", title: "Material palette PDF", status: "approved", submitted_at: "2026-05-17T15:30:00Z" },
+    { id: "vd3", vendor_id: "vn1", project_id: "pj6", title: "3D walkthrough — HSR", status: "in_review", submitted_at: "2026-05-18T09:14:00Z" },
+  ],
 };

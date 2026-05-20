@@ -8,9 +8,15 @@ export default defineConfig({
     globals: true,
     setupFiles: "./src/test/setup.ts",
     css: true,
+    // Vitest scans the package root by default. The Playwright suites live in
+    // `tests/` and import `@playwright/test` — including them here pulls in
+    // Playwright's test runner globals and explodes. Restrict to src + spec
+    // files that aren't Playwright.
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["node_modules/**", "dist/**", "tests/**"],
     coverage: {
       reporter: ["text", "html"],
-      exclude: ["node_modules/", "dist/", "src/test/"],
+      exclude: ["node_modules/", "dist/", "src/test/", "tests/"],
     },
   },
 });

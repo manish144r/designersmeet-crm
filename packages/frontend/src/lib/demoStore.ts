@@ -2,6 +2,15 @@
 // every wired button performs a real CRUD op that persists for the session.
 // Seeded from demoFixtures (the pages' own verbatim sample rows) so a wired
 // page's first render is byte-identical to its locked baseline (≤2% drift).
+//
+// Wave-A Phase-2 panels (Audit, Workspaces, Teams, Plan & usage, Invoices,
+// Vendor portal) extend this layer with:
+//   • An audit-event interceptor — every mutation on a tracked resource emits
+//     a row into `audit_events` (100-row cap, oldest evicts).
+//   • A current-workspace pointer + setter so the new Workspaces panel can
+//     switch the demo session's active workspace.
+//   • A subscribe() pub-sub so panels that want to react to writes outside
+//     the react-query path (e.g. the audit-log live feed) can re-render.
 import { demoFixtures } from "./demoFixtures.js";
 
 export interface DemoRow {
@@ -17,9 +26,120 @@ const newId = (r: string) => `${r}-demo-${seq++}`;
 // Deep-clone the fixtures so mutations never leak back into the seed.
 const store: Store = JSON.parse(JSON.stringify(demoFixtures));
 
+// ── Audit interceptor ──────────────────────────────────────────────────────
+// Resources we DO audit. We deliberately exclude `audit_events` itself
+// (infinite-loop guard) and high-noise resources where the writes are not
+// user-meaningful in a demo (workflow-runs, messages).
+const AUDIT_TRACKED = new Set<string>([
+  "contacts",
+  "vendors",
+  "projects",
+  "calendar-events",
+  "workflows",
+  "forms",
+  "workspaces",
+  "teams",
+  "users",
+  "plan",
+  "invoices",
+  "shopify-mappings",
+  "services",
+  "orders",
+]);
+const AUDIT_CAP = 100;
+const ACTOR_DEFAULT = { id: "u1", name: "Manish Sharma" };
+
+// Pub/sub for non-react-query subscribers (audit log live tail).
+const subscribers = new Set<() => void>();
+function notify() {
+  for (const fn of subscribers) {
+    try { fn(); } catch { /* swallow — listener errors must not break store */ }
+  }
+}
+
+// Persistence keys for the cross-page demo context (workspace + admin/vendor
+// view). Values stay in localStorage so the Surge static site survives a tab
+// refresh — but never leaves the browser.
+const LS_WORKSPACE = "dm.demo.workspaceId";
+const LS_VIEW = "dm.demo.view";
+const LS_LOCALE = "dm.demo.locale";
+
+function lsGet(key: string): string | null {
+  try {
+    return typeof window !== "undefined" ? window.localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+function lsSet(key: string, value: string) {
+  try {
+    if (typeof window !== "undefined") window.localStorage.setItem(key, value);
+  } catch {
+    /* storage unavailable (private mode / SSR) — in-memory only */
+  }
+}
+
+export type DemoView = "admin" | "vendor";
+
+let currentWorkspaceId: string =
+  lsGet(LS_WORKSPACE) ??
+  (store.workspaces?.find((w) => w.active === true)?.id as string) ??
+  "ws-default";
+
+let currentView: DemoView = (lsGet(LS_VIEW) as DemoView | null) ?? "admin";
+
+// Vendor view scopes the experience to one vendor row. Aurora Studio (vn1) is
+// the demo-default vendor — has the richest assignment graph in the seed.
+const DEFAULT_VENDOR_ID = "vn1";
+
+// Default locale prefs — seeded into `locale_prefs` on first read so the
+// useDatePreference hook never sees an empty store.
+const DEFAULT_LOCALE = {
+  id: "locale-prefs",
+  timezone: "Asia/Kolkata",
+  language: "en-IN",
+  dateFormat: "DD MMM YYYY",
+  timeFormat: "24h",
+  firstDayOfWeek: "Mon",
+};
+
+(function seedLocale() {
+  const rows = (store["locale_prefs"] ??= []);
+  if (rows.length === 0) {
+    const stored = lsGet(LS_LOCALE);
+    if (stored) {
+      try {
+        rows.push({ ...DEFAULT_LOCALE, ...JSON.parse(stored) });
+      } catch {
+        rows.push({ ...DEFAULT_LOCALE });
+      }
+    } else {
+      rows.push({ ...DEFAULT_LOCALE });
+    }
+  }
+})();
+
 function ensure(resource: string): DemoRow[] {
   if (!store[resource]) store[resource] = [];
   return store[resource];
+}
+
+function pushAuditEvent(action: string, resource: string, id: string, metadata?: Record<string, unknown>) {
+  if (!AUDIT_TRACKED.has(resource)) return;
+  const events = ensure("audit_events");
+  events.unshift({
+    id: newId("audit"),
+    actor: ACTOR_DEFAULT.name,
+    actor_id: ACTOR_DEFAULT.id,
+    action,
+    target_type: resource,
+    target_id: id,
+    timestamp: new Date().toISOString(),
+    metadata: metadata ?? {},
+    workspace_id: currentWorkspaceId,
+  });
+  // 100-row cap, oldest evicts.
+  if (events.length > AUDIT_CAP) events.length = AUDIT_CAP;
 }
 
 export const demoStore = {
@@ -63,6 +183,8 @@ export const demoStore = {
       created_at: body.created_at ?? new Date().toISOString(),
     };
     ensure(resource).unshift(row);
+    pushAuditEvent("create", resource, row.id, { name: row.name ?? row.title ?? undefined });
+    notify();
     return row;
   },
 
@@ -71,6 +193,8 @@ export const demoStore = {
     const i = rows.findIndex((r) => r.id === id);
     if (i === -1) return undefined;
     rows[i] = { ...rows[i], ...patch, id };
+    pushAuditEvent("update", resource, id, { fields: Object.keys(patch) });
+    notify();
     return rows[i];
   },
 
@@ -79,6 +203,8 @@ export const demoStore = {
     const i = rows.findIndex((r) => r.id === id);
     if (i === -1) return false;
     rows.splice(i, 1);
+    pushAuditEvent("delete", resource, id);
+    notify();
     return true;
   },
 
@@ -103,5 +229,81 @@ export const demoStore = {
       payload_json: payload,
       submitted_at: new Date().toISOString(),
     });
+  },
+
+  // ── Wave-A additions ─────────────────────────────────────────────────────
+  getCurrentWorkspaceId() {
+    return currentWorkspaceId;
+  },
+  getCurrentWorkspace() {
+    return ensure("workspaces").find((w) => w.id === currentWorkspaceId);
+  },
+  setCurrentWorkspace(id: string) {
+    const target = ensure("workspaces").find((w) => w.id === id);
+    if (!target) return undefined;
+    // Flip the `active` flag on the persisted rows so the UI's "Active" badge
+    // moves with the pointer.
+    for (const w of ensure("workspaces")) {
+      w.active = w.id === id;
+    }
+    const previous = currentWorkspaceId;
+    currentWorkspaceId = id;
+    lsSet(LS_WORKSPACE, id);
+    pushAuditEvent("switch_workspace", "workspaces", id, { from: previous });
+    notify();
+    return target;
+  },
+  subscribe(listener: () => void) {
+    subscribers.add(listener);
+    return () => {
+      subscribers.delete(listener);
+    };
+  },
+  /** Returns the (mutable) audit_events tail for live-render UIs. */
+  auditTail(limit = 100) {
+    return ensure("audit_events").slice(0, limit);
+  },
+
+  // ── view (admin / vendor) — persistence + pub/sub ────────────────────────
+  getView(): DemoView {
+    return currentView;
+  },
+  setView(v: DemoView) {
+    if (currentView === v) return;
+    currentView = v;
+    lsSet(LS_VIEW, v);
+    pushAuditEvent("view_switch", "users", ACTOR_DEFAULT.id, { to: v });
+    notify();
+  },
+
+  // ── actor (always Manish in this demo, but auditable as a real id) ───────
+  getActorId(): string {
+    return ACTOR_DEFAULT.id;
+  },
+  getActorName(): string {
+    return ACTOR_DEFAULT.name;
+  },
+
+  // ── vendor scope (used by /vendor) ───────────────────────────────────────
+  getVendorId(): string {
+    return DEFAULT_VENDOR_ID;
+  },
+  getVendor() {
+    return ensure("vendors").find((v) => v.id === DEFAULT_VENDOR_ID);
+  },
+
+  // ── locale prefs (single-row, localStorage-backed) ───────────────────────
+  getLocale(): DemoRow {
+    const rows = ensure("locale_prefs");
+    return (rows[0] ?? DEFAULT_LOCALE) as DemoRow;
+  },
+  setLocale(patch: Record<string, unknown>) {
+    const rows = ensure("locale_prefs");
+    if (rows.length === 0) rows.push({ ...DEFAULT_LOCALE });
+    rows[0] = { ...rows[0], ...patch, id: rows[0].id };
+    lsSet(LS_LOCALE, JSON.stringify(rows[0]));
+    pushAuditEvent("update", "users", ACTOR_DEFAULT.id, { fields: Object.keys(patch) });
+    notify();
+    return rows[0];
   },
 };

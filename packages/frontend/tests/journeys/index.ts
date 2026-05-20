@@ -61,6 +61,26 @@ export const journeys: Journey[] = [
   // here so the journey set documentation stays the single source of truth.
   { id: "exhaustive-ui-walk", label: "Exhaustive UI walk (D-DECORATIVE)", route: "/settings",
     steps: ["sidebar-nav", "primary-cta-click", "icon-button-click", "tab-switch"] },
+
+  // ── Wave-A Phase-2 Settings journeys (2026-05-20) ────────────────────────
+  // Each journey walks the Settings sub-nav into a specific item, then
+  // exercises the panel's primary CRUD/affordance. These journeys lift the
+  // sub-items from B-LOCK ("Coming in Phase 2") to PASS / FAIL — they should
+  // never block on the missing baseline because the panels render real DOM.
+  { id: "walk-audit-log", label: "Settings · Audit log", route: "/settings",
+    steps: ["sidebar-nav", "tab-switch", "secondary-cta-click", "scroll"] },
+  { id: "walk-workspaces-crud", label: "Settings · Workspaces CRUD", route: "/settings",
+    steps: ["sidebar-nav", "tab-switch", "primary-cta-click", "text-input", "form-submit"] },
+  { id: "walk-locale-preferences", label: "Settings · Locale & time", route: "/settings",
+    steps: ["sidebar-nav", "tab-switch", "multi-select-input", "form-submit"] },
+  { id: "walk-teams-crud", label: "Settings · Teams CRUD", route: "/settings",
+    steps: ["sidebar-nav", "tab-switch", "primary-cta-click", "text-input", "multi-select-input", "form-submit"] },
+  { id: "walk-plan-usage", label: "Settings · Plan & usage", route: "/settings",
+    steps: ["sidebar-nav", "tab-switch", "primary-cta-click", "modal-open", "modal-close"] },
+  { id: "walk-invoices-pdf-download", label: "Settings · Invoices PDF download", route: "/settings",
+    steps: ["sidebar-nav", "tab-switch", "secondary-cta-click"] },
+  { id: "walk-vendor-portal", label: "Vendor portal", route: "/vendor",
+    steps: ["sidebar-nav", "tab-switch", "text-input", "form-submit"] },
 ];
 
 export const journeyById = (id: string): Journey | undefined =>

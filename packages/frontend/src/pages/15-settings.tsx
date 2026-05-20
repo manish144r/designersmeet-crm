@@ -7,20 +7,31 @@
  * Wave-1 implementation render a "Coming in Phase 2" panel and carry
  * data-disabled/aria-disabled so the new D-DECORATIVE probe accepts them as
  * intentionally inert (not as silent defects).
+ *
+ * Wave-A (2026-05-20) wires 7 panels that were Phase-2 stubs into real demo-
+ * mode features backed by demoStore: Audit log, Workspaces CRUD + active-
+ * switch, Locale & time, Teams, Plan & usage (+ upgrade modal), Invoices
+ * (+ jsPDF download), Vendor portal admin pane. The 5 remaining Phase-2
+ * items (Sessions, API keys, SSO providers, Email providers, Webhooks)
+ * still render the locked "Coming in Phase 2" pane — they need a real
+ * backend deploy and land in Wave B.
  */
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useMemo, useReducer, useState, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
   Building2,
   Calendar,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   ChevronsUpDown,
   CircleHelp,
   ClipboardList,
   CreditCard,
+  Download,
+  ExternalLink,
   GitBranch,
   Globe,
   HardHat,
@@ -42,10 +53,12 @@ import {
   Settings as SettingsIcon,
   ShieldCheck,
   ShoppingBag,
+  Trash2,
   Users,
   UsersRound,
   Webhook,
   Workflow,
+  X,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -54,6 +67,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { demoStore } from "@/lib/demoData";
+import {
+  DATE_FORMATS,
+  LANGUAGES,
+  TIMEZONES,
+  useDatePreference,
+  usePreferences,
+} from "@/hooks/usePreferences";
+import { downloadInvoicePdf } from "@/lib/invoicePdf";
 
 type NavItem = {
   label: string;
@@ -108,15 +130,15 @@ const settingsSections: SettingsSection[] = [
       { label: "General", icon: SettingsIcon },
       { label: "Workspaces", icon: Building2 },
       { label: "Branding", icon: Palette },
-      { label: "Locale & time", icon: Globe, phase2: true },
+      { label: "Locale & time", icon: Globe },
     ],
   },
   {
     label: "People",
     items: [
       { label: "Users & roles", icon: Users },
-      { label: "Teams", icon: UsersRound, phase2: true },
-      { label: "Vendor portal", icon: HardHat, phase2: true },
+      { label: "Teams", icon: UsersRound },
+      { label: "Vendor portal", icon: HardHat },
     ],
   },
   {
@@ -124,7 +146,7 @@ const settingsSections: SettingsSection[] = [
     items: [
       { label: "SSO providers", icon: ShieldCheck },
       { label: "Sessions", icon: Lock, phase2: true },
-      { label: "Audit log", icon: Scroll, phase2: true },
+      { label: "Audit log", icon: Scroll },
     ],
   },
   {
@@ -139,8 +161,8 @@ const settingsSections: SettingsSection[] = [
   {
     label: "Billing",
     items: [
-      { label: "Plan & usage", icon: CreditCard, phase2: true },
-      { label: "Invoices", icon: Receipt, phase2: true },
+      { label: "Plan & usage", icon: CreditCard },
+      { label: "Invoices", icon: Receipt },
     ],
   },
 ];
@@ -244,10 +266,12 @@ function IconButton({
   title,
   children,
   className,
+  onClick,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
+  onClick?: () => void;
 }) {
   return (
     <Button
@@ -256,6 +280,7 @@ function IconButton({
       size="icon"
       title={title}
       aria-label={title}
+      onClick={onClick}
       className={cn(
         "h-[30px] w-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -608,7 +633,7 @@ function GeneralPanel() {
 }
 
 function BrandingPanel() {
-  const [primary, setPrimary] = useState("#0F172A");
+  const [primary, setPrimary] = useState("");
   return (
     <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Branding">
       <div className="mb-6">
@@ -626,16 +651,17 @@ function BrandingPanel() {
             <Input
               value={primary}
               onChange={(e) => setPrimary(e.target.value)}
+              placeholder="var(--color-foreground)"
               className="mt-1 h-[34px] text-[13px]"
             />
           </label>
           <div className="flex items-center gap-3">
             <div
-              className="size-8 rounded-md border border-border"
-              style={{ backgroundColor: primary }}
+              className="size-8 rounded-md border border-border bg-foreground"
+              style={primary ? { backgroundColor: primary } : undefined}
               aria-label="Primary colour preview"
             />
-            <span className="text-[12px] text-muted">{primary}</span>
+            <span className="text-[12px] text-muted">{primary || "default"}</span>
           </div>
         </CardContent>
       </Card>
@@ -730,7 +756,51 @@ function SsoProvidersPanel() {
   );
 }
 
+// ── Wave-A: live subscription to demoStore ────────────────────────────────
+// Tiny hook that re-renders on demoStore.notify() so panels reading from the
+// raw store (workspaces, audit_events, plan, invoices, teams) reflect writes
+// outside the react-query path.
+function useDemoStoreTick(): number {
+  const [tick, force] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => demoStore.subscribe(() => force()), []);
+  return tick;
+}
+
+interface WorkspaceRow {
+  id: string;
+  name: string;
+  slug: string;
+  members_count?: number;
+  region?: string;
+  active?: boolean;
+  created_at?: string;
+}
+
 function WorkspacesPanel() {
+  useDemoStoreTick();
+  const [draftName, setDraftName] = useState("");
+  const [draftSlug, setDraftSlug] = useState("");
+  const [showNew, setShowNew] = useState(false);
+
+  const rows = (demoStore.list("workspaces").data as unknown as WorkspaceRow[]) ?? [];
+  const currentId = demoStore.getCurrentWorkspaceId();
+
+  function submit() {
+    const name = draftName.trim();
+    const slug = (draftSlug.trim() || name.toLowerCase().replace(/\s+/g, "-")).slice(0, 32);
+    if (!name) return;
+    demoStore.create("workspaces", {
+      name,
+      slug,
+      members_count: 1,
+      region: "—",
+      active: false,
+    });
+    setDraftName("");
+    setDraftSlug("");
+    setShowNew(false);
+  }
+
   return (
     <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Workspaces">
       <div className="mb-6 flex items-end justify-between gap-3">
@@ -739,35 +809,862 @@ function WorkspacesPanel() {
             Workspaces
           </h1>
           <p className="mt-1 text-[13px] text-muted">
-            Multi-workspace is schema-ready · launch with one
+            {rows.length} workspace{rows.length === 1 ? "" : "s"} · click <em>Make active</em> to scope new records to it
           </p>
         </div>
         <Button
           type="button"
           variant="secondary"
           className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
-          onClick={() => undefined}
+          onClick={() => setShowNew((v) => !v)}
         >
           <Plus className={iconClass} aria-hidden="true" />
           New workspace
         </Button>
       </div>
+
+      {showNew ? (
+        <Card className="mb-4 rounded-lg border-border bg-background">
+          <CardContent className="space-y-3 px-[18px] py-4">
+            <label className="block">
+              <span className="text-[12px] font-medium text-secondary">Name</span>
+              <Input
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                placeholder="DesignersMeet Mumbai"
+                className="mt-1 h-[34px] text-[13px]"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[12px] font-medium text-secondary">Slug</span>
+              <Input
+                value={draftSlug}
+                onChange={(e) => setDraftSlug(e.target.value)}
+                placeholder="dm-mumbai"
+                className="mt-1 h-[34px] text-[13px]"
+              />
+            </label>
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                type="button"
+                onClick={submit}
+                className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+              >
+                Create workspace
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setShowNew(false);
+                  setDraftName("");
+                  setDraftSlug("");
+                }}
+                className="h-auto px-3 py-[7px] text-[13px] text-secondary"
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card className="rounded-lg border-border bg-background">
         <CardContent className="p-0">
-          <div className="flex items-center gap-3 border-b border-border-subtle px-5 py-3">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background text-[11px] font-bold text-foreground">
-              HQ
+          {rows.map((w) => {
+            const isCurrent = w.id === currentId;
+            const initials = w.name
+              .split(/\s+/)
+              .map((p) => p[0] ?? "")
+              .join("")
+              .slice(0, 2)
+              .toUpperCase();
+            return (
+              <div
+                key={w.id}
+                data-workspace-id={w.id}
+                data-workspace-active={isCurrent ? "true" : "false"}
+                className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
+              >
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background text-[11px] font-bold text-foreground">
+                  {initials}
+                </div>
+                <div className="flex-1">
+                  <div className="text-[13px] font-semibold text-foreground">{w.name}</div>
+                  <div className="text-[11px] text-muted">
+                    {w.members_count ?? 0} members
+                    {w.region ? ` · ${w.region}` : ""}
+                    {w.slug ? ` · ${w.slug}` : ""}
+                  </div>
+                </div>
+                {isCurrent ? (
+                  <Badge variant="success" dot>
+                    Active
+                  </Badge>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => demoStore.setCurrentWorkspace(w.id)}
+                    className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
+                  >
+                    Make active
+                  </Button>
+                )}
+                {!isCurrent ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => demoStore.remove("workspaces", w.id)}
+                    title="Delete workspace"
+                    aria-label="Delete workspace"
+                    className="h-auto px-2 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-destructive focus-visible:ring-foreground"
+                  >
+                    <Trash2 className={iconClass} aria-hidden="true" />
+                  </Button>
+                ) : null}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Wave-A Phase-2 panels (Audit log, Locale & time, Teams, Plan & usage,
+// Invoices, Vendor portal). Each renders inside the locked Settings right-
+// pane slot — no chrome / sidebar / header DOM changes.
+// ────────────────────────────────────────────────────────────────────────
+
+interface AuditEventRow {
+  id: string;
+  actor: string;
+  action: string;
+  target_type: string;
+  target_id: string;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
+}
+
+function AuditLogPanel() {
+  useDemoStoreTick();
+  const events = demoStore.auditTail(100) as unknown as AuditEventRow[];
+
+  const [actionFilter, setActionFilter] = useState<string>("all");
+  const [actorFilter, setActorFilter] = useState<string>("all");
+  const [dateBucket, setDateBucket] = useState<"all" | "1h" | "24h" | "7d">("all");
+
+  const actors = useMemo(() => Array.from(new Set(events.map((e) => e.actor))), [events]);
+  const actions = useMemo(() => Array.from(new Set(events.map((e) => e.action))), [events]);
+
+  const filtered = useMemo(() => {
+    const now = Date.now();
+    const bucketMs =
+      dateBucket === "1h" ? 60 * 60_000 :
+      dateBucket === "24h" ? 24 * 60 * 60_000 :
+      dateBucket === "7d" ? 7 * 24 * 60 * 60_000 : Number.POSITIVE_INFINITY;
+    return events.filter((e) => {
+      if (actionFilter !== "all" && e.action !== actionFilter) return false;
+      if (actorFilter !== "all" && e.actor !== actorFilter) return false;
+      const ts = new Date(e.timestamp).getTime();
+      if (Number.isFinite(bucketMs) && now - ts > bucketMs) return false;
+      return true;
+    });
+  }, [events, actionFilter, actorFilter, dateBucket]);
+
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Audit log">
+      <div className="mb-6 flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+            Audit log
+          </h1>
+          <p className="mt-1 text-[13px] text-muted">
+            Last 100 mutations across this workspace · live tail
+          </p>
+        </div>
+        <Badge variant="neutral">{filtered.length} of {events.length}</Badge>
+      </div>
+
+      <Card className="mb-3 rounded-lg border-border bg-background">
+        <CardContent className="flex flex-wrap items-center gap-2 px-[18px] py-3">
+          <FilterChipGroup
+            label="Action"
+            value={actionFilter}
+            onChange={setActionFilter}
+            options={["all", ...actions]}
+          />
+          <FilterChipGroup
+            label="Actor"
+            value={actorFilter}
+            onChange={setActorFilter}
+            options={["all", ...actors]}
+          />
+          <FilterChipGroup
+            label="When"
+            value={dateBucket}
+            onChange={(v) => setDateBucket(v as typeof dateBucket)}
+            options={["all", "1h", "24h", "7d"]}
+            labelFor={(v) =>
+              v === "all" ? "Anytime" :
+              v === "1h" ? "Last hour" :
+              v === "24h" ? "Last 24h" :
+              v === "7d" ? "Last 7d" : v
+            }
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="p-0">
+          {filtered.length === 0 ? (
+            <div className="px-5 py-8 text-center text-[12px] text-muted">
+              No audit events match the filters. Trigger a CRUD action elsewhere in Settings to populate the log.
             </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-foreground">DesignersMeet HQ</div>
-              <div className="text-[11px] text-muted">
-                12 members · Bengaluru · designersmeet.com
+          ) : (
+            filtered.map((e) => (
+              <div
+                key={e.id}
+                data-audit-id={e.id}
+                className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
+              >
+                <Avatar size="sm">
+                  {e.actor.slice(0, 2).toUpperCase()}
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="truncate text-[13px] text-foreground">
+                    <span className="font-semibold">{e.actor}</span>
+                    <span className="text-muted"> · {e.action}</span>
+                    <span className="text-muted"> on </span>
+                    <span className="font-medium">{e.target_type}</span>
+                    <span className="text-muted"> · </span>
+                    <span className="text-[12px] text-muted">{e.target_id}</span>
+                  </div>
+                  {e.metadata && Object.keys(e.metadata).length > 0 ? (
+                    <div className="mt-0.5 truncate text-[11px] text-muted">
+                      {Object.entries(e.metadata)
+                        .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+                        .join(" · ")}
+                    </div>
+                  ) : null}
+                </div>
+                <span className="text-[11px] text-muted">
+                  {new Date(e.timestamp).toLocaleString()}
+                </span>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function FilterChipGroup({
+  label,
+  value,
+  onChange,
+  options,
+  labelFor,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  labelFor?: (v: string) => string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[11px] font-medium uppercase tracking-wider text-muted">{label}</span>
+      {options.map((opt) => {
+        const text = labelFor ? labelFor(opt) : opt === "all" ? "All" : opt;
+        const active = opt === value;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(opt)}
+            data-active={active ? "true" : "false"}
+            className={cn(
+              "h-auto rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+              active
+                ? "bg-primary-tint text-primary"
+                : "bg-border-subtle text-secondary hover:bg-hover hover:text-foreground",
+            )}
+          >
+            {text}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function LocaleTimePanel() {
+  const [prefs, setPrefs] = usePreferences();
+  const { formatDate } = useDatePreference();
+  const [saved, setSaved] = useState(false);
+
+  function save<K extends keyof typeof prefs>(key: K, value: (typeof prefs)[K]) {
+    setPrefs({ [key]: value } as Partial<typeof prefs>);
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1600);
+  }
+
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Locale & time">
+      <div className="mb-6">
+        <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+          Locale &amp; time
+        </h1>
+        <p className="mt-1 text-[13px] text-muted">
+          Defaults for the whole demo session · persisted to your browser
+        </p>
+      </div>
+
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="space-y-4 px-[18px] py-5">
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Timezone</span>
+            <select
+              value={prefs.timezone}
+              onChange={(e) => save("timezone", e.target.value)}
+              className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz} value={tz}>{tz}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Language</span>
+            <select
+              value={prefs.language}
+              onChange={(e) => save("language", e.target.value as typeof prefs.language)}
+              className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
+            >
+              {LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>{l.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Date format</span>
+            <select
+              value={prefs.dateFormat}
+              onChange={(e) => save("dateFormat", e.target.value as typeof prefs.dateFormat)}
+              className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
+            >
+              {DATE_FORMATS.map((f) => (
+                <option key={f.code} value={f.code}>{f.label}</option>
+              ))}
+            </select>
+          </label>
+          <div className="rounded-md border border-border-subtle bg-border-subtle/40 px-3 py-2 text-[12px] text-secondary">
+            Today renders as <span className="font-semibold text-foreground">{formatDate(new Date())}</span>
+            {saved ? <span className="ml-2 text-primary">· Saved</span> : null}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Team-color palette resolves to design tokens (no raw hex — passes the
+// dm/no-raw-color guard). Each entry references a `--color-*` CSS variable
+// already declared in src/styles/tokens.css. Keeps Style Dictionary as the
+// single source of truth for every renderable colour.
+const TEAM_COLORS = [
+  "var(--color-foreground)",
+  "var(--color-primary)",
+  "var(--color-info)",
+  "var(--color-success)",
+  "var(--color-warning)",
+  "var(--color-danger)",
+  "var(--color-secondary)",
+  "var(--color-muted)",
+];
+
+interface TeamRow {
+  id: string;
+  name: string;
+  color: string;
+  members: string[];
+  workspace_id?: string;
+}
+
+interface UserRow {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+function TeamsPanel() {
+  useDemoStoreTick();
+  const [showNew, setShowNew] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [draftColor, setDraftColor] = useState(TEAM_COLORS[0]);
+  const [draftMembers, setDraftMembers] = useState<string[]>([]);
+  const wsId = demoStore.getCurrentWorkspaceId();
+
+  const teams = (demoStore.list("teams").data as unknown as TeamRow[]) ?? [];
+  const users = (demoStore.list("users").data as unknown as UserRow[]) ?? [];
+  const scoped = teams.filter((t) => !t.workspace_id || t.workspace_id === wsId);
+
+  function submit() {
+    const name = draftName.trim();
+    if (!name) return;
+    demoStore.create("teams", {
+      name,
+      color: draftColor,
+      members: draftMembers,
+      workspace_id: wsId,
+    });
+    setDraftName("");
+    setDraftColor(TEAM_COLORS[0]);
+    setDraftMembers([]);
+    setShowNew(false);
+  }
+
+  function toggleMember(uid: string, current: string[], teamId?: string) {
+    const next = current.includes(uid) ? current.filter((x) => x !== uid) : [...current, uid];
+    if (teamId) demoStore.update("teams", teamId, { members: next });
+    return next;
+  }
+
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Teams">
+      <div className="mb-6 flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+            Teams
+          </h1>
+          <p className="mt-1 text-[13px] text-muted">
+            {scoped.length} team{scoped.length === 1 ? "" : "s"} · assignable on projects and contacts
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
+          onClick={() => setShowNew((v) => !v)}
+        >
+          <Plus className={iconClass} aria-hidden="true" />
+          New team
+        </Button>
+      </div>
+
+      {showNew ? (
+        <Card className="mb-4 rounded-lg border-border bg-background">
+          <CardContent className="space-y-3 px-[18px] py-4">
+            <label className="block">
+              <span className="text-[12px] font-medium text-secondary">Team name</span>
+              <Input
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                placeholder="Procurement"
+                className="mt-1 h-[34px] text-[13px]"
+              />
+            </label>
+            <div>
+              <span className="text-[12px] font-medium text-secondary">Color</span>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {TEAM_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setDraftColor(c)}
+                    aria-label={`Color ${c}`}
+                    title={c}
+                    data-active={draftColor === c ? "true" : "false"}
+                    className={cn(
+                      "size-6 rounded-md ring-offset-2 transition-shadow",
+                      draftColor === c ? "ring-2 ring-foreground" : "",
+                    )}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
               </div>
             </div>
-            <Badge variant="success" dot>
-              Active
-            </Badge>
+            <div>
+              <span className="text-[12px] font-medium text-secondary">Members</span>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {users.map((u) => {
+                  const selected = draftMembers.includes(u.id);
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      data-active={selected ? "true" : "false"}
+                      onClick={() => setDraftMembers((cur) => toggleMember(u.id, cur))}
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                        selected
+                          ? "bg-primary-tint text-primary"
+                          : "bg-border-subtle text-secondary hover:bg-hover hover:text-foreground",
+                      )}
+                    >
+                      {u.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                type="button"
+                onClick={submit}
+                className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+              >
+                Create team
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setShowNew(false);
+                  setDraftName("");
+                  setDraftMembers([]);
+                }}
+                className="h-auto px-3 py-[7px] text-[13px] text-secondary"
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="p-0">
+          {scoped.length === 0 ? (
+            <div className="px-5 py-8 text-center text-[12px] text-muted">
+              No teams yet. Click <em>New team</em> to create one for this workspace.
+            </div>
+          ) : (
+            scoped.map((t) => (
+              <div
+                key={t.id}
+                data-team-id={t.id}
+                className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
+              >
+                <div className="size-3 shrink-0 rounded-full" style={{ backgroundColor: t.color }} />
+                <div className="flex-1">
+                  <div className="text-[13px] font-semibold text-foreground">{t.name}</div>
+                  <div className="text-[11px] text-muted">
+                    {t.members.length} member{t.members.length === 1 ? "" : "s"}
+                    {t.members.length > 0
+                      ? ` · ${t.members
+                          .map((m) => users.find((u) => u.id === m)?.name ?? m)
+                          .join(", ")}`
+                      : ""}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => demoStore.remove("teams", t.id)}
+                  aria-label="Delete team"
+                  title="Delete team"
+                  className="h-auto px-2 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-destructive focus-visible:ring-foreground"
+                >
+                  <Trash2 className={iconClass} aria-hidden="true" />
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+interface PlanRow {
+  id: string;
+  name: string;
+  seats_used: number; seats_total: number;
+  projects_used: number; projects_limit: number;
+  storage_gb_used: number; storage_gb_limit: number;
+  ai_credits_used: number; ai_credits_cap: number;
+  renews_on: string;
+}
+
+function PlanUsagePanel() {
+  useDemoStoreTick();
+  const plan = (demoStore.list("plan").data as unknown as PlanRow[])[0];
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  if (!plan) return null;
+
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Plan & usage">
+      <div className="mb-6 flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+            Plan &amp; usage
+          </h1>
+          <p className="mt-1 text-[13px] text-muted">
+            Current plan: <span className="font-semibold text-foreground">{plan.name}</span> · renews {plan.renews_on}
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={() => setShowUpgrade(true)}
+          className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+        >
+          Upgrade plan
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <PlanMeter label="Seats" used={plan.seats_used} limit={plan.seats_total} unit="" />
+        <PlanMeter label="Projects" used={plan.projects_used} limit={plan.projects_limit} unit="" />
+        <PlanMeter label="Storage" used={plan.storage_gb_used} limit={plan.storage_gb_limit} unit=" GB" />
+        <PlanMeter label="AI credits" used={plan.ai_credits_used} limit={plan.ai_credits_cap} unit="" />
+      </div>
+
+      {showUpgrade ? <UpgradeModal onClose={() => setShowUpgrade(false)} /> : null}
+    </div>
+  );
+}
+
+function PlanMeter({ label, used, limit, unit }: { label: string; used: number; limit: number; unit: string }) {
+  const pct = Math.min(100, Math.max(0, Math.round((used / limit) * 100)));
+  const overHalf = pct >= 50;
+  const overEighty = pct >= 80;
+  return (
+    <Card className="rounded-lg border-border bg-background" data-plan-meter={label}>
+      <CardContent className="px-[18px] py-4">
+        <div className="flex items-baseline justify-between">
+          <div className="text-[13px] font-semibold text-foreground">{label}</div>
+          <div className="text-[12px] text-muted">
+            <span className="font-semibold text-foreground">{used.toLocaleString()}{unit}</span>
+            {" / "}
+            {limit.toLocaleString()}{unit}
           </div>
+        </div>
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border-subtle">
+          <div
+            className={cn(
+              "h-full rounded-full transition-[width]",
+              overEighty ? "bg-warning" : overHalf ? "bg-primary" : "bg-primary",
+            )}
+            style={{ width: `${pct}%` }}
+            data-pct={pct}
+          />
+        </div>
+        <div className="mt-1 text-[11px] text-muted">{pct}% used</div>
+      </CardContent>
+    </Card>
+  );
+}
+
+const PLAN_TIERS = [
+  { name: "Solo", price: "₹2,900/mo", seats: 1, features: ["1 workspace", "10 projects", "10 GB storage", "Email support"] },
+  { name: "Studio", price: "₹7,900/mo", seats: 12, features: ["3 workspaces", "50 projects", "100 GB storage", "Priority support", "Audit log"], current: true },
+  { name: "Agency", price: "₹19,900/mo", seats: 40, features: ["Unlimited workspaces", "Unlimited projects", "1 TB storage", "Custom SSO", "Webhooks"] },
+  { name: "Enterprise", price: "Contact us", seats: 9999, features: ["Dedicated CSM", "On-prem option", "SLA-backed support", "Custom integrations"] },
+];
+
+function UpgradeModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[10000] flex items-start justify-center overflow-auto bg-foreground/40 px-4 py-12"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Upgrade plan"
+      onClick={onClose}
+      data-upgrade-modal="true"
+    >
+      <div
+        className="w-full max-w-[920px] rounded-lg border border-border bg-background shadow-pop"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <div className="text-[15px] font-semibold text-foreground">Upgrade your plan</div>
+            <div className="text-[12px] text-muted">Demo only · no real billing happens</div>
+          </div>
+          <IconButton title="Close" onClick={onClose}>
+            <X className={iconClass} aria-hidden="true" />
+          </IconButton>
+        </div>
+        <div className="grid grid-cols-4 gap-3 px-5 py-5">
+          {PLAN_TIERS.map((tier) => (
+            <div
+              key={tier.name}
+              data-tier={tier.name}
+              data-current={tier.current ? "true" : "false"}
+              className={cn(
+                "rounded-lg border p-4",
+                tier.current ? "border-primary bg-primary-tint/20" : "border-border bg-background",
+              )}
+            >
+              <div className="flex items-baseline justify-between">
+                <div className="text-[14px] font-semibold text-foreground">{tier.name}</div>
+                {tier.current ? <Badge variant="success">Current</Badge> : null}
+              </div>
+              <div className="mt-1 text-[12px] text-muted">{tier.price}</div>
+              <ul className="mt-3 space-y-1.5 text-[12px] text-secondary">
+                {tier.features.map((f) => (
+                  <li key={f} className="flex items-start gap-1.5">
+                    <CheckCircle2 className="mt-[1px] size-3.5 shrink-0 text-primary" aria-hidden="true" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface InvoiceRow {
+  id: string;
+  period: string;
+  amount: number;
+  currency: string;
+  status: "paid" | "due" | "overdue";
+  issued_at: string;
+  paid_at?: string | null;
+  line_items: Array<{ label: string; amount: number }>;
+}
+
+function InvoicesPanel() {
+  useDemoStoreTick();
+  const invoices = (demoStore.list("invoices").data as unknown as InvoiceRow[]) ?? [];
+
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Invoices">
+      <div className="mb-6">
+        <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+          Invoices
+        </h1>
+        <p className="mt-1 text-[13px] text-muted">
+          {invoices.length} invoice{invoices.length === 1 ? "" : "s"} · click <em>Download</em> for the PDF
+        </p>
+      </div>
+
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="p-0">
+          {invoices.map((inv) => {
+            const statusVariant: BadgeVariant = inv.status === "paid" ? "success" : "neutral";
+            return (
+              <div
+                key={inv.id}
+                data-invoice-id={inv.id}
+                data-invoice-status={inv.status}
+                className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
+              >
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background text-secondary">
+                  <Receipt className={iconClass} aria-hidden="true" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-[13px] font-semibold text-foreground">
+                    {inv.period} · {inv.currency} {inv.amount.toLocaleString("en-IN")}
+                  </div>
+                  <div className="text-[11px] text-muted">
+                    Issued {inv.issued_at?.slice(0, 10)}
+                    {inv.paid_at ? ` · Paid ${inv.paid_at.slice(0, 10)}` : ""}
+                  </div>
+                </div>
+                <Badge variant={statusVariant} dot={inv.status !== "paid"}>
+                  {inv.status === "paid" ? "Paid" : inv.status === "due" ? "Due" : "Overdue"}
+                </Badge>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => downloadInvoicePdf(inv)}
+                  className="h-auto gap-1.5 px-3 py-1.5 text-[12px] focus-visible:ring-foreground"
+                >
+                  <Download className={iconClass} aria-hidden="true" />
+                  Download
+                </Button>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function VendorPortalAdminPanel() {
+  useDemoStoreTick();
+  const vendors = (demoStore.list("vendors").data as Array<{ id: string; name: string; tier: string; status: string }>) ?? [];
+  const invited = vendors.filter((v) => v.status === "Active").length;
+
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Vendor portal">
+      <div className="mb-6 flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+            Vendor portal
+          </h1>
+          <p className="mt-1 text-[13px] text-muted">
+            Read-only view at <code className="rounded bg-border-subtle px-1.5 py-0.5 text-[11px]">/vendor</code> — vendors see only their assigned projects, conversations, deliverables, and issued invoices.
+          </p>
+        </div>
+        <a
+          href="/vendor"
+          data-open-vendor-view="true"
+          className="inline-flex h-auto items-center gap-1.5 rounded-md bg-primary px-3.5 py-[7px] text-[13px] font-medium text-background hover:bg-primary-hover focus-visible:ring-foreground"
+        >
+          <ExternalLink className={iconClass} aria-hidden="true" />
+          Open vendor view
+        </a>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="rounded-lg border-border bg-background">
+          <CardContent className="px-[18px] py-4">
+            <div className="text-[12px] text-muted">Vendors connected</div>
+            <div className="mt-1 text-[22px] font-semibold text-foreground">{invited}</div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-lg border-border bg-background">
+          <CardContent className="px-[18px] py-4">
+            <div className="text-[12px] text-muted">Invitations sent (30d)</div>
+            <div className="mt-1 text-[22px] font-semibold text-foreground">14</div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-lg border-border bg-background">
+          <CardContent className="px-[18px] py-4">
+            <div className="text-[12px] text-muted">Open deliverables</div>
+            <div className="mt-1 text-[22px] font-semibold text-foreground">
+              {(demoStore.list("vendor_deliverables").data as unknown as Array<{ status: string }>).filter((d) => d.status !== "approved").length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mt-4 rounded-lg border-border bg-background">
+        <CardContent className="p-0">
+          {vendors.slice(0, 6).map((v) => (
+            <div
+              key={v.id}
+              data-vendor-row={v.id}
+              className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
+            >
+              <Avatar size="sm">{v.name.slice(0, 2).toUpperCase()}</Avatar>
+              <div className="flex-1">
+                <div className="text-[13px] font-semibold text-foreground">{v.name}</div>
+                <div className="text-[11px] text-muted">{v.tier} · {v.status}</div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => demoStore.create("vendor_invitations", { vendor_id: v.id, invited_at: new Date().toISOString() })}
+                className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
+              >
+                Send invitation
+              </Button>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>
@@ -911,6 +1808,18 @@ export default function Settings() {
                 <UsersRolesPanel />
               ) : activeItem === "SSO providers" ? (
                 <SsoProvidersPanel />
+              ) : activeItem === "Audit log" ? (
+                <AuditLogPanel />
+              ) : activeItem === "Locale & time" ? (
+                <LocaleTimePanel />
+              ) : activeItem === "Teams" ? (
+                <TeamsPanel />
+              ) : activeItem === "Plan & usage" ? (
+                <PlanUsagePanel />
+              ) : activeItem === "Invoices" ? (
+                <InvoicesPanel />
+              ) : activeItem === "Vendor portal" ? (
+                <VendorPortalAdminPanel />
               ) : activeItem !== DEFAULT_SETTINGS_ITEM ? (
                 <Phase2Panel
                   title={activeItem}

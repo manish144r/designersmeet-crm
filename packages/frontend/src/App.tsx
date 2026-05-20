@@ -19,6 +19,7 @@ const Workflows = lazy(() => import("./pages/13-workflows.js"));
 const Forms = lazy(() => import("./pages/14-forms.js"));
 const Settings = lazy(() => import("./pages/15-settings.js"));
 const SpecSheet = lazy(() => import("./pages/16-spec-sheet.js"));
+const VendorPortal = lazy(() => import("./pages/vendor-portal.js"));
 
 const Loading = () => (
   <div className="flex h-screen items-center justify-center text-sm text-muted">Loading…</div>
@@ -61,6 +62,8 @@ export function App() {
         <Route path="/forms" element={<Forms />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/spec" element={<SpecSheet />} />
+        <Route path="/vendor" element={<VendorPortal />} />
+        <Route path="/vendor/*" element={<VendorPortal />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>
