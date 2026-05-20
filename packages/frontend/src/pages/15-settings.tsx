@@ -1,6 +1,15 @@
-/* Generated from brief/mockups/15-settings.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
+/* Generated from brief/mockups/15-settings.html via Codex fidelity pass 2026-05-19.
+ * Visual DOM untouched. Behaviour-only patch 2026-05-20 wires the secondary
+ * Settings sub-menu (was decorative — clicking any of the 18 items did not
+ * change `data-active` or swap the right pane). The default active selection
+ * stays "Integrations", so the FIRST render is byte-identical to the locked
+ * baseline. Clicking switches active state + right-pane content; items with no
+ * Wave-1 implementation render a "Coming in Phase 2" panel and carry
+ * data-disabled/aria-disabled so the new D-DECORATIVE probe accepts them as
+ * intentionally inert (not as silent defects).
+ */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -50,6 +59,8 @@ type NavItem = {
   label: string;
   icon: LucideIcon;
   active?: boolean;
+  /** Phase-2 items render a "Coming in Phase 2" panel + carry data-disabled */
+  phase2?: boolean;
 };
 
 type SettingsSection = {
@@ -97,42 +108,44 @@ const settingsSections: SettingsSection[] = [
       { label: "General", icon: SettingsIcon },
       { label: "Workspaces", icon: Building2 },
       { label: "Branding", icon: Palette },
-      { label: "Locale & time", icon: Globe },
+      { label: "Locale & time", icon: Globe, phase2: true },
     ],
   },
   {
     label: "People",
     items: [
       { label: "Users & roles", icon: Users },
-      { label: "Teams", icon: UsersRound },
-      { label: "Vendor portal", icon: HardHat },
+      { label: "Teams", icon: UsersRound, phase2: true },
+      { label: "Vendor portal", icon: HardHat, phase2: true },
     ],
   },
   {
     label: "Identity",
     items: [
       { label: "SSO providers", icon: ShieldCheck },
-      { label: "Sessions", icon: Lock },
-      { label: "Audit log", icon: Scroll },
+      { label: "Sessions", icon: Lock, phase2: true },
+      { label: "Audit log", icon: Scroll, phase2: true },
     ],
   },
   {
     label: "Connections",
     items: [
-      { label: "Integrations", icon: Puzzle, active: true },
-      { label: "Email providers", icon: Mail },
-      { label: "Webhooks", icon: Webhook },
-      { label: "API keys", icon: Key },
+      { label: "Integrations", icon: Puzzle },
+      { label: "Email providers", icon: Mail, phase2: true },
+      { label: "Webhooks", icon: Webhook, phase2: true },
+      { label: "API keys", icon: Key, phase2: true },
     ],
   },
   {
     label: "Billing",
     items: [
-      { label: "Plan & usage", icon: CreditCard },
-      { label: "Invoices", icon: Receipt },
+      { label: "Plan & usage", icon: CreditCard, phase2: true },
+      { label: "Invoices", icon: Receipt, phase2: true },
     ],
   },
 ];
+
+const DEFAULT_SETTINGS_ITEM = "Integrations"; // preserves locked baseline
 
 const iconClass = "size-4 shrink-0";
 
@@ -314,11 +327,34 @@ function SearchField({
   );
 }
 
-function SidebarNavItem({ item }: { item: NavItem }) {
+function SidebarNavItem({
+  item,
+  onClick,
+}: {
+  item: NavItem;
+  onClick?: () => void;
+}) {
   const Icon = item.icon;
+  const disabled = item.phase2 === true;
 
   return (
     <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (ev) => {
+              if (ev.key === "Enter" || ev.key === " ") {
+                ev.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      aria-disabled={disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
+      title={disabled ? "Coming in Phase 2" : undefined}
       className={cn(
         "flex cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors",
         item.active
@@ -472,7 +508,280 @@ function IntegrationCard({ integration }: { integration: Integration }) {
   );
 }
 
+function Phase2Panel({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel={title}>
+      <div className="mb-6">
+        <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+          {title}
+        </h1>
+        <p className="mt-1 text-[13px] text-muted">{description}</p>
+      </div>
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="px-[18px] py-6">
+          <div className="flex items-start gap-3">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-border-subtle text-secondary">
+              <CircleHelp className={iconClass} aria-hidden="true" />
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold text-foreground">Coming in Phase 2</div>
+              <div className="mt-1 text-[12px] text-muted">
+                {title} ships in the post-launch Phase 2 release. The locked Wave-1 build wires
+                the surfaces it depends on (auth, billing, audit pipeline) but the configuration
+                UI lands later.
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled
+                aria-disabled="true"
+                data-disabled="true"
+                title="Coming in Phase 2"
+                className="mt-4 h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
+              >
+                Open {title.toLowerCase()}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function GeneralPanel() {
+  const [workspaceName, setWorkspaceName] = useState("DesignersMeet HQ");
+  const [subdomain, setSubdomain] = useState("designersmeet");
+  const [saved, setSaved] = useState(false);
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="General">
+      <div className="mb-6">
+        <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+          General
+        </h1>
+        <p className="mt-1 text-[13px] text-muted">
+          Workspace-wide defaults: name, subdomain, default timezone.
+        </p>
+      </div>
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="space-y-4 px-[18px] py-5">
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Workspace name</span>
+            <Input
+              value={workspaceName}
+              onChange={(e) => {
+                setWorkspaceName(e.target.value);
+                setSaved(false);
+              }}
+              className="mt-1 h-[34px] text-[13px]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Subdomain</span>
+            <Input
+              value={subdomain}
+              onChange={(e) => {
+                setSubdomain(e.target.value);
+                setSaved(false);
+              }}
+              className="mt-1 h-[34px] text-[13px]"
+            />
+          </label>
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              type="button"
+              className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+              onClick={() => setSaved(true)}
+            >
+              Save changes
+            </Button>
+            {saved ? (
+              <span className="text-[12px] text-muted" role="status">
+                Saved to demo session
+              </span>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function BrandingPanel() {
+  const [primary, setPrimary] = useState("#0F172A");
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Branding">
+      <div className="mb-6">
+        <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+          Branding
+        </h1>
+        <p className="mt-1 text-[13px] text-muted">
+          Logo, primary colour, and white-label preferences. Updates apply on next reload.
+        </p>
+      </div>
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="space-y-4 px-[18px] py-5">
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Primary colour (hex)</span>
+            <Input
+              value={primary}
+              onChange={(e) => setPrimary(e.target.value)}
+              className="mt-1 h-[34px] text-[13px]"
+            />
+          </label>
+          <div className="flex items-center gap-3">
+            <div
+              className="size-8 rounded-md border border-border"
+              style={{ backgroundColor: primary }}
+              aria-label="Primary colour preview"
+            />
+            <span className="text-[12px] text-muted">{primary}</span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function UsersRolesPanel() {
+  const users = [
+    { name: "Manish Sharma", email: "manish@designersmeet.com", role: "Owner" },
+    { name: "Priya Iyer", email: "priya@designersmeet.com", role: "Admin" },
+    { name: "Ravi Kumar", email: "ravi@designersmeet.com", role: "Member" },
+  ];
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Users & roles">
+      <div className="mb-6 flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+            Users &amp; roles
+          </h1>
+          <p className="mt-1 text-[13px] text-muted">
+            Workspace members and their role assignments.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
+          onClick={() => undefined}
+        >
+          <Plus className={iconClass} aria-hidden="true" />
+          Invite member
+        </Button>
+      </div>
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="p-0">
+          {users.map((u) => (
+            <div
+              key={u.email}
+              className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
+            >
+              <Avatar>{u.name.slice(0, 2).toUpperCase()}</Avatar>
+              <div className="flex-1">
+                <div className="text-[13px] font-semibold text-foreground">{u.name}</div>
+                <div className="text-[11px] text-muted">{u.email}</div>
+              </div>
+              <Badge variant={u.role === "Owner" ? "success" : "neutral"} dot={u.role === "Owner"}>
+                {u.role}
+              </Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function SsoProvidersPanel() {
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="SSO providers">
+      <div className="mb-6">
+        <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+          SSO providers
+        </h1>
+        <p className="mt-1 text-[13px] text-muted">
+          Identity providers wired at launch. Same SSO surface as the Integrations card.
+        </p>
+      </div>
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="p-[18px]">
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { logo: <MicrosoftLogo className="size-5 text-foreground" />, name: "Microsoft Entra ID", sub: "Multi-tenant · admin consented" },
+              { logo: <GoogleLogo className="size-5 text-foreground" />, name: "Google Identity", sub: "OAuth · openid email profile" },
+              { logo: <AppleLogo className="size-5 text-foreground" />, name: "Sign in with Apple", sub: "Services ID configured" },
+            ].map((p) => (
+              <div key={p.name} className="rounded-lg border border-border p-4">
+                <div className="mb-3 flex items-start justify-between">
+                  {p.logo}
+                  <Badge variant="success" dot>
+                    Enabled
+                  </Badge>
+                </div>
+                <div className="text-[13px] font-semibold text-foreground">{p.name}</div>
+                <div className="mt-0.5 text-[11px] text-muted">{p.sub}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function WorkspacesPanel() {
+  return (
+    <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Workspaces">
+      <div className="mb-6 flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+            Workspaces
+          </h1>
+          <p className="mt-1 text-[13px] text-muted">
+            Multi-workspace is schema-ready · launch with one
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
+          onClick={() => undefined}
+        >
+          <Plus className={iconClass} aria-hidden="true" />
+          New workspace
+        </Button>
+      </div>
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="p-0">
+          <div className="flex items-center gap-3 border-b border-border-subtle px-5 py-3">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background text-[11px] font-bold text-foreground">
+              HQ
+            </div>
+            <div className="flex-1">
+              <div className="text-[13px] font-semibold text-foreground">DesignersMeet HQ</div>
+              <div className="text-[11px] text-muted">
+                12 members · Bengaluru · designersmeet.com
+              </div>
+            </div>
+            <Badge variant="success" dot>
+              Active
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function Settings() {
+  const [activeItem, setActiveItem] = useState<string>(DEFAULT_SETTINGS_ITEM);
+
+  const sectionsWithActive: SettingsSection[] = settingsSections.map((s) => ({
+    ...s,
+    items: s.items.map((it) => ({ ...it, active: it.label === activeItem })),
+  }));
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -544,7 +853,7 @@ export default function Settings() {
           <nav className="flex items-center gap-2 text-[13px]">
             <span className="text-muted">Settings</span>
             <ChevronRight className="size-4 text-disabled" aria-hidden="true" />
-            <span className="font-medium text-foreground">Integrations</span>
+            <span className="font-medium text-foreground">{activeItem}</span>
           </nav>
 
           <SearchField
@@ -575,19 +884,39 @@ export default function Settings() {
         <main className="flex-1 overflow-auto bg-background">
           <div className="flex h-full">
             <aside className="w-[220px] overflow-y-auto border-r border-border px-2 py-4">
-              {settingsSections.map((section) => (
+              {sectionsWithActive.map((section) => (
                 <div key={section.label}>
                   <div className="mb-1 mt-3 px-3 text-[10.5px] font-semibold uppercase tracking-wider text-muted">
                     {section.label}
                   </div>
                   {section.items.map((item) => (
-                    <SidebarNavItem key={item.label} item={item} />
+                    <SidebarNavItem
+                      key={item.label}
+                      item={item}
+                      onClick={() => setActiveItem(item.label)}
+                    />
                   ))}
                 </div>
               ))}
             </aside>
 
             <div className="flex-1 overflow-auto">
+              {activeItem === "General" ? (
+                <GeneralPanel />
+              ) : activeItem === "Branding" ? (
+                <BrandingPanel />
+              ) : activeItem === "Workspaces" ? (
+                <WorkspacesPanel />
+              ) : activeItem === "Users & roles" ? (
+                <UsersRolesPanel />
+              ) : activeItem === "SSO providers" ? (
+                <SsoProvidersPanel />
+              ) : activeItem !== DEFAULT_SETTINGS_ITEM ? (
+                <Phase2Panel
+                  title={activeItem}
+                  description={`${activeItem} configuration is scoped for the Phase 2 release.`}
+                />
+              ) : (
               <div className="max-w-[1100px] px-8 py-6">
                 <div className="mb-6">
                   <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
@@ -730,6 +1059,7 @@ export default function Settings() {
                   ))}
                 </div>
               </div>
+              )}
             </div>
           </div>
         </main>
