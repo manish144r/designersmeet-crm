@@ -61,7 +61,9 @@ interface Row {
   state: string;
   route: string;
   verdict: Verdict;
-  block?: "B-AUTH" | "B-ASYNC" | "B-LOCK" | "B-XJRNY";
+  // D-DECORATIVE is a fail category (decorative interactive element), reported
+  // separately from B-* blockers which are structural impossibilities.
+  block?: "B-AUTH" | "B-ASYNC" | "B-LOCK" | "B-XJRNY" | "D-DECORATIVE";
   governance: boolean;
   reason: string;
 }
@@ -296,6 +298,7 @@ function renderMarkdown(
     "B-ASYNC": "synchronous demoStore, no in-flight — unblock: live backend latency",
     "B-LOCK": "affordance absent from locked page — unblock: Manish [brand-change] approval",
     "B-XJRNY": "breadth cell: interaction not in journey & not on route — coverage, no defect",
+    "D-DECORATIVE": "decorative interactive element (looks clickable, no wired behaviour, not disabled) — unblock: wire onClick OR mark aria-disabled/data-disabled. See decorative-walk.spec.ts.",
   };
   for (const [k, v] of [...blockByKind.entries()].sort((a, b) => b[1] - a[1]))
     L.push(`| ${k} | ${v} | ${bm[k]} |`);

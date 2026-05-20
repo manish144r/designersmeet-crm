@@ -45,6 +45,7 @@ const ALL_JOURNEYS = [
   "approve",
   "reject",
   "generate-report",
+  "exhaustive-ui-walk",
 ];
 
 export const personas: Persona[] = [
@@ -61,6 +62,7 @@ export const personas: Persona[] = [
       "export",
       "profile-update",
       "sign-out",
+      "exhaustive-ui-walk",
     ],
     creds: { email: "owner@designersmeet.demo", password: "demo-owner-pw" },
   },

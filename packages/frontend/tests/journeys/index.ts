@@ -53,6 +53,14 @@ export const journeys: Journey[] = [
     steps: ["secondary-cta-click", "text-input", "modal-open"] },
   { id: "generate-report", label: "Generate report", route: "/dashboard",
     steps: ["date-input", "primary-cta-click", "scroll"] },
+  // exhaustive-ui-walk: methodology fix from feedback_no_decorative_interactive_elements.md.
+  // The persona matrix tests journey completion; this journey adds "every
+  // clickable-looking element on the route is wired or intentionally inert".
+  // Executed via the dedicated D-DECORATIVE probe in decorative-walk.spec.ts
+  // (runs as a separate Playwright config — see test:ux:decorative). Listed
+  // here so the journey set documentation stays the single source of truth.
+  { id: "exhaustive-ui-walk", label: "Exhaustive UI walk (D-DECORATIVE)", route: "/settings",
+    steps: ["sidebar-nav", "primary-cta-click", "icon-button-click", "tab-switch"] },
 ];
 
 export const journeyById = (id: string): Journey | undefined =>

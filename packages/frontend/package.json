@@ -15,6 +15,7 @@
     "test:ui": "vitest --ui",
     "test:ux:full": "playwright test --config=playwright.ux.config.ts",
     "test:ux:critical": "playwright test --config=playwright.ux-critical.config.ts",
+    "test:ux:decorative": "playwright test --config=playwright.ux-decorative.config.ts",
     "test:vr:wiring": "playwright test --config=playwright.config.ts wiring-regression.spec.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
