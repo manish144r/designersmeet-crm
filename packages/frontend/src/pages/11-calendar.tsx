@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/11-calendar.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -421,7 +421,12 @@ function TimeButton({ time }: { time: string }) {
 }
 
 export default function Calendar() {
-  const _ev = useList("calendar-events").data?.data ?? [];
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
+  const _evAll = useList("calendar-events").data?.data ?? [];
+  const _ev =
+    eventTypeFilter === "all"
+      ? _evAll
+      : _evAll.filter((e: any) => e.event_type === eventTypeFilter);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
@@ -589,6 +594,36 @@ export default function Calendar() {
                     Booking link
                   </Button>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 px-8 pb-3">
+                {(
+                  [
+                    ["all", "All"],
+                    ["meeting", "Meeting"],
+                    ["call", "Call"],
+                    ["deadline", "Deadline"],
+                    ["reminder", "Reminder"],
+                  ] as const
+                ).map(([value, label]) => {
+                  const isActive = eventTypeFilter === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setEventTypeFilter(value)}
+                      data-active={isActive ? "true" : "false"}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium leading-[18px] tracking-[0.01em] hover:bg-border-subtle focus-visible:outline-foreground",
+                        isActive
+                          ? "bg-primary-tint text-primary"
+                          : "bg-border-subtle text-secondary",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="flex-1 overflow-auto border-t border-border">

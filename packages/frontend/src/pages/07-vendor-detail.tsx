@@ -40,7 +40,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useItem } from "../hooks/useResource.js";
+import { useItem, useList } from "../hooks/useResource.js";
 import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
@@ -504,9 +504,9 @@ export default function VendorDetail() {
                       <h1 className="font-display text-[24px] font-semibold tracking-normal text-foreground">
                         {v?.name ?? "Aurora Studio"}
                       </h1>
-                      <Badge>Tier-1 partner</Badge>
+                      <Badge>{v?.tier ?? 'Tier-1 partner'}</Badge>
                       <Badge variant="success" dot>
-                        Active
+                        {v?.status ?? 'Active'}
                       </Badge>
                       <div className="ml-2 flex items-center gap-1">
                         <Star className="size-4 shrink-0 fill-current text-warning" aria-hidden="true" />
@@ -520,11 +520,11 @@ export default function VendorDetail() {
                     <div className="mt-3 flex items-center gap-4 text-[12px] text-secondary">
                       <span className="flex items-center gap-1.5">
                         <Mail className="size-4 text-muted" aria-hidden="true" />
-                        hello@aurorastudio.in
+                        {v?.email ?? 'hello@aurorastudio.in'}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Phone className="size-4 text-muted" aria-hidden="true" />
-                        +91 80 4123 5678
+                        {v?.phone ?? '+91 80 4123 5678'}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Globe className="size-4 text-muted" aria-hidden="true" />
@@ -587,148 +587,269 @@ export default function VendorDetail() {
 
               <div className="grid grid-cols-3 gap-6 px-8 py-6">
                 <div className="col-span-2 space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <div className="text-[13px] font-semibold text-foreground">
-                        Skills & specialization
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => useUIStore.getState().openEdit("vendors", vid)}
-                        className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground"
-                      >
-                        <Pencil className={iconClass} aria-hidden="true" />
-                        Edit
-                      </Button>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {skills.map((skill) => (
-                          <Badge key={skill}>{skill}</Badge>
-                        ))}
-                      </div>
-                      <div className="mt-5 grid grid-cols-3 gap-4 border-t border-border-subtle pt-4">
-                        <div>
-                          <div className="text-[11px] uppercase tracking-[0.04em] text-muted">
-                            Avg. project value
+                  {activeTab === 'Profile' && (
+                    <>
+                      <Card>
+                        <CardHeader>
+                          <div className="text-[13px] font-semibold text-foreground">
+                            Skills & specialization
                           </div>
-                          <div className="mt-1 text-[16px] font-semibold text-foreground">₹ 4.2 L</div>
-                        </div>
-                        <div>
-                          <div className="text-[11px] uppercase tracking-[0.04em] text-muted">
-                            On-time delivery
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => useUIStore.getState().openEdit("vendors", vid)}
+                            className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground"
+                          >
+                            <Pencil className={iconClass} aria-hidden="true" />
+                            Edit
+                          </Button>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
+                            {skills.map((skill) => (
+                              <Badge key={skill}>{skill}</Badge>
+                            ))}
                           </div>
-                          <div className="mt-1 text-[16px] font-semibold text-success">94%</div>
-                        </div>
-                        <div>
-                          <div className="text-[11px] uppercase tracking-[0.04em] text-muted">
-                            Last assignment
+                          <div className="mt-5 grid grid-cols-3 gap-4 border-t border-border-subtle pt-4">
+                            <div>
+                              <div className="text-[11px] uppercase tracking-[0.04em] text-muted">
+                                Avg. project value
+                              </div>
+                              <div className="mt-1 text-[16px] font-semibold text-foreground">₹ 4.2 L</div>
+                            </div>
+                            <div>
+                              <div className="text-[11px] uppercase tracking-[0.04em] text-muted">
+                                On-time delivery
+                              </div>
+                              <div className="mt-1 text-[16px] font-semibold text-success">94%</div>
+                            </div>
+                            <div>
+                              <div className="text-[11px] uppercase tracking-[0.04em] text-muted">
+                                Last assignment
+                              </div>
+                              <div className="mt-1 text-[16px] font-semibold text-foreground">5h ago</div>
+                            </div>
                           </div>
-                          <div className="mt-1 text-[16px] font-semibold text-foreground">5h ago</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <div className="text-[13px] font-semibold text-foreground">Rate card</div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground"
-                      >
-                        <ExternalLink className={iconClass} aria-hidden="true" />
-                        View MSA
-                      </Button>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <table className="w-full border-separate border-spacing-0 text-[13px]">
-                        <thead>
-                          <tr>
-                            <th className={tableHeadClass}>Deliverable</th>
-                            <th className={tableHeadClass}>Unit</th>
-                            <th className={tableHeadClass}>Rate</th>
-                            <th className={tableHeadClass}>Notes</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {rateRows.map((row, index) => {
-                            const isLast = index === rateRows.length - 1;
-
-                            return (
-                              <tr key={row.deliverable} className="hover:bg-hover">
-                                <td className={cn(tableCellClass, isLast && "border-border")}>
-                                  <span className="font-medium text-foreground">{row.deliverable}</span>
-                                </td>
-                                <td className={cn(tableCellClass, isLast && "border-border")}>
-                                  {row.unit}
-                                </td>
-                                <td className={cn(tableCellClass, isLast && "border-border")}>
-                                  {row.rate}
-                                </td>
-                                <td className={cn(tableCellClass, "text-muted", isLast && "border-border")}>
-                                  {row.notes}
-                                </td>
+                      <Card>
+                        <CardHeader>
+                          <div className="text-[13px] font-semibold text-foreground">Rate card</div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground"
+                          >
+                            <ExternalLink className={iconClass} aria-hidden="true" />
+                            View MSA
+                          </Button>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          <table className="w-full border-separate border-spacing-0 text-[13px]">
+                            <thead>
+                              <tr>
+                                <th className={tableHeadClass}>Deliverable</th>
+                                <th className={tableHeadClass}>Unit</th>
+                                <th className={tableHeadClass}>Rate</th>
+                                <th className={tableHeadClass}>Notes</th>
                               </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </CardContent>
-                  </Card>
+                            </thead>
+                            <tbody>
+                              {rateRows.map((row, index) => {
+                                const isLast = index === rateRows.length - 1;
 
-                  <Card>
-                    <CardHeader>
-                      <div className="text-[13px] font-semibold text-foreground">Project history</div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground"
-                      >
-                        All 12 →
-                      </Button>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <table className="w-full border-separate border-spacing-0 text-[13px]">
-                        <thead>
-                          <tr>
-                            <th className={tableHeadClass}>Project</th>
-                            <th className={tableHeadClass}>Role</th>
-                            <th className={tableHeadClass}>Period</th>
-                            <th className={tableHeadClass}>Fee</th>
-                            <th className={tableHeadClass}>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {projectRows.map((row, index) => {
-                            const isLast = index === projectRows.length - 1;
+                                return (
+                                  <tr key={row.deliverable} className="hover:bg-hover">
+                                    <td className={cn(tableCellClass, isLast && "border-border")}>
+                                      <span className="font-medium text-foreground">{row.deliverable}</span>
+                                    </td>
+                                    <td className={cn(tableCellClass, isLast && "border-border")}>
+                                      {row.unit}
+                                    </td>
+                                    <td className={cn(tableCellClass, isLast && "border-border")}>
+                                      {row.rate}
+                                    </td>
+                                    <td className={cn(tableCellClass, "text-muted", isLast && "border-border")}>
+                                      {row.notes}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </CardContent>
+                      </Card>
 
-                            return (
-                              <tr key={row.project} className="hover:bg-hover">
-                                <td className={cn(tableCellClass, isLast && "border-border")}>
-                                  <span className="font-medium text-foreground">{row.project}</span>
-                                </td>
-                                <td className={cn(tableCellClass, isLast && "border-border")}>
-                                  {row.role}
-                                </td>
-                                <td className={cn(tableCellClass, isLast && "border-border")}>
-                                  {row.period}
-                                </td>
-                                <td className={cn(tableCellClass, isLast && "border-border")}>
-                                  {row.fee}
-                                </td>
-                                <td className={cn(tableCellClass, isLast && "border-border")}>
-                                  <StatusPill variant={row.variant}>{row.status}</StatusPill>
-                                </td>
+                      <Card>
+                        <CardHeader>
+                          <div className="text-[13px] font-semibold text-foreground">Project history</div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground"
+                          >
+                            All 12 →
+                          </Button>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          <table className="w-full border-separate border-spacing-0 text-[13px]">
+                            <thead>
+                              <tr>
+                                <th className={tableHeadClass}>Project</th>
+                                <th className={tableHeadClass}>Role</th>
+                                <th className={tableHeadClass}>Period</th>
+                                <th className={tableHeadClass}>Fee</th>
+                                <th className={tableHeadClass}>Status</th>
                               </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </CardContent>
-                  </Card>
+                            </thead>
+                            <tbody>
+                              {projectRows.map((row, index) => {
+                                const isLast = index === projectRows.length - 1;
+
+                                return (
+                                  <tr key={row.project} className="hover:bg-hover">
+                                    <td className={cn(tableCellClass, isLast && "border-border")}>
+                                      <span className="font-medium text-foreground">{row.project}</span>
+                                    </td>
+                                    <td className={cn(tableCellClass, isLast && "border-border")}>
+                                      {row.role}
+                                    </td>
+                                    <td className={cn(tableCellClass, isLast && "border-border")}>
+                                      {row.period}
+                                    </td>
+                                    <td className={cn(tableCellClass, isLast && "border-border")}>
+                                      {row.fee}
+                                    </td>
+                                    <td className={cn(tableCellClass, isLast && "border-border")}>
+                                      <StatusPill variant={row.variant}>{row.status}</StatusPill>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+
+                  {activeTab === 'Projects' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Projects</div>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <table className="w-full border-separate border-spacing-0 text-[13px]">
+                          <thead>
+                            <tr>
+                              <th className={tableHeadClass}>Project</th>
+                              <th className={tableHeadClass}>Role</th>
+                              <th className={tableHeadClass}>Period</th>
+                              <th className={tableHeadClass}>Fee</th>
+                              <th className={tableHeadClass}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(useList('projects', { vendorId: vid }).data?.data || []).map((project: any, index: number) => {
+                              const isLast = index === projectRows.length - 1;
+
+                              return (
+                                <tr key={project.project} className="hover:bg-hover">
+                                  <td className={cn(tableCellClass, isLast && "border-border")}>
+                                    <span className="font-medium text-foreground">{project.project}</span>
+                                  </td>
+                                  <td className={cn(tableCellClass, isLast && "border-border")}>
+                                    {project.role}
+                                  </td>
+                                  <td className={cn(tableCellClass, isLast && "border-border")}>
+                                    {project.period}
+                                  </td>
+                                  <td className={cn(tableCellClass, isLast && "border-border")}>
+                                    {project.fee}
+                                  </td>
+                                  <td className={cn(tableCellClass, isLast && "border-border")}>
+                                    <StatusPill variant={project.variant}>{project.status}</StatusPill>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Tasks' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Tasks</div>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="list-disc pl-5">
+                          {(useList('project-stages', { assignedVendorId: vid }).data?.data || []).map((task: any) => (
+                            <li key={task.id} className="text-[13px] text-foreground">{task.name}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Deliverables' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Deliverables</div>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="list-disc pl-5">
+                          {rateRows.map((row) => (
+                            <li key={row.deliverable} className="text-[13px] text-foreground">{row.deliverable}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Conversations' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Conversations</div>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="list-disc pl-5">
+                          {(useList('conversations', { vendorId: vid }).data?.data || []).map((conversation: any) => (
+                            <li key={conversation.id} className="text-[13px] text-foreground">{conversation.topic}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Files' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Files</div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-[13px] text-muted">Phase 2 placeholder card</div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Reviews' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Reviews</div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="text-[13px] text-foreground">"Great collaboration!" - Client A</div>
+                          <div className="text-[13px] text-foreground">"Excellent design work." - Client B</div>
+                          <div className="text-[13px] text-foreground">"Timely delivery and quality." - Client C</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
 
                 <div className="col-span-1 space-y-4">

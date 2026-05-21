@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/10-pipelines.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -238,11 +238,24 @@ function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: "ne
   );
 }
 
-function FilterBadge({ children }: { children: ReactNode }) {
+function FilterBadge({
+  children,
+  active,
+  onClick,
+}: {
+  children: ReactNode;
+  active?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1 rounded-full bg-border-subtle px-2 py-0.5 text-[11px] font-medium leading-[18px] tracking-[0.01em] text-secondary hover:bg-border-subtle focus-visible:outline-foreground"
+      onClick={onClick}
+      data-active={active ? "true" : "false"}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium leading-[18px] tracking-[0.01em] hover:bg-border-subtle focus-visible:outline-foreground",
+        active ? "bg-primary-tint text-primary" : "bg-border-subtle text-secondary",
+      )}
     >
       {children}
     </button>
@@ -312,8 +325,19 @@ function KanbanColumn({ column }: { column: PipelineColumn }) {
 }
 
 export default function Pipelines() {
-  const _st = useList<PipelineStageRow>("pipeline-stages").data?.data ?? [];
+  const [activePipelineFilter, setActivePipelineFilter] = useState<string | null>(null);
+  const _st = useList<PipelineStageRow & { id?: string }>("pipeline-stages").data?.data ?? [];
   const _pp = useList<PipelineRow>("pipelines").data?.data ?? [];
+  const _deals =
+    useList<{
+      id: string;
+      pipelineStageId?: string;
+      contactName?: string;
+      note?: string;
+      value?: number;
+      currency?: string;
+      createdAt?: string;
+    }>("pipeline-deals").data?.data ?? [];
   const _pl1Stages = _st
     .filter((stage) => stage.pipeline_id === "pl1")
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -321,16 +345,32 @@ export default function Pipelines() {
     _pl1Stages.length > 0
       ? pipelineColumns.map((column, index) => {
           const stage = _pl1Stages[index];
-
-          return stage
-            ? {
-                ...column,
-                title: stage.title ?? column.title,
-                count: stage.count ?? column.count,
-                total: stage.total ?? column.total,
-                dotClass: stage.dotClass ?? column.dotClass,
-              }
-            : column;
+          if (!stage) return column;
+          const stageDeals = _deals.filter((d) => d.pipelineStageId === stage.id);
+          const liveCards =
+            stageDeals.length > 0
+              ? stageDeals.map<OpportunityCard>((d) => ({
+                  title: d.contactName ?? "—",
+                  detail: d.note ?? "—",
+                  value: `${d.currency ?? "₹"} ${(d.value ?? 0).toLocaleString("en-IN")}`,
+                  age: "—",
+                  owner: (d.contactName ?? "?").slice(0, 1).toUpperCase(),
+                }))
+              : column.cards;
+          const liveTotal =
+            stageDeals.length > 0
+              ? `${stageDeals[0]?.currency ?? "₹"} ${stageDeals
+                  .reduce((sum, d) => sum + (d.value ?? 0), 0)
+                  .toLocaleString("en-IN")}`
+              : column.total;
+          return {
+            ...column,
+            title: stage.title ?? column.title,
+            count: stageDeals.length > 0 ? String(stageDeals.length) : stage.count ?? column.count,
+            total: liveTotal,
+            dotClass: stage.dotClass ?? column.dotClass,
+            cards: liveCards,
+          };
         })
       : pipelineColumns;
 
@@ -450,10 +490,19 @@ export default function Pipelines() {
             </div>
 
             <div className="flex items-center gap-2 border-b border-border bg-subtle/40 px-8 pb-3">
-              <FilterBadge>Owner: Anyone</FilterBadge>
-              <FilterBadge>Source: Any</FilterBadge>
-              <FilterBadge>Close date: This quarter</FilterBadge>
-              <FilterBadge>Value: Any</FilterBadge>
+              {(["Owner: Anyone", "Source: Any", "Close date: This quarter", "Value: Any"] as const).map(
+                (label) => (
+                  <FilterBadge
+                    key={label}
+                    active={activePipelineFilter === label}
+                    onClick={() =>
+                      setActivePipelineFilter((cur) => (cur === label ? null : label))
+                    }
+                  >
+                    {label}
+                  </FilterBadge>
+                ),
+              )}
               <FilterBadge>+ Add filter</FilterBadge>
             </div>
 

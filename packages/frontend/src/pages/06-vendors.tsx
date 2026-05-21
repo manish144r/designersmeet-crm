@@ -27,6 +27,7 @@ import {
   Settings,
   ShieldCheck,
   Star,
+  Trash2,
   Upload,
   Users,
   UsersRound,
@@ -37,6 +38,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { SortChevron } from "../components/SortChevron.js";
 import { useList } from "../hooks/useResource.js";
 import { useUIStore } from "../stores/uiStore.js";
 import { useNavigate } from "react-router-dom";
@@ -258,9 +260,20 @@ function AgreementStatus({ agreement }: { agreement: Vendor["agreement"] }) {
 
 export default function Vendors() {
   const [q, setQ] = useState("");
+  const [sort, setSortField] = useState("name");
+  const [order, setOrder] = useState<"asc" | "desc">("asc");
   const navigate = useNavigate();
-  const { data } = useList("vendors", { name: q });
+  const { data } = useList("vendors", { name: q, sort, order });
   const vendors = (data?.data ?? []) as Vendor[];
+
+  function handleSort(field: string) {
+    if (sort === field) {
+      setOrder(order === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setOrder("asc");
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
@@ -489,12 +502,31 @@ export default function Vendors() {
                         className="size-4 rounded border-border-strong accent-foreground"
                       />
                     </th>
-                    <th className={tableHeadClass}>Vendor</th>
+                    <th className={tableHeadClass}>
+                      Vendor
+                      <SortChevron field="name" sort={sort} order={order} onSort={handleSort} />
+                    </th>
                     <th className={tableHeadClass}>Regions</th>
                     <th className={tableHeadClass}>Tier</th>
-                    <th className={tableHeadClass}>Rating</th>
+                    <th className={tableHeadClass}>
+                      Rating
+                      <SortChevron
+                        field="quality_rating"
+                        sort={sort}
+                        order={order}
+                        onSort={handleSort}
+                      />
+                    </th>
                     <th className={tableHeadClass}>NDA / MSA</th>
-                    <th className={tableHeadClass}>Status</th>
+                    <th className={tableHeadClass}>
+                      Status
+                      <SortChevron
+                        field="availability_status"
+                        sort={sort}
+                        order={order}
+                        onSort={handleSort}
+                      />
+                    </th>
                     <th className={tableHeadClass} />
                   </tr>
                 </thead>
@@ -564,6 +596,17 @@ export default function Vendors() {
                             }}
                           >
                             <MoreHorizontal className={iconClass} aria-hidden="true" />
+                          </IconButton>
+                          <IconButton
+                            title={`Delete ${vendor.name}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              useUIStore
+                                .getState()
+                                .openConfirmDelete("vendors", vendor.id);
+                            }}
+                          >
+                            <Trash2 className={iconClass} aria-hidden="true" />
                           </IconButton>
                         </td>
                       </tr>

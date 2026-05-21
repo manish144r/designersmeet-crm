@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "appId": "181d5d71-93f0-445a-a89d-6b01b987b070",
+  "appDisplayName": "DesignersMeet CRM",
+  "region": "prod",
+  "environmentId": "16411312-4930-e236-a2e8-14a748933dc5",
+  "description": "Vendor + project + freelancer CRM (Wave A+B), demo-mode build, hosted by Power Apps",
+  "buildPath": "dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:5173",
+  "logoPath": "Default",
+  "connectionReferences": {},
+  "databaseReferences": {}
+}

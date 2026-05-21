@@ -42,9 +42,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useItem } from "../hooks/useResource.js";
+import { useItem, useList, useUpdate } from "../hooks/useResource.js";
 import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
@@ -403,9 +403,9 @@ function ContactProfileHeader() {
             <h1 className="font-display text-[24px] font-semibold tracking-tight text-foreground">
               {c?.name ?? "Priya Raghavan"}
             </h1>
-            <Badge>Client</Badge>
+            <Badge>{c?.type ?? "Client"}</Badge>
             <Badge variant="success" dot>
-              Active
+              {c?.status ?? "Active"}
             </Badge>
           </div>
           <div className="mt-1 text-[13px] text-muted">
@@ -416,7 +416,7 @@ function ContactProfileHeader() {
               <Mail className="size-4 text-muted" aria-hidden="true" /> {c?.email ?? "priya@lumencafe.in"}
             </span>
             <span className="flex items-center gap-1.5">
-              <Phone className="size-4 text-muted" aria-hidden="true" /> +91 98450 12345
+              <Phone className="size-4 text-muted" aria-hidden="true" /> {c?.phone ?? "+91 98450 12345"}
             </span>
             <span className="flex items-center gap-1.5">
               <MapPin className="size-4 text-muted" aria-hidden="true" /> HSR Layout
@@ -457,6 +457,15 @@ function ContactProfileHeader() {
       </div>
 
       <Tabs defaultValue="profile" className="mt-5">
+        <TabsList>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="conversations">Conversations</TabsTrigger>
+          <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
+          <TabsTrigger value="custom-fields">Custom fields</TabsTrigger>
+        </TabsList>
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="timeline">
@@ -707,18 +716,61 @@ export default function ContactDetail() {
             <div className="flex-1 overflow-auto">
               <ContactProfileHeader />
 
-              <div className="grid grid-cols-3 gap-6 px-8 py-6">
-                <div className="col-span-2 space-y-4">
+              <Tabs defaultValue="profile">
+                <TabsList>
+                  <TabsTrigger value="profile">Profile</TabsTrigger>
+                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                  <TabsTrigger value="conversations">Conversations</TabsTrigger>
+                  <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
+                  <TabsTrigger value="projects">Projects</TabsTrigger>
+                  <TabsTrigger value="files">Files</TabsTrigger>
+                  <TabsTrigger value="custom-fields">Custom fields</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="profile">
                   <PropertiesCard />
                   <TimelineCard />
-                </div>
+                </TabsContent>
+                <TabsContent value="timeline">
+                  <TimelineCard />
+                </TabsContent>
+                <TabsContent value="conversations">
+                  <div className="p-4">
+                    <p className="text-muted">No conversations available.</p>
+                  </div>
+                </TabsContent>
+                <TabsContent value="opportunities">
+                  <div className="p-4">
+                    <p className="text-muted">No opportunities available.</p>
+                  </div>
+                </TabsContent>
+                <TabsContent value="projects">
+                  <div className="p-4">
+                    <p className="text-muted">No projects available.</p>
+                  </div>
+                </TabsContent>
+                <TabsContent value="files">
+                  <div className="p-4">
+                    <p className="text-muted">No files available.</p>
+                  </div>
+                </TabsContent>
+                <TabsContent value="custom-fields">
+                  <div className="p-4">
+                    <p className="text-muted">No custom fields available.</p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
 
-                <div className="col-span-1 space-y-4">
-                  <ActiveProjectCard />
-                  <UpcomingCard />
-                  <AttachmentsCard />
-                </div>
-              </div>
+            <div className="col-span-2 space-y-4">
+              <PropertiesCard />
+              <TimelineCard />
+            </div>
+
+            <div className="col-span-1 space-y-4">
+              <ActiveProjectCard />
+              <UpcomingCard />
+              <AttachmentsCard />
             </div>
           </div>
         </main>

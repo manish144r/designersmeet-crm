@@ -75,6 +75,7 @@ import {
   useDatePreference,
   usePreferences,
 } from "@/hooks/usePreferences";
+import { useCreate, useList, useRemove, useUpdate } from '../hooks/useResource.js';
 import { downloadInvoicePdf } from "@/lib/invoicePdf";
 import {
   ApiKeysSlot,
@@ -677,11 +678,8 @@ function BrandingPanel() {
 }
 
 function UsersRolesPanel() {
-  const users = [
-    { name: "Manish Sharma", email: "manish@designersmeet.com", role: "Owner" },
-    { name: "Priya Iyer", email: "priya@designersmeet.com", role: "Admin" },
-    { name: "Ravi Kumar", email: "ravi@designersmeet.com", role: "Member" },
-  ];
+  const { data } = useList('users');
+  const { mutate: updateUser } = useUpdate('users');
   return (
     <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Users & roles">
       <div className="mb-6 flex items-end justify-between gap-3">
@@ -705,7 +703,7 @@ function UsersRolesPanel() {
       </div>
       <Card className="rounded-lg border-border bg-background">
         <CardContent className="p-0">
-          {users.map((u) => (
+          {data?.data?.map((u: any) => (
             <div
               key={u.email}
               className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
@@ -715,9 +713,15 @@ function UsersRolesPanel() {
                 <div className="text-[13px] font-semibold text-foreground">{u.name}</div>
                 <div className="text-[11px] text-muted">{u.email}</div>
               </div>
-              <Badge variant={u.role === "Owner" ? "success" : "neutral"} dot={u.role === "Owner"}>
-                {u.role}
-              </Badge>
+              <select
+                value={u.role}
+                onChange={(e) => updateUser({ id: u.id, patch: { role: e.target.value } })}
+                className="text-[11px] font-medium text-secondary bg-transparent border-none focus:outline-none"
+              >
+                <option value="Owner">Owner</option>
+                <option value="Admin">Admin</option>
+                <option value="Member">Member</option>
+              </select>
             </div>
           ))}
         </CardContent>

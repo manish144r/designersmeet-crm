@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/08-projects-board.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { MouseEventHandler, ReactNode } from "react";
+import { useState, type MouseEventHandler, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -40,9 +40,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useList } from "../hooks/useResource.js";
+import { useList, useUpdate } from "../hooks/useResource.js";
 import { useUIStore } from "../stores/uiStore.js";
 import { useNavigate } from "react-router-dom";
+import {
+  DndContext,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 
 type NavItem = {
   label: string;
@@ -218,13 +224,19 @@ function SidebarNavItem({ item }: { item: NavItem }) {
 function FilterBadge({
   children,
   tone = "neutral",
+  onClick,
+  active,
 }: {
   children: ReactNode;
   tone?: "neutral" | "primary" | "warning";
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+  active?: boolean;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
+      data-active={active ? "true" : "false"}
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium leading-[18px] tracking-normal hover:bg-border-subtle focus-visible:outline-foreground",
         tone === "primary" && "bg-primary-tint text-primary",
@@ -239,10 +251,24 @@ function FilterBadge({
 
 function ProjectCard({ project }: { project: ProjectCardData }) {
   const navigate = useNavigate();
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: project.id,
+  });
+  // dnd-kit applies transform ONLY during drag; resting state is byte-identical.
+  const dragStyle = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 50 }
+    : undefined;
 
   return (
     <Card
-      onClick={() => navigate("/projects/" + project.id)}
+      ref={setNodeRef}
+      style={dragStyle}
+      {...attributes}
+      {...listeners}
+      onClick={() => {
+        if (isDragging) return;
+        navigate("/projects/" + project.id);
+      }}
       className="cursor-grab rounded-md border-border bg-background p-3 transition-colors hover:border-border-strong hover:shadow-card"
     >
       <div className="mb-2 flex items-start justify-between">
@@ -310,6 +336,7 @@ function ProjectCard({ project }: { project: ProjectCardData }) {
 }
 
 function KanbanColumn({ column }: { column: ProjectColumn }) {
+  const { setNodeRef } = useDroppable({ id: column.title });
   return (
     <div className="flex w-[280px] min-w-[280px] flex-col rounded-lg border border-border bg-subtle">
       <div className="flex items-center justify-between border-b border-border px-3.5 py-3 text-[12px] font-semibold text-foreground">
@@ -327,7 +354,10 @@ function KanbanColumn({ column }: { column: ProjectColumn }) {
         </IconButton>
       </div>
 
-      <div className="flex min-h-[200px] flex-1 flex-col gap-2 p-2.5">
+      <div
+        ref={setNodeRef}
+        className="flex min-h-[200px] flex-1 flex-col gap-2 p-2.5"
+      >
         {column.cards.map((project) => (
           <ProjectCard key={project.title} project={project} />
         ))}
@@ -338,9 +368,29 @@ function KanbanColumn({ column }: { column: ProjectColumn }) {
 
 export default function ProjectsBoard() {
   const { data } = useList<ProjectRow>("projects");
-  const rows = data?.data ?? [];
+  const allRows = data?.data ?? [];
+  const updateProject = useUpdate<ProjectRow>("projects");
+  const [boardFilter, setBoardFilter] = useState<string>("all");
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    const destStatus = String(over.id);
+    const card = allRows.find((row) => row.id === active.id);
+    if (!card || card.status === destStatus) return;
+    updateProject.mutate({ id: card.id, patch: { status: destStatus } });
+  }
+  const filteredRows = allRows.filter((row) => {
+    if (boardFilter === "all") return true;
+    if (boardFilter === "my projects") return row.owner === "M";
+    if (boardFilter === "anita m.") return row.owner === "A";
+    if (boardFilter === "rohit") return row.owner === "R";
+    if (boardFilter === "at risk")
+      return row.status === "At risk" || (row.progressClass ?? "").includes("warning");
+    return true;
+  });
   const projectColumns: ProjectColumn[] = projectColumnMeta.map((column) => {
-    const cards = rows.filter((row) => row.status === column.title);
+    const cards = filteredRows.filter((row) => row.status === column.title);
 
     return {
       title: column.title,
@@ -514,19 +564,39 @@ export default function ProjectsBoard() {
             </div>
 
             <div className="flex items-center gap-2 border-b border-border bg-subtle/40 px-8 pb-3">
-              <FilterBadge tone="primary">
+              <FilterBadge
+                tone={boardFilter === "all" ? "primary" : "neutral"}
+                active={boardFilter === "all"}
+                onClick={() => setBoardFilter("all")}
+              >
                 Active <span className="ml-1 text-primary">13</span>
               </FilterBadge>
-              <FilterBadge>
+              <FilterBadge
+                tone={boardFilter === "my projects" ? "primary" : "neutral"}
+                active={boardFilter === "my projects"}
+                onClick={() => setBoardFilter("my projects")}
+              >
                 My projects <span className="ml-1 text-muted">5</span>
               </FilterBadge>
-              <FilterBadge>
+              <FilterBadge
+                tone={boardFilter === "anita m." ? "primary" : "neutral"}
+                active={boardFilter === "anita m."}
+                onClick={() => setBoardFilter("anita m.")}
+              >
                 Anita M. <span className="ml-1 text-muted">4</span>
               </FilterBadge>
-              <FilterBadge>
+              <FilterBadge
+                tone={boardFilter === "rohit" ? "primary" : "neutral"}
+                active={boardFilter === "rohit"}
+                onClick={() => setBoardFilter("rohit")}
+              >
                 Rohit <span className="ml-1 text-muted">4</span>
               </FilterBadge>
-              <FilterBadge tone="warning">
+              <FilterBadge
+                tone={boardFilter === "at risk" ? "primary" : "warning"}
+                active={boardFilter === "at risk"}
+                onClick={() => setBoardFilter("at risk")}
+              >
                 At risk <span className="ml-1 text-warning">3</span>
               </FilterBadge>
               <FilterBadge>+ Add filter</FilterBadge>
@@ -547,11 +617,13 @@ export default function ProjectsBoard() {
             </div>
 
             <div className="flex-1 overflow-x-auto">
-              <div className="flex min-w-min gap-4 p-6">
-                {projectColumns.map((column) => (
-                  <KanbanColumn key={column.title} column={column} />
-                ))}
-              </div>
+              <DndContext onDragEnd={handleDragEnd}>
+                <div className="flex min-w-min gap-4 p-6">
+                  {projectColumns.map((column) => (
+                    <KanbanColumn key={column.title} column={column} />
+                  ))}
+                </div>
+              </DndContext>
             </div>
           </div>
         </main>

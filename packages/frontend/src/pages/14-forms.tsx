@@ -53,7 +53,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useItem, useUpdate } from "../hooks/useResource.js";
+import { useItem, useList, useUpdate } from "../hooks/useResource.js";
 
 type NavItem = {
   label: string;
@@ -260,10 +260,11 @@ function FieldPaletteItem({ item }: { item: FieldType }) {
   );
 }
 
-function ModeButton({ active, icon: Icon, children, last }: { active?: boolean; icon: LucideIcon; children: ReactNode; last?: boolean }) {
+function ModeButton({ active, icon: Icon, children, last, onClick }: { active?: boolean; icon: LucideIcon; children: ReactNode; last?: boolean; onClick?: () => void }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={cn(
         "flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] focus-visible:outline-foreground",
         active ? "rounded-l-md bg-primary-tint font-medium text-primary" : "text-muted hover:bg-hover",
@@ -326,6 +327,8 @@ function FormFieldCard({ field }: { field: FormField }) {
 export default function Forms() {
   const _f = useItem("forms", "fm1").data as any;
   const updateForm = useUpdate("forms");
+  const responsesCount = useList("form-responses", { formId: "fm1" }).data?.data?.length ?? 0;
+  const previewUrl = (_f?.publicUrl as string | undefined) ?? "https://forms.designersmeet.com/vendor-onboarding";
   const formFields: FormField[] = _f?.schema_json ?? [
     { label: "Studio / company name", meta: "Required", required: true, kind: "input", value: "Aurora Studio" },
     { label: "Primary contact email", meta: "Required", required: true, kind: "input", value: "hello@aurorastudio.in" },
@@ -444,13 +447,13 @@ export default function Forms() {
                     <IconButton title="Copy link" className="size-5">
                       <Copy className={iconClass} aria-hidden="true" />
                     </IconButton>
-                    <span>{"\u00b7"} {_f?.submissions ?? "47 submissions"} {"\u00b7"} {_f?.lastSubmission ?? "last 2h ago"}</span>
+                    <span>{"\u00b7"} {`${responsesCount} submissions`} {"\u00b7"} {_f?.lastSubmission ?? "last 2h ago"}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center rounded-md border border-border-strong bg-background">
                     <ModeButton active icon={PencilRuler}>Build</ModeButton>
-                    <ModeButton icon={Eye}>Preview</ModeButton>
+                    <ModeButton icon={Eye} onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}>Preview</ModeButton>
                     <ModeButton icon={Code}>Embed</ModeButton>
                     <ModeButton icon={Zap} last>Logic</ModeButton>
                   </div>

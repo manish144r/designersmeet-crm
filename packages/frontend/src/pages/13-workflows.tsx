@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/13-workflows.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import { useState, type ReactNode } from "react";
+import { useState, type ChangeEventHandler, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -223,10 +223,14 @@ function SearchField({
   placeholder,
   className,
   shortcut,
+  value,
+  onChange,
 }: {
   placeholder: string;
   className?: string;
   shortcut?: string;
+  value?: string;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
 }) {
   return (
     <div
@@ -242,6 +246,8 @@ function SearchField({
       <Input
         type="text"
         placeholder={placeholder}
+        value={value}
+        onChange={onChange}
         className={cn(
           "h-full border-0 bg-transparent py-0 pl-8 text-[13px] text-foreground shadow-none placeholder:text-muted focus:border-transparent focus:ring-0 focus:ring-transparent",
           shortcut ? "pr-14" : "pr-3",
@@ -359,12 +365,17 @@ function WorkflowActionNode({ step }: { step: WorkflowStep }) {
 
 export default function Workflows() {
   const [selectedWfId, setSelectedWfId] = useState("wf1");
+  const [wfQ, setWfQ] = useState("");
   const workflowsKey = "workflows";
   const { data } = useList<WorkflowItem>(workflowsKey);
-  const workflows = data?.data ?? [];
+  const allWorkflows = data?.data ?? [];
+  const workflows = wfQ
+    ? allWorkflows.filter((w) => w.name.toLowerCase().includes(wfQ.toLowerCase()))
+    : allWorkflows;
   const _r = useList<WorkflowRun>("workflow-runs").data?.data ?? [];
   const lastRuns = _r.filter((x: any) => x.workflow_id === selectedWfId);
-  const updateWorkflow = useUpdate(workflowsKey);
+  const updateWorkflow = useUpdate<WorkflowItem>(workflowsKey);
+  const selectedRow = allWorkflows.find((w) => w.id === selectedWfId);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
@@ -472,7 +483,11 @@ export default function Workflows() {
                     New
                   </Button>
                 </div>
-                <SearchField placeholder="Filter…" />
+                <SearchField
+                  placeholder="Filter…"
+                  value={wfQ}
+                  onChange={(event) => setWfQ(event.target.value)}
+                />
               </div>
 
               <div className="flex-1 space-y-1 overflow-y-auto p-2">
@@ -512,6 +527,7 @@ export default function Workflows() {
                   <Button
                     type="button"
                     variant="secondary"
+                    onClick={() => useUIStore.getState().openEdit("workflows", selectedWfId)}
                     className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                   >
                     <Play className={iconClass} aria-hidden="true" />
@@ -520,7 +536,17 @@ export default function Workflows() {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => updateWorkflow.mutate({ id: selectedWfId, patch: { status: "paused" } })}
+                    onClick={() =>
+                      updateWorkflow.mutate({
+                        id: selectedWfId,
+                        patch: {
+                          status:
+                            (selectedRow?.status as unknown as string) === "active"
+                              ? "paused"
+                              : "active",
+                        } as unknown as Partial<WorkflowItem>,
+                      })
+                    }
                     className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                   >
                     <Pause className={iconClass} aria-hidden="true" />

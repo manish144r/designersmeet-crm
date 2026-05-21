@@ -27,6 +27,7 @@ import {
   Plus,
   Search,
   Settings,
+  Trash2,
   Upload,
   Users,
   UsersRound,
@@ -37,6 +38,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { SortChevron } from "../components/SortChevron.js";
 import { useList, useRemove } from "../hooks/useResource.js";
 import { useUIStore } from "../stores/uiStore.js";
 import { useNavigate } from "react-router-dom";
@@ -218,12 +220,36 @@ function SidebarNavItem({ item }: { item: NavItem }) {
 
 export default function Contacts() {
   const [q, setQ] = useState("");
+  const [sort, setSortField] = useState("name");
+  const [order, setOrder] = useState<"asc" | "desc">("asc");
+  const [activeSavedFilter, setActiveSavedFilter] = useState<string | null>(null);
   const navigate = useNavigate();
   const selectedContacts = useUIStore((state) => state.selection.contacts);
   const toggleSelected = useUIStore((state) => state.toggleSelected);
-  const { data } = useList<Contact>("contacts", { name: q });
+  const listParams: Record<string, string> = { name: q, sort, order };
+  if (activeSavedFilter) listParams.type = activeSavedFilter;
+  const { data } = useList<Contact>("contacts", listParams);
   const contacts = data?.data ?? [];
   const selectedContactIds = selectedContacts ?? [];
+
+  function handleSort(field: string) {
+    if (sort === field) {
+      setOrder(order === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setOrder("asc");
+    }
+  }
+
+  function handleSavedFilterClick(label: string) {
+    if (label === "+ Saved filter") return;
+    if (label === "All") {
+      setActiveSavedFilter(null);
+      return;
+    }
+    const next = label.toLowerCase().replace(/s$/, "");
+    setActiveSavedFilter((cur) => (cur === next ? null : next));
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
@@ -364,20 +390,34 @@ export default function Contacts() {
             </div>
 
             <div className="flex items-center gap-2 border-b border-border-subtle px-8 pb-3">
-              {savedFilters.map((filter) => (
-                <button
-                  type="button"
-                  key={filter.label}
-                  className={cn(
-                    badgeClass,
-                    "hover:bg-border focus-visible:outline-foreground",
-                    filter.active && "text-foreground",
-                  )}
-                >
-                  {filter.label}
-                  {filter.count ? <span className="ml-1 text-muted">{filter.count}</span> : null}
-                </button>
-              ))}
+              {savedFilters.map((filter) => {
+                const normalized =
+                  filter.label === "All"
+                    ? null
+                    : filter.label === "+ Saved filter"
+                      ? "__saved__"
+                      : filter.label.toLowerCase().replace(/s$/, "");
+                const isActive =
+                  normalized === null
+                    ? activeSavedFilter === null
+                    : activeSavedFilter === normalized;
+                return (
+                  <button
+                    type="button"
+                    key={filter.label}
+                    onClick={() => handleSavedFilterClick(filter.label)}
+                    data-active={isActive ? "true" : "false"}
+                    className={cn(
+                      badgeClass,
+                      "hover:bg-border focus-visible:outline-foreground",
+                      isActive && "text-foreground",
+                    )}
+                  >
+                    {filter.label}
+                    {filter.count ? <span className="ml-1 text-muted">{filter.count}</span> : null}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="flex items-center gap-2 border-b border-border bg-background px-8 py-3">
@@ -476,12 +516,26 @@ export default function Contacts() {
                         className="size-4 rounded border-border-strong accent-foreground"
                       />
                     </th>
-                    <th className={tableHeadClass}>Name</th>
-                    <th className={tableHeadClass}>Type</th>
+                    <th className={tableHeadClass}>
+                      Name
+                      <SortChevron field="name" sort={sort} order={order} onSort={handleSort} />
+                    </th>
+                    <th className={tableHeadClass}>
+                      Type
+                      <SortChevron field="type" sort={sort} order={order} onSort={handleSort} />
+                    </th>
                     <th className={tableHeadClass}>Active project</th>
                     <th className={tableHeadClass}>Tag</th>
                     <th className={tableHeadClass}>Owner</th>
-                    <th className={tableHeadClass}>Last contact</th>
+                    <th className={tableHeadClass}>
+                      Last contact
+                      <SortChevron
+                        field="last_contact"
+                        sort={sort}
+                        order={order}
+                        onSort={handleSort}
+                      />
+                    </th>
                     <th className={tableHeadClass} />
                   </tr>
                 </thead>
@@ -530,12 +584,24 @@ export default function Contacts() {
                         </td>
                         <td className={cn(tableCellClass, "text-right", isLast && "border-border")}>
                           <IconButton
+                            title="Edit contact"
                             onClick={(event) => {
                               event.stopPropagation();
                               useUIStore.getState().openEdit("contacts", contact.id);
                             }}
                           >
                             <MoreHorizontal className={iconClass} aria-hidden="true" />
+                          </IconButton>
+                          <IconButton
+                            title="Delete contact"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              useUIStore
+                                .getState()
+                                .openConfirmDelete("contacts", contact.id);
+                            }}
+                          >
+                            <Trash2 className={iconClass} aria-hidden="true" />
                           </IconButton>
                         </td>
                       </tr>

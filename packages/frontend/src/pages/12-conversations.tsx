@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/12-conversations.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, useEffect } from "react";
 import {
   Archive,
   BarChart3,
@@ -64,6 +64,7 @@ type InboxItem = {
   channel: Channel;
   active?: boolean;
   unread?: boolean;
+  assigned_user_id?: string;
 };
 
 type ThreadMessage = {
@@ -226,14 +227,17 @@ function FilterBadge({
   children,
   count,
   active,
+  onClick,
 }: {
   children: ReactNode;
   count: string;
   active?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium leading-[18px] tracking-[0.01em] focus-visible:outline-foreground",
         active ? "bg-primary-tint text-primary" : "bg-border-subtle text-secondary",
@@ -325,8 +329,15 @@ function ThreadMessageItem({ message }: { message: ThreadMessage }) {
 
 export default function Conversations() {
   const [selectedConvId, setSelectedConvId] = useState("cv1");
+  const [replyBody, setReplyBody] = useState("");
   const { data } = useList<InboxItem>("conversations");
+  const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "assigned">("all");
   const inboxItems = data?.data ?? [];
+  const filteredInboxItems = inboxItems.filter(item => {
+    if (activeFilter === "unread") return item.unread;
+    if (activeFilter === "assigned") return item.assigned_user_id === "u1";
+    return true;
+  });
   const _m = useList<ThreadMessage & { conversation_id: string }>("messages").data?.data ?? [];
   const threadMessages = _m.filter((x: any) => x.conversation_id === selectedConvId);
   const createMessage = useCreate("messages");
@@ -447,7 +458,7 @@ export default function Conversations() {
                 <SearchField placeholder="Search messages…" />
 
                 <div className="mt-3 flex items-center gap-1 text-[11px]">
-                  <FilterBadge active count="137">
+                  <FilterBadge active={activeFilter === "all"} count="137" onClick={() => setActiveFilter("all")}>
                     All
                   </FilterBadge>
                   <FilterBadge count="12">Unread</FilterBadge>
@@ -456,7 +467,7 @@ export default function Conversations() {
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                {inboxItems.map((item) => (
+                {filteredInboxItems.map((item) => (
                   <InboxRow key={`${item.name}-${item.subject}`} item={item} onClick={() => setSelectedConvId(item.id)} />
                 ))}
               </div>
@@ -535,7 +546,14 @@ export default function Conversations() {
                     className="w-full resize-none bg-background text-[13.5px] text-foreground placeholder:text-muted focus:outline-none"
                     rows={4}
                     placeholder="Type your reply… (⌘+Enter to send)"
-                    defaultValue={composerDefaultValue}
+                    value={replyBody}
+                    onChange={(e) => setReplyBody(e.target.value)}
+                    onKeyDown={(e) => {
+                      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && replyBody.trim()) {
+                        createMessage.mutate({ conversation_id: selectedConvId, direction: "outbound", body: replyBody.trim() });
+                        setReplyBody("");
+                      }
+                    }}
                   />
                   <div className="mt-2 flex items-center justify-between">
                     <div className="flex items-center gap-1">
@@ -561,7 +579,7 @@ export default function Conversations() {
                       >
                         Save draft
                       </Button>
-                      <Button onClick={() => createMessage.mutate({ conversation_id: selectedConvId, direction: "outbound", body: "" })} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
+                      <Button onClick={() => { if (replyBody.trim()) { createMessage.mutate({ conversation_id: selectedConvId, direction: "outbound", body: replyBody.trim() }); setReplyBody(""); } }} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
                         <Send className={iconClass} aria-hidden="true" />
                         Send
                       </Button>

@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useList } from "../hooks/useResource.js";
 import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
@@ -339,6 +340,10 @@ function StatusPill({
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const projectsTotal = useList("projects").data?.total ?? 12;
+  const vendorsTotal = useList("vendors").data?.total ?? 41;
+  const contactsTotal = useList("contacts").data?.total ?? 0;
+  void contactsTotal;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
@@ -505,7 +510,7 @@ export default function Dashboard() {
                   <Layers className="size-4 text-muted" aria-hidden="true" />
                 </div>
                 <div className="font-display mt-2 text-[28px] font-semibold text-foreground">
-                  9 <span className="text-[16px] font-normal text-muted">/ 12</span>
+                  9 <span className="text-[16px] font-normal text-muted">/ {projectsTotal}</span>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-subtle">
@@ -526,7 +531,7 @@ export default function Dashboard() {
                   68%
                 </div>
                 <div className="mt-1 flex items-center gap-1.5 text-[12px]">
-                  <span className="text-secondary">28 of 41 vendors active</span>
+                  <span className="text-secondary">28 of {vendorsTotal} vendors active</span>
                 </div>
               </Card>
 

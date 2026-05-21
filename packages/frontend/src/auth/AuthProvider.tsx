@@ -33,9 +33,9 @@ interface AuthContextValue {
 }
 
 const DEMO_USER: AuthUser = {
-  sub: "demo-user",
-  email: "demo@designersmeet.com",
-  name: "Demo Admin",
+  sub: "admin-user",
+  email: "admin@designersmeet.com",
+  name: "Manish Sharma",
   roles: ["admin"],
   via: "demo",
 };
