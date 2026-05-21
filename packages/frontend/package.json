@@ -6,7 +6,7 @@
   "scripts": {
     "tokens": "node ../../brief/style-dictionary.config.js",
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --config ../../vite.frontend.config.ts",
     "preview": "vite preview --port 5173",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --ext .ts,.tsx && node scripts/check-no-raw-color.mjs",
