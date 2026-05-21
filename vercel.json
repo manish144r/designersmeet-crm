@@ -1,7 +1,7 @@
 {
   "version": 2,
   "framework": null,
-  "installCommand": "npm_config_production=false npm install",
+  "installCommand": "npm install --include=dev",
   "buildCommand": "npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend",
   "outputDirectory": "packages/frontend/dist",
   "functions": {
