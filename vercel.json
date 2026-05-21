@@ -1,7 +1,7 @@
 {
   "version": 2,
   "framework": null,
-  "buildCommand": "npm install && npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend",
+  "buildCommand": "npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend",
   "outputDirectory": "packages/frontend/dist",
   "functions": {
     "api/server.mjs": {
