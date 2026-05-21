@@ -1,16 +1,21 @@
 // DesignersMeet auth context.
-// Three production providers (Microsoft Entra/MSAL — mandatory for Graph,
-// Google, Apple). A demo flag bypasses all three so the rebuilt UI is
-// reviewable without any IdP. Dev mode also bypasses (backend dev-bypass
-// accepts the request).
+// Real path: Microsoft Entra (MSAL loginPopup) when VITE_MSAL_CLIENT_ID is set.
+// Demo path: instant bypass when VITE_MSAL_CLIENT_ID is not configured.
 import {
   createContext,
   useContext,
   useMemo,
   useCallback,
   useState,
+  useEffect,
   type ReactNode,
 } from "react";
+import {
+  PublicClientApplication,
+  type AccountInfo,
+  InteractionRequiredAuthError,
+  BrowserAuthError,
+} from "@azure/msal-browser";
 
 export type AppRole = "admin" | "pm" | "designer" | "vendor" | "viewer";
 export type AuthProviderKind = "microsoft" | "google" | "apple";
@@ -40,25 +45,40 @@ const DEMO_USER: AuthUser = {
   via: "demo",
 };
 
-// Demo bypass: explicit VITE_DEMO_MODE, or dev AUTH_MODE (the default).
-const DEMO_MODE =
-  (import.meta.env.VITE_DEMO_MODE ?? "true") === "true" ||
-  (import.meta.env.VITE_AUTH_MODE ?? "dev") === "dev";
+// Demo mode when MSAL client ID is not configured.
+// Set VITE_MSAL_CLIENT_ID in Vercel env vars to enable real Microsoft auth.
+const MSAL_CLIENT_ID = import.meta.env.VITE_MSAL_CLIENT_ID ?? "";
+const MSAL_TENANT = import.meta.env.VITE_MSAL_TENANT ?? "designersmeet.com";
+const DEMO_MODE = !MSAL_CLIENT_ID;
 
-// MSAL config preserved from wave-1/msal-sso (production path, Graph token source).
+const MSAL_SCOPES = ["openid", "profile", "email", "User.Read"];
+
 export const msalConfig = {
   auth: {
-    clientId: import.meta.env.VITE_MSAL_CLIENT_ID ?? "",
-    authority: `https://login.microsoftonline.com/${import.meta.env.VITE_MSAL_TENANT ?? "common"}`,
-    redirectUri: import.meta.env.VITE_MSAL_REDIRECT ?? window.location.origin,
+    clientId: MSAL_CLIENT_ID,
+    authority: `https://login.microsoftonline.com/${MSAL_TENANT}`,
+    redirectUri: typeof window !== "undefined" ? window.location.origin : "",
   },
-  cache: { cacheLocation: "localStorage" as const },
+  cache: { cacheLocation: "localStorage" as const, storeAuthStateInCookie: true },
 };
-export const msalScopes = (import.meta.env.VITE_MSAL_SCOPE ?? "User.Read Mail.Send")
-  .split(/\s+/)
-  .filter(Boolean);
-export const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
-export const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID ?? "";
+
+// MSAL singleton — only created when client ID is present.
+let _msalApp: PublicClientApplication | null = null;
+function getMsalApp(): PublicClientApplication | null {
+  if (DEMO_MODE) return null;
+  if (!_msalApp) _msalApp = new PublicClientApplication(msalConfig);
+  return _msalApp;
+}
+
+function accountToUser(account: AccountInfo): AuthUser {
+  return {
+    sub: account.homeAccountId,
+    email: account.username,
+    name: account.name ?? account.username,
+    roles: ["admin"],
+    via: "microsoft",
+  };
+}
 
 const AuthContext = createContext<AuthContextValue>({
   user: DEMO_MODE ? DEMO_USER : null,
@@ -71,14 +91,50 @@ const AuthContext = createContext<AuthContextValue>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(DEMO_MODE ? DEMO_USER : null);
+  const [ready, setReady] = useState(DEMO_MODE); // demo is always ready
+
+  // Initialise MSAL and restore any existing session.
+  useEffect(() => {
+    if (DEMO_MODE) return;
+    const app = getMsalApp()!;
+    app
+      .initialize()
+      .then(() => app.handleRedirectPromise())
+      .then((resp) => {
+        if (resp?.account) {
+          setUser(accountToUser(resp.account));
+        } else {
+          const accounts = app.getAllAccounts();
+          if (accounts.length > 0) setUser(accountToUser(accounts[0]));
+        }
+      })
+      .catch(console.error)
+      .finally(() => setReady(true));
+  }, []);
 
   const signIn = useCallback(async (via: AuthProviderKind) => {
     if (DEMO_MODE) {
       setUser({ ...DEMO_USER, via });
       return;
     }
-    // Production: MSAL loginRedirect / GIS / Apple JS. Wired in Phase 5.
-    window.location.href = `/api/auth/${via}/start`;
+    if (via !== "microsoft") {
+      // Google / Apple not wired yet — use demo user as placeholder.
+      setUser({ ...DEMO_USER, via });
+      return;
+    }
+    const app = getMsalApp();
+    if (!app) return;
+    try {
+      const resp = await app.loginPopup({ scopes: MSAL_SCOPES });
+      if (resp?.account) setUser(accountToUser(resp.account));
+    } catch (err) {
+      if (err instanceof BrowserAuthError && err.errorCode === "popup_window_error") {
+        // Popup blocked — fall back to redirect flow.
+        await app.loginRedirect({ scopes: MSAL_SCOPES });
+      } else {
+        console.error("MSAL login error", err);
+      }
+    }
   }, []);
 
   const signOut = useCallback(() => {
@@ -86,26 +142,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       return;
     }
-    window.location.href = "/api/auth/signout";
+    const app = getMsalApp();
+    const accounts = app?.getAllAccounts() ?? [];
+    setUser(null);
+    if (app && accounts.length > 0) {
+      app.logoutRedirect({
+        account: accounts[0],
+        postLogoutRedirectUri: window.location.origin,
+      });
+    }
   }, []);
 
   const getAccessToken = useCallback(async (): Promise<string | null> => {
     if (DEMO_MODE) return "demo-token";
-    // Production: msalInstance.acquireTokenSilent({ scopes: msalScopes })
-    return null;
+    const app = getMsalApp();
+    if (!app) return null;
+    const accounts = app.getAllAccounts();
+    if (!accounts.length) return null;
+    try {
+      const result = await app.acquireTokenSilent({ scopes: MSAL_SCOPES, account: accounts[0] });
+      return result.accessToken;
+    } catch (err) {
+      if (err instanceof InteractionRequiredAuthError) {
+        try {
+          const result = await app.acquireTokenPopup({ scopes: MSAL_SCOPES, account: accounts[0] });
+          return result.accessToken;
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    }
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({
-      user,
-      signedIn: !!user,
-      demoMode: DEMO_MODE,
-      signIn,
-      getAccessToken,
-      signOut,
-    }),
+    () => ({ user, signedIn: !!user, demoMode: DEMO_MODE, signIn, getAccessToken, signOut }),
     [user, signIn, getAccessToken, signOut],
   );
+
+  // Don't render until MSAL is initialised (prevents auth flicker on redirect).
+  if (!ready) return null;
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
