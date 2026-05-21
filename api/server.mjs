@@ -1,7 +1,7 @@
-// Vercel serverless entry point — wraps the Express app without calling listen().
-// Vercel routes /api/* here; the frontend static files are served from
-// packages/frontend/dist via Vercel CDN (see vercel.json outputDirectory).
-import { createApp } from "../packages/backend/dist/crm/app.js";
+// Vercel serverless entry — wraps the Express app as a serverless function.
+// The build step compiles packages/backend/src to packages/backend/dist before
+// Vercel serves this file, so the relative import resolves correctly at runtime.
+import { createApp } from '../packages/backend/dist/crm/app.js';
 
 const app = createApp();
 export default app;
