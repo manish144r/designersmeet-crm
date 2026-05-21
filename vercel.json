@@ -2,7 +2,7 @@
   "version": 2,
   "framework": null,
   "installCommand": "npm install",
-  "buildCommand": "npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend",
+  "buildCommand": "npm run build -w @dm/shared && npm run build -w @dm/backend && node_modules/.bin/vite build --config vite.frontend.config.ts",
   "outputDirectory": "packages/frontend/dist",
   "functions": {
     "api/server.mjs": {
