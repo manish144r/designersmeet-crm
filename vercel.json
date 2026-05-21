@@ -2,7 +2,7 @@
   "version": 2,
   "framework": null,
   "installCommand": "npm install --include=dev",
-  "buildCommand": "npm install tailwindcss autoprefixer postcss --no-save && npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend",
+  "buildCommand": "cd packages/frontend && npm install --no-save && cd ../.. && npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend",
   "outputDirectory": "packages/frontend/dist",
   "functions": {
     "api/server.mjs": {
