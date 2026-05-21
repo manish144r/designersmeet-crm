@@ -2,7 +2,7 @@
   "version": 2,
   "framework": null,
   "installCommand": "npm install --include=dev",
-  "buildCommand": "npm install --prefix ../frontend --no-save && npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend",
+  "buildCommand": "npm install react react-dom react-router-dom @tanstack/react-query zustand lucide-react react-hook-form class-variance-authority clsx tailwind-merge jspdf @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-slot @radix-ui/react-tabs @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities @azure/msal-browser @azure/msal-react @react-oauth/google apple-signin-auth tailwindcss autoprefixer postcss zod @types/react @types/react-dom --no-save && npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend",
   "outputDirectory": "packages/frontend/dist",
   "functions": {
     "api/server.mjs": {
