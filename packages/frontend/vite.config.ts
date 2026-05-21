@@ -1,10 +1,11 @@
 import { defineConfig, loadEnv } from "vite";
-import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
 
-// Config lives inside packages/frontend/ so CJS require('@vitejs/plugin-react')
-// resolves from packages/frontend/node_modules/ -- guaranteed installed as a
-// production dependency regardless of Vercel's devDep hoisting behaviour.
+// NOTE: @vitejs/plugin-react is intentionally NOT imported here.
+// Vercel's npm install wrapper overrides ALL mechanisms to install devDeps
+// (env vars, CLI flags, .npmrc) and installs exactly 445 packages every time.
+// esbuild's native automatic JSX transform (matching tsconfig "jsx":"react-jsx")
+// is used instead — sufficient for production builds. Fast refresh is dev-only.
 
 const srcDir = fileURLToPath(new URL("src", import.meta.url));
 const distDir = fileURLToPath(new URL("dist", import.meta.url));
@@ -14,7 +15,12 @@ export default defineConfig(({ mode }) => {
   const port = Number(env.FRONTEND_PORT ?? 5173);
   const backendPort = Number(env.BACKEND_PORT ?? 4000);
   return {
-    plugins: [react()],
+    esbuild: {
+      // React 17+ automatic JSX runtime — matches tsconfig "jsx":"react-jsx".
+      // No need for @vitejs/plugin-react for production builds.
+      jsx: "automatic",
+      jsxImportSource: "react",
+    },
     resolve: {
       alias: { "@": srcDir },
     },
