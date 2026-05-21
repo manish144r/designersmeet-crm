@@ -1,7 +1,7 @@
 {
   "version": 2,
   "framework": null,
-  "installCommand": "npm install",
+  "installCommand": "npm install --include=dev",
   "buildCommand": "npm run build -w @dm/shared && npm run build -w @dm/backend && node_modules/.bin/vite build --config vite.frontend.config.ts",
   "outputDirectory": "packages/frontend/dist",
   "functions": {
