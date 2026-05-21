@@ -37,9 +37,9 @@ function getJwks() {
 
 // ─── Auth Middleware ─────────────────────────────────────────────────────
 export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
-  // SECURITY: Block dev mode in production
-  if (config.AUTH_MODE === "dev" && config.NODE_ENV === "production") {
-    logger.error("AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra.");
+  // SECURITY: Block dev mode in production unless DEMO_BYPASS=true
+  if (config.AUTH_MODE === "dev" && config.NODE_ENV === "production" && !config.DEMO_BYPASS) {
+    logger.error("AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra or DEMO_BYPASS=true.");
     return next(new HttpError(500, "Server misconfiguration"));
   }
 

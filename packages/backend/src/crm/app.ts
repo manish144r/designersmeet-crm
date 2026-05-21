@@ -1,4 +1,6 @@
 // Express app for the DesignersMeet CRM (15-page surface from brief/mockups).
+import { fileURLToPath } from "url";
+import path from "path";
 import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
@@ -23,7 +25,9 @@ export function createApp(): Express {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
+          // Vite production builds use module scripts; allow 'unsafe-inline'
+          // for the small runtime snippet Vite injects into index.html.
+          scriptSrc: ["'self'", "'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'", "https://rsms.me"],
           fontSrc: ["'self'", "https://rsms.me"],
           imgSrc: ["'self'", "data:", "https:"],
@@ -139,5 +143,18 @@ export function createApp(): Express {
   );
 
   app.use(errorHandler);
+
+  // Production: serve the Vite-built frontend as static files.
+  // Compiled file is packages/backend/dist/crm/app.js, so frontend/dist is 3 levels up.
+  if (config.NODE_ENV === "production") {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const distPath = path.resolve(__dirname, "../../../frontend/dist");
+    app.use(express.static(distPath, { index: "index.html" }));
+    // SPA fallback -- any non-API GET returns index.html
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
+
   return app;
 }

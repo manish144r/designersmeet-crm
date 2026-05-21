@@ -1,29 +1,32 @@
-# Render blueprint — DesignersMeet CRM backend (free tier, no card required).
-# Deploy: push repo to GitHub, then in Render dashboard → New → Blueprint →
-# pick this repo. Render reads this file. ~2 min to live.
+# Render blueprint — DesignersMeet CRM (full-stack: backend serves frontend).
+# Deploy: push repo to GitHub, then Render dashboard → New → Blueprint.
+# ~4 min to live. The backend serves the React SPA on the same origin so
+# /api calls are same-origin — no CORS config required.
 services:
   - type: web
-    name: designersmeet-crm-api
+    name: designersmeet-crm
     runtime: node
     plan: free
     rootDir: .
-    buildCommand: npm install && npm --workspace @dm/shared run build && npm --workspace @dm/backend run build
+    buildCommand: >-
+      npm install &&
+      npm --workspace @dm/shared run build &&
+      npm --workspace @dm/backend run build &&
+      npm --workspace @dm/frontend run build
     startCommand: node packages/backend/dist/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: AUTH_MODE
-        value: entra
+        value: dev
+      - key: DEMO_BYPASS
+        value: "true"
       - key: DATA_PROVIDER
         value: memory
-      - key: BACKEND_PORT
-        value: 4000
+      - key: QUEUE_PROVIDER
+        value: memory
       - key: CORS_ORIGIN
-        value: https://designersmeet-preview.surge.sh
-      - key: ENTRA_TENANT_ID
-        sync: false
-      - key: ENTRA_CLIENT_ID
-        sync: false
-      - key: ENTRA_AUDIENCE
-        sync: false
+        value: "*"
+      - key: BACKEND_PORT
+        value: "10000"

@@ -1,27 +1,28 @@
 {
-    "name":  "designersmeet-crm",
-    "version":  "0.1.0",
-    "private":  true,
-    "description":  "Custom CRM for DesignersMeet — Shopify orders, freelancer database, queue-driven workflows, social pipeline.",
-    "workspaces":  [
-                       "packages/shared",
-                       "packages/backend",
-                       "packages/frontend"
-                   ],
-    "scripts":  {
-                    "dev":  "concurrently -n backend,frontend -c blue,magenta \"npm run dev -w @dm/backend\" \"npm run dev -w @dm/frontend\"",
-                    "build":  "npm run build -w @dm/shared \u0026\u0026 npm run build -w @dm/backend \u0026\u0026 npm run build -w @dm/frontend",
-                    "typecheck":  "npm run typecheck -w @dm/shared \u0026\u0026 npm run typecheck -w @dm/backend \u0026\u0026 npm run typecheck -w @dm/frontend",
-                    "lint":  "npm run lint -w @dm/backend \u0026\u0026 npm run lint -w @dm/frontend",
-                    "seed":  "npm run seed -w @dm/backend",
-                    "test":  "npm test --workspaces --if-present",
-                    "test:watch":  "npm run test:watch --workspaces --if-present"
-                },
-    "devDependencies":  {
-                            "concurrently":  "^8.2.2",
-                            "typescript":  "^5.4.5"
-                        },
-    "engines":  {
-                    "node":  "\u003e=20.0.0"
-                }
+  "name": "designersmeet-crm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Custom CRM for DesignersMeet — Shopify orders, freelancer database, queue-driven workflows, social pipeline.",
+  "workspaces": [
+    "packages/shared",
+    "packages/backend",
+    "packages/frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev -w @dm/backend\" \"npm run dev -w @dm/frontend\"",
+    "build": "npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend",
+    "typecheck": "npm run typecheck -w @dm/shared && npm run typecheck -w @dm/backend && npm run typecheck -w @dm/frontend",
+    "lint": "npm run lint -w @dm/backend && npm run lint -w @dm/frontend",
+    "seed": "npm run seed -w @dm/backend",
+    "test": "npm test --workspaces --if-present",
+    "test:watch": "npm run test:watch --workspaces --if-present",
+    "start": "node packages/backend/dist/server.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }

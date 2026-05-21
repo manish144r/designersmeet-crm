@@ -36,6 +36,8 @@ const Env = z.object({
 
   SENTRY_DSN: z.string().optional(),
   DEMO_BYPASS_EMAIL: z.string().default("vendor@designersmeet.demo"),
+  // Set DEMO_BYPASS=true to run AUTH_MODE=dev in production (demo deployments only).
+  DEMO_BYPASS: z.coerce.boolean().default(false),
 
   // ── Integration feature flags (default OFF; build runs with no external
   //    deps; demo mode forces all off; smoke tests skip cleanly w/o creds) ──
@@ -73,17 +75,18 @@ const Env = z.object({
 export const config = Env.parse(process.env);
 export type Config = z.infer<typeof Env>;
 
-// Production safety validation — fail fast on dangerous configs
-if (config.NODE_ENV === "production") {
+// Production safety validation — fail fast on dangerous configs.
+// All checks are bypassed when DEMO_BYPASS=true (demo / staging deployments).
+if (config.NODE_ENV === "production" && !config.DEMO_BYPASS) {
   if (config.AUTH_MODE === "dev") {
     throw new Error(
-      "FATAL: AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra and configure ENTRA_* variables.",
+      "FATAL: AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra and configure ENTRA_* variables, or set DEMO_BYPASS=true for a demo deployment.",
     );
   }
   if (config.QUEUE_PROVIDER === "memory" && !config.SUPABASE_URL && !config.SERVICE_BUS_CONNECTION_STRING) {
     throw new Error(
       "FATAL: QUEUE_PROVIDER=memory with no persistent fallback is not allowed in production. " +
-        "Set SUPABASE_URL+SUPABASE_ANON_KEY or SERVICE_BUS_CONNECTION_STRING.",
+        "Set SUPABASE_URL+SUPABASE_ANON_KEY or SERVICE_BUS_CONNECTION_STRING, or set DEMO_BYPASS=true.",
     );
   }
   if (config.AUTH_MODE === "entra" && (!config.ENTRA_TENANT_ID || !config.ENTRA_CLIENT_ID)) {
