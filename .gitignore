@@ -11,6 +11,9 @@ coverage
 *.tsbuildinfo
 .aider*
 
+# Vite temp config files
+*.timestamp-*.mjs
+
 # DM rebuild transient artifacts
 brief/.codex-log/
 packages/frontend/.vr-out/
