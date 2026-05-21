@@ -19,6 +19,7 @@
     "start": "node packages/backend/dist/server.js"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
     "concurrently": "^8.2.2",
     "typescript": "^5.4.5",
     "vite": "^5.2.13"
