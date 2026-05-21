@@ -1,6 +1,10 @@
 // DesignersMeet auth context.
 // Real path: Microsoft Entra (MSAL loginPopup) when VITE_MSAL_CLIENT_ID is set.
 // Demo path: instant bypass when VITE_MSAL_CLIENT_ID is not configured.
+//
+// Backend token strategy: we send the MSAL ID token (aud=client_id) rather than
+// the access token (aud=graph.microsoft.com) so the backend JWKS validation
+// works without requiring a custom API scope in Azure App Registration.
 import {
   createContext,
   useContext,
@@ -16,6 +20,7 @@ import {
   InteractionRequiredAuthError,
   BrowserAuthError,
 } from "@azure/msal-browser";
+import { setTokenGetter } from "../api/client.js";
 
 export type AppRole = "admin" | "pm" | "designer" | "vendor" | "viewer";
 export type AuthProviderKind = "microsoft" | "google" | "apple";
@@ -160,13 +165,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const accounts = app.getAllAccounts();
     if (!accounts.length) return null;
     try {
+      // Return idToken (aud=client_id) — backend validates against ENTRA_CLIENT_ID.
+      // Access token has aud=graph.microsoft.com and would fail backend JWKS check.
       const result = await app.acquireTokenSilent({ scopes: MSAL_SCOPES, account: accounts[0] });
-      return result.accessToken;
+      return result.idToken;
     } catch (err) {
       if (err instanceof InteractionRequiredAuthError) {
         try {
           const result = await app.acquireTokenPopup({ scopes: MSAL_SCOPES, account: accounts[0] });
-          return result.accessToken;
+          return result.idToken;
         } catch {
           return null;
         }
@@ -174,6 +181,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
   }, []);
+
+  // Wire the token getter into the API client so every fetch includes Bearer header.
+  useEffect(() => {
+    setTokenGetter(getAccessToken);
+  }, [getAccessToken]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ user, signedIn: !!user, demoMode: DEMO_MODE, signIn, getAccessToken, signOut }),

@@ -62,7 +62,11 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
       sub: String(payload.sub ?? ""),
       email: String(payload.preferred_username ?? payload.email ?? ""),
       name: String(payload.name ?? ""),
-      roles: Array.isArray(payload.roles) ? (payload.roles as AppRole[]) : ["client"],
+      // Use app roles from token if present; otherwise default to admin.
+      // Azure App Registration app roles can be configured later for fine-grained RBAC.
+      roles: Array.isArray(payload.roles) && (payload.roles as string[]).length > 0
+        ? (payload.roles as AppRole[])
+        : ["admin"],
     };
     next();
   } catch (err) {
