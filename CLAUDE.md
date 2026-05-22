@@ -126,3 +126,24 @@ DesignersMeet is an AI-augmented freelance arbitrage business in the Night Facto
 - Queue-driven workers (memory in dev, Azure Service Bus or Supabase in prod)
 
 Target revenue: $10K/month at scale.
+
+## Design Architecture Agent
+
+**Model:** `claude-opus-4-7`
+
+The Design Architect runs at two mandatory points around every Aider UI brief.
+
+1. **Pre-build** — consumes one BRIEF section and produces `brief/design-docs/BRIEF-XX-design.md` with five fixed sections: Data Model, Frontend Interaction Spec, Component Wiring Map, Acceptance Criteria, Playwright Test Stubs. No "TBD". Every UI element has a defined action; every API call has a full contract; every AC is binary. Aider only runs after this doc exists.
+2. **Post-build** — consumes the design doc plus the git diff produced by Aider and emits `brief/reviews/BRIEF-XX-conformance.md`. Each AC is reported PASS or BLOCK with `file:line` and `found vs expected`. The report ends with exactly `Overall verdict: PASS` or `Overall verdict: BLOCK`. BLOCK reruns Aider with the report attached, up to 2 reruns, then escalates to a human.
+
+**Command:**
+
+```bash
+./brief/run-with-design-architect.sh BRIEF-XX
+```
+
+**Hard rules:**
+- NO brief goes to Aider without a design doc.
+- NO build merges without a conformance PASS.
+
+Full spec: `brief/design-architecture-agent-spec.md`. Worked example: `brief/design-docs/BRIEF-EXAMPLE-design.md`.
