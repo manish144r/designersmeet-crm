@@ -65,6 +65,7 @@ export const msalConfig = {
     redirectUri: typeof window !== "undefined" ? window.location.origin : "",
   },
   cache: { cacheLocation: "localStorage" as const, storeAuthStateInCookie: true },
+  system: { allowNativeBroker: false },
 };
 
 // MSAL singleton — only created when client ID is present.

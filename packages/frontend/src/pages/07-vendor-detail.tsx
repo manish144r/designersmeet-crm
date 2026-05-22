@@ -1,9 +1,8 @@
 /* Generated from brief/mockups/07-vendor-detail.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
 import { useState, type MouseEventHandler, type ReactNode } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   BarChart3,
   Bell,
   Calendar,
@@ -391,7 +390,6 @@ function PortfolioPlaceholder() {
 
 export default function VendorDetail() {
   const params = useParams();
-  const navigate = useNavigate();
   const vid = params.id ?? "vn1";
   const v = useItem("vendors", vid).data as any;
   const [activeTab, setActiveTab] = useState(profileTabs[0]?.label ?? "Profile");
@@ -499,16 +497,6 @@ export default function VendorDetail() {
           <div className="flex h-full">
             <div className="flex-1 overflow-auto">
               <div className="border-b border-border-subtle px-8 pb-4 pt-6">
-                <div className="mb-3">
-                  <button
-                    type="button"
-                    onClick={() => navigate("/vendors")}
-                    className="flex items-center gap-1.5 text-[12px] text-secondary hover:text-foreground focus-visible:outline-foreground"
-                  >
-                    <ArrowLeft className="size-4" aria-hidden="true" />
-                    Back to Vendors
-                  </button>
-                </div>
                 <div className="flex items-start gap-4">
                   <Avatar size="xl">AS</Avatar>
                   <div className="flex-1">
@@ -553,7 +541,6 @@ export default function VendorDetail() {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => window.open(`https://wa.me/${(v?.phone ?? "").replace(/\D/g, "")}`, "_blank", "noopener,noreferrer")}
                       className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                     >
                       <MessageCircle className={iconClass} aria-hidden="true" />
@@ -562,7 +549,6 @@ export default function VendorDetail() {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => window.open(`mailto:${v?.email ?? ""}`, "_self")}
                       className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                     >
                       <Mail className={iconClass} aria-hidden="true" />
@@ -570,7 +556,6 @@ export default function VendorDetail() {
                     </Button>
                     <Button
                       type="button"
-                      onClick={() => useUIStore.getState().openCreate("projects")}
                       className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary"
                     >
                       <UserPlus className={iconClass} aria-hidden="true" />
@@ -702,7 +687,6 @@ export default function VendorDetail() {
                           <Button
                             type="button"
                             variant="ghost"
-                            onClick={() => navigate("/projects")}
                             className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground"
                           >
                             All 12 →
@@ -785,4 +769,174 @@ export default function VendorDetail() {
                                     {project.fee}
                                   </td>
                                   <td className={cn(tableCellClass, isLast && "border-border")}>
-                                    <StatusPill variant={projec
+                                    <StatusPill variant={project.variant}>{project.status}</StatusPill>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Tasks' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Tasks</div>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="list-disc pl-5">
+                          {(useList('project-stages', { assignedVendorId: vid }).data?.data || []).map((task: any) => (
+                            <li key={task.id} className="text-[13px] text-foreground">{task.name}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Deliverables' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Deliverables</div>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="list-disc pl-5">
+                          {rateRows.map((row) => (
+                            <li key={row.deliverable} className="text-[13px] text-foreground">{row.deliverable}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Conversations' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Conversations</div>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="list-disc pl-5">
+                          {(useList('conversations', { vendorId: vid }).data?.data || []).map((conversation: any) => (
+                            <li key={conversation.id} className="text-[13px] text-foreground">{conversation.topic}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Files' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Files</div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-[13px] text-muted">Phase 2 placeholder card</div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'Reviews' && (
+                    <Card>
+                      <CardHeader>
+                        <div className="text-[13px] font-semibold text-foreground">Reviews</div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="text-[13px] text-foreground">"Great collaboration!" - Client A</div>
+                          <div className="text-[13px] text-foreground">"Excellent design work." - Client B</div>
+                          <div className="text-[13px] text-foreground">"Timely delivery and quality." - Client C</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                <div className="col-span-1 space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <div className="text-[13px] font-semibold text-foreground">Compliance</div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {complianceItems.map((item, index) => (
+                        <div
+                          key={item.title}
+                          className={cn(
+                            "flex items-center justify-between px-4 py-3",
+                            index !== complianceItems.length - 1 && "border-b border-border-subtle",
+                          )}
+                        >
+                          <div>
+                            <div className="text-[12.5px] font-medium text-foreground">{item.title}</div>
+                            <div
+                              className={cn(
+                                "text-[11px]",
+                                item.variant === "warning" ? "text-warning" : "text-muted",
+                              )}
+                            >
+                              {item.detail}
+                            </div>
+                          </div>
+                          <Badge variant={item.variant} dot>
+                            {item.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <div className="text-[13px] font-semibold text-foreground">Portfolio</div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="grid grid-cols-2 gap-px bg-border-subtle p-px">
+                        <PortfolioPlaceholder />
+                        <PortfolioPlaceholder />
+                        <PortfolioPlaceholder />
+                        <PortfolioPlaceholder />
+                      </div>
+                      <div className="border-t border-border-subtle px-4 py-2.5 text-center">
+                        <a
+                          href="#"
+                          className="text-[12px] font-medium text-secondary hover:text-foreground hover:underline"
+                        >
+                          Open SharePoint folder →
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <div className="text-[13px] font-semibold text-foreground">Team contacts</div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {teamContacts.map((contact, index) => (
+                        <div
+                          key={contact.initials}
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-2.5",
+                            index !== teamContacts.length - 1 && "border-b border-border-subtle",
+                          )}
+                        >
+                          <Avatar size="sm">{contact.initials}</Avatar>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[12.5px] font-medium text-foreground">
+                              {contact.name}
+                            </div>
+                            <div className="text-[11px] text-muted">{contact.role}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}

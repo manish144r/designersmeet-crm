@@ -30,8 +30,6 @@ import {
   Zap,
 } from "lucide-react";
 
-import { useNavigate } from "react-router-dom";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -148,7 +146,6 @@ function IntegrationCard({
 }
 
 export default function Onboarding() {
-  const navigate = useNavigate();
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] flex-shrink-0 flex-col border-r border-border bg-sidebar">
@@ -260,7 +257,7 @@ export default function Onboarding() {
                   Let's set up DesignersMeet HQ. You can come back to any step from Settings.
                 </p>
               </div>
-              <Button variant="ghost" className="h-auto px-2.5 py-1.5 text-[13px] font-medium text-secondary hover:bg-hover hover:text-foreground" onClick={() => navigate("/dashboard")}>
+              <Button variant="ghost" className="h-auto px-2.5 py-1.5 text-[13px] font-medium text-secondary hover:bg-hover hover:text-foreground">
                 Skip for now
               </Button>
             </div>
@@ -312,7 +309,7 @@ export default function Onboarding() {
                     </div>
                   </div>
                 </div>
-                <Button className="h-auto gap-1.5 rounded-md px-3.5 py-[7px] text-[13px] font-medium" onClick={() => navigate("/settings?tab=integrations")}>
+                <Button className="h-auto gap-1.5 rounded-md px-3.5 py-[7px] text-[13px] font-medium">
                   <LinkIcon data-icon="inline-start" className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
                   Connect tenant
                 </Button>
@@ -352,7 +349,6 @@ export default function Onboarding() {
                 <Button
                   variant="secondary"
                   className="h-auto gap-1.5 rounded-md px-3.5 py-[7px] text-[13px] font-medium"
-                  onClick={() => navigate("/settings?tab=workspaces")}
                 >
                   <Plus data-icon="inline-start" className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
                   New workspace
@@ -370,7 +366,7 @@ export default function Onboarding() {
                   <span className="inline-flex items-center gap-1 rounded-full bg-success-tint px-2 py-0.5 text-[11px] font-medium leading-[18px] tracking-[0.01em] text-success before:size-1.5 before:rounded-full before:bg-current before:content-['']">
                     Active
                   </span>
-                  <Button variant="ghost" className="h-auto px-2.5 py-1.5 text-[13px] font-medium text-secondary hover:bg-hover hover:text-foreground" onClick={() => navigate("/settings?tab=workspaces")}>
+                  <Button variant="ghost" className="h-auto px-2.5 py-1.5 text-[13px] font-medium text-secondary hover:bg-hover hover:text-foreground">
                     Manage
                   </Button>
                 </div>
@@ -379,4 +375,15 @@ export default function Onboarding() {
                     <Building2 className="size-5" strokeWidth={1.75} aria-hidden="true" />
                   </div>
                   <div className="text-[13px] font-medium text-secondary">No additional workspaces yet</div>
-                  <d
+                  <div className="mt-1 text-[12px] text-secondary">
+                    When you add a second design firm or studio, it'll appear here.
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
