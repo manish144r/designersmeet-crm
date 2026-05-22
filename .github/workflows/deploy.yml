@@ -30,13 +30,14 @@ jobs:
         run: |
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
           COMMIT=$(git rev-parse --short HEAD)
-          tar -czf backup-${TIMESTAMP}-${COMMIT}.tar.gz \
+          BACKUP_NAME="backup-${TIMESTAMP}-${COMMIT}.tar.gz"
+          tar -czf "/tmp/${BACKUP_NAME}" \
             --exclude=node_modules \
             --exclude=packages/*/node_modules \
             --exclude=packages/frontend/dist \
             --exclude=.git \
             .
-          echo "BACKUP_FILE=backup-${TIMESTAMP}-${COMMIT}.tar.gz" >> $GITHUB_ENV
+          echo "BACKUP_FILE=/tmp/${BACKUP_NAME}" >> $GITHUB_ENV
 
       - name: Upload backup as artifact
         uses: actions/upload-artifact@v4
