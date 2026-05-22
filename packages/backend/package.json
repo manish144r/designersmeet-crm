@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./dist/server.js",
+  "main": "api/server.mjs",
   "scripts": {
     "vercel-build": "npm install react react-dom react-router-dom @tanstack/react-query zustand lucide-react react-hook-form class-variance-authority clsx tailwind-merge jspdf @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-slot @radix-ui/react-tabs @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities @clerk/clerk-react @clerk/backend @clerk/express tailwindcss autoprefixer postcss zod @types/react @types/react-dom --no-save && npm run build -w @dm/shared && npm run build -w @dm/backend && npm run build -w @dm/frontend && mkdir -p public && cp -r ../frontend/dist/. public/",
     "dev": "tsx watch src/server.ts",
