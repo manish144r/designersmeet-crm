@@ -86,7 +86,7 @@ const workspaceNavItems: NavItem[] = [
   { label: "Projects", icon: Layers, active: true },
   { label: "Calendar", icon: Calendar },
   { label: "Conversations", icon: MessagesSquare },
-  { label: "Forms", icon: ClipboardList },
+  // { label: "Forms", icon: ClipboardList }, // hidden
   { label: "Workflows", icon: Zap },
   { label: "Reports", icon: BarChart3 },
   { label: "Settings", icon: Settings },
@@ -246,7 +246,13 @@ function FilterBadge({
   );
 }
 
-function ProjectCard({ project }: { project: ProjectCardData }) {
+function ProjectCard({
+  project,
+  status,
+}: {
+  project: ProjectCardData;
+  status: string;
+}) {
   const navigate = useNavigate();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: project.id,
@@ -268,9 +274,19 @@ function ProjectCard({ project }: { project: ProjectCardData }) {
       }}
       className="cursor-grab rounded-md border-border bg-background p-3 transition-colors hover:border-border-strong hover:shadow-card"
     >
-      <div className="mb-2 flex items-start justify-between">
-        <div className="text-[13px] font-semibold leading-snug text-foreground">
-          {project.title}
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-semibold leading-snug text-foreground">
+            {project.title}
+          </div>
+          {status ? (
+            <span
+              data-status={status}
+              className="mt-1 inline-flex items-center gap-1 rounded-full bg-border-subtle px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] text-secondary"
+            >
+              {status}
+            </span>
+          ) : null}
         </div>
         <IconButton
           title="Project menu"
@@ -356,7 +372,8 @@ function KanbanColumn({ column }: { column: ProjectColumn }) {
         className="flex min-h-[200px] flex-1 flex-col gap-2 p-2.5"
       >
         {column.cards.map((project) => (
-          <ProjectCard key={project.title} project={project} />
+          // status badge text = column.title — keeps card & column in lock-step.
+          <ProjectCard key={project.title} project={project} status={column.title} />
         ))}
       </div>
     </div>
@@ -437,7 +454,7 @@ export default function ProjectsBoard() {
           </div>
           <div className="flex flex-col gap-0.5">
             {workspaceNavItems.map((item) => (
-              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/pipelines",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
+              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/reports",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
             ))}
           </div>
 

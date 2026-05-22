@@ -87,7 +87,7 @@ const workspaceNavItems: NavItem[] = [
   { label: "Projects", icon: Layers },
   { label: "Calendar", icon: Calendar },
   { label: "Conversations", icon: MessagesSquare },
-  { label: "Forms", icon: ClipboardList },
+  // { label: "Forms", icon: ClipboardList }, // hidden
   { label: "Workflows", icon: Zap, active: true },
   { label: "Reports", icon: BarChart3 },
   { label: "Settings", icon: Settings },
@@ -413,7 +413,7 @@ export default function Workflows() {
           </div>
           <div className="space-y-0.5">
             {workspaceNavItems.map((item) => (
-              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/pipelines",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
+              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/reports",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
             ))}
           </div>
 

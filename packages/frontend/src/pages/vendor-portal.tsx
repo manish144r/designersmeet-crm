@@ -37,6 +37,8 @@ import { cn } from "@/lib/utils";
 import { demoStore } from "@/lib/demoData";
 import { downloadInvoicePdf } from "@/lib/invoicePdf";
 import { useDatePreference } from "@/hooks/usePreferences";
+import { pushToast } from "@/lib/demoInteractions";
+import { useNavigate } from "react-router-dom";
 
 const iconClass = "size-4 shrink-0";
 
@@ -103,12 +105,62 @@ const vendorNavItems: Array<{ label: string; icon: LucideIcon; key: string }> = 
   { label: "Projects", icon: Layers, key: "projects" },
   { label: "Conversations", icon: MessagesSquare, key: "conversations" },
   { label: "Deliverables", icon: ClipboardCheck, key: "deliverables" },
+  { label: "Profile", icon: Users, key: "profile" },
+  { label: "Banking", icon: Receipt, key: "banking" },
+  { label: "Timesheets", icon: Calendar, key: "timesheets" },
   { label: "Invoices", icon: Receipt, key: "invoices" },
 ];
 
+interface ProfileForm {
+  name: string;
+  email: string;
+  phone: string;
+  abn: string;
+  address: string;
+}
+
+interface BankingForm {
+  bsb: string;
+  accountNumber: string;
+  accountName: string;
+  bankName: string;
+}
+
+interface TimesheetRow {
+  id: string;
+  date: string;
+  project: string;
+  hours: number;
+  rate: number;
+}
+
+interface DeliverableLink {
+  id: string;
+  kind: "file" | "link";
+  label: string;
+  url?: string;
+}
+
 export default function VendorPortal() {
   useDemoStoreTick();
+  const navigate = useNavigate();
   const [activeKey, setActiveKey] = useState<string>("overview");
+  // Local UI state for the new portal-only tabs.
+  const [profile, setProfile] = useState<ProfileForm>({
+    name: "Aurora Studio",
+    email: "hello@aurorastudio.in",
+    phone: "+91 98800 12345",
+    abn: "53 004 085 616",
+    address: "Indiranagar, Bengaluru",
+  });
+  const [banking, setBanking] = useState<BankingForm>({
+    bsb: "",
+    accountNumber: "",
+    accountName: "",
+    bankName: "",
+  });
+  const [timesheets, setTimesheets] = useState<TimesheetRow[]>([]);
+  const [extraDeliverables, setExtraDeliverables] = useState<DeliverableLink[]>([]);
 
   // The demo seed pegs vendor scope to Aurora Studio (vn1) — see
   // demoStore.getVendorId. Switching vendors is a deliberate Wave-B feature.
@@ -129,7 +181,10 @@ export default function VendorPortal() {
   const invoices = demoStore.list("invoices").data as unknown as InvoiceRow[];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
+    <div
+      data-no-demo-nav="true"
+      className="flex h-screen overflow-hidden bg-background text-foreground antialiased"
+    >
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-normal text-foreground">
@@ -199,14 +254,15 @@ export default function VendorPortal() {
             Back
           </div>
           <div className="space-y-0.5">
-            <a
-              href="/dashboard"
+            <button
+              type="button"
               data-vendor-back="admin"
-              className="flex cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium text-secondary hover:bg-border-subtle hover:text-foreground"
+              onClick={() => navigate("/dashboard")}
+              className="flex w-full cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium text-secondary hover:bg-border-subtle hover:text-foreground"
             >
               <ArrowLeft className="size-4 shrink-0 text-muted" aria-hidden="true" />
               <span>Admin view</span>
-            </a>
+            </button>
           </div>
         </nav>
 
@@ -276,7 +332,23 @@ export default function VendorPortal() {
           ) : activeKey === "conversations" ? (
             <ConversationsPane conversations={conversations} />
           ) : activeKey === "deliverables" ? (
-            <DeliverablesPane vendor={vendor} projects={projects} deliverables={deliverables} />
+            <DeliverablesPane
+              vendor={vendor}
+              projects={projects}
+              deliverables={deliverables}
+              extra={extraDeliverables}
+              setExtra={setExtraDeliverables}
+            />
+          ) : activeKey === "profile" ? (
+            <ProfilePane value={profile} onChange={setProfile} />
+          ) : activeKey === "banking" ? (
+            <BankingPane value={banking} onChange={setBanking} />
+          ) : activeKey === "timesheets" ? (
+            <TimesheetsPane
+              rows={timesheets}
+              setRows={setTimesheets}
+              projects={projects}
+            />
           ) : activeKey === "invoices" ? (
             <InvoicesPane invoices={invoices} />
           ) : null}
@@ -423,13 +495,19 @@ function DeliverablesPane({
   vendor,
   projects,
   deliverables,
+  extra,
+  setExtra,
 }: {
   vendor: VendorRow;
   projects: ProjectRow[];
   deliverables: DeliverableRow[];
+  extra: DeliverableLink[];
+  setExtra: (next: DeliverableLink[] | ((cur: DeliverableLink[]) => DeliverableLink[])) => void;
 }) {
   const [draftTitle, setDraftTitle] = useState("");
   const [draftProject, setDraftProject] = useState<string>(projects[0]?.id ?? "");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [selectedFileName, setSelectedFileName] = useState<string>("");
 
   function submit() {
     const title = draftTitle.trim();
@@ -441,7 +519,35 @@ function DeliverablesPane({
       status: "submitted",
       submitted_at: new Date().toISOString(),
     });
+    pushToast(`Deliverable "${title}" submitted`);
     setDraftTitle("");
+  }
+
+  function onFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setSelectedFileName(f.name);
+    setExtra((cur) => [
+      ...cur,
+      { id: `dl-${Date.now()}`, kind: "file", label: f.name },
+    ]);
+    pushToast(`File added: ${f.name}`);
+    e.target.value = "";
+  }
+
+  function addLink() {
+    const url = linkUrl.trim();
+    if (!url) return;
+    setExtra((cur) => [
+      ...cur,
+      { id: `dl-${Date.now()}`, kind: "link", label: url, url },
+    ]);
+    pushToast(`Link added`);
+    setLinkUrl("");
+  }
+
+  function removeExtra(id: string) {
+    setExtra((cur) => cur.filter((d) => d.id !== id));
   }
 
   return (
@@ -492,6 +598,95 @@ function DeliverablesPane({
         </CardContent>
       </Card>
 
+      <Card className="mb-4 rounded-lg border-border bg-background">
+        <CardContent className="space-y-4 px-[18px] py-4">
+          <div className="text-[13px] font-semibold text-foreground">
+            Attach files &amp; shareable links
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border-strong bg-background px-3 py-1.5 text-[12px] font-medium text-secondary hover:bg-hover">
+              <Upload className={iconClass} aria-hidden="true" />
+              Choose file
+              <input
+                type="file"
+                className="hidden"
+                onChange={onFilePicked}
+                aria-label="Upload file"
+              />
+            </label>
+            {selectedFileName ? (
+              <span className="text-[12px] text-muted">
+                Last picked: {selectedFileName}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="flex-1 block">
+              <span className="text-[12px] font-medium text-secondary">
+                Shareable link
+              </span>
+              <Input
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://drive.google.com/…"
+                className="mt-1 h-[34px] text-[13px]"
+              />
+            </label>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={addLink}
+              className="h-auto px-3 py-1.5 text-[12px] focus-visible:ring-foreground"
+            >
+              Add link
+            </Button>
+          </div>
+
+          {extra.length > 0 ? (
+            <div className="rounded-md border border-border-subtle">
+              {extra.map((d) => (
+                <div
+                  key={d.id}
+                  className="flex items-center gap-3 border-b border-border-subtle px-3 py-2 text-[12px] last:border-b-0"
+                >
+                  <span className="rounded-md bg-border-subtle px-2 py-0.5 text-[10px] font-semibold uppercase text-secondary">
+                    {d.kind}
+                  </span>
+                  <span className="flex-1 truncate text-foreground">
+                    {d.url ? (
+                      <a
+                        href={d.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        {d.label}
+                      </a>
+                    ) : (
+                      d.label
+                    )}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => removeExtra(d.id)}
+                    className="h-auto px-2 py-1 text-[11px] text-secondary hover:text-destructive focus-visible:ring-foreground"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-[11px] text-muted">
+              No attachments yet. Files and links you add appear here.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="rounded-lg border-border bg-background">
         <CardContent className="p-0">
           {deliverables.length === 0 ? (
@@ -529,6 +724,317 @@ function DeliverablesPane({
               </div>
             ))
           )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ProfilePane({
+  value,
+  onChange,
+}: {
+  value: ProfileForm;
+  onChange: (next: ProfileForm) => void;
+}) {
+  const [form, setForm] = useState<ProfileForm>(value);
+
+  function save() {
+    onChange(form);
+    pushToast("Profile saved");
+  }
+
+  return (
+    <div className="max-w-[720px] px-8 py-6">
+      <div className="mb-6">
+        <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+          Profile
+        </h1>
+        <p className="mt-1 text-[13px] text-muted">
+          Contact details shown on invoices and project handoffs.
+        </p>
+      </div>
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="space-y-3 px-[18px] py-4">
+          {(["name", "email", "phone", "abn", "address"] as const).map((key) => (
+            <label key={key} className="block">
+              <span className="text-[12px] font-medium uppercase tracking-[0.04em] text-secondary">
+                {key}
+              </span>
+              <Input
+                value={form[key]}
+                onChange={(e) => setForm((cur) => ({ ...cur, [key]: e.target.value }))}
+                className="mt-1 h-[34px] text-[13px]"
+              />
+            </label>
+          ))}
+          <div className="pt-1">
+            <Button
+              type="button"
+              onClick={save}
+              className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+            >
+              Save profile
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function BankingPane({
+  value,
+  onChange,
+}: {
+  value: BankingForm;
+  onChange: (next: BankingForm) => void;
+}) {
+  const [form, setForm] = useState<BankingForm>(value);
+
+  function save() {
+    onChange(form);
+    pushToast("Banking details saved");
+  }
+
+  return (
+    <div className="max-w-[720px] px-8 py-6">
+      <div className="mb-6">
+        <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+          Banking details
+        </h1>
+        <p className="mt-1 text-[13px] text-muted">
+          Used for invoice payouts. Stored locally for this session only.
+        </p>
+      </div>
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="space-y-3 px-[18px] py-4">
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">BSB</span>
+            <Input
+              value={form.bsb}
+              onChange={(e) => setForm((cur) => ({ ...cur, bsb: e.target.value }))}
+              placeholder="123-456"
+              className="mt-1 h-[34px] text-[13px]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Account number</span>
+            <Input
+              value={form.accountNumber}
+              onChange={(e) => setForm((cur) => ({ ...cur, accountNumber: e.target.value }))}
+              placeholder="12345678"
+              className="mt-1 h-[34px] text-[13px]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Account name</span>
+            <Input
+              value={form.accountName}
+              onChange={(e) => setForm((cur) => ({ ...cur, accountName: e.target.value }))}
+              className="mt-1 h-[34px] text-[13px]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Bank name</span>
+            <Input
+              value={form.bankName}
+              onChange={(e) => setForm((cur) => ({ ...cur, bankName: e.target.value }))}
+              className="mt-1 h-[34px] text-[13px]"
+            />
+          </label>
+          <div className="pt-1">
+            <Button
+              type="button"
+              onClick={save}
+              className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+            >
+              Save banking
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function TimesheetsPane({
+  rows,
+  setRows,
+  projects,
+}: {
+  rows: TimesheetRow[];
+  setRows: (next: TimesheetRow[] | ((cur: TimesheetRow[]) => TimesheetRow[])) => void;
+  projects: ProjectRow[];
+}) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState<{ date: string; project: string; hours: string; rate: string }>({
+    date: new Date().toISOString().slice(0, 10),
+    project: projects[0]?.title ?? "",
+    hours: "",
+    rate: "",
+  });
+
+  function save() {
+    const hours = Number.parseFloat(draft.hours);
+    const rate = Number.parseFloat(draft.rate);
+    if (!draft.date || !draft.project || !Number.isFinite(hours) || !Number.isFinite(rate)) return;
+    setRows((cur) => [
+      ...cur,
+      {
+        id: `ts-${Date.now()}`,
+        date: draft.date,
+        project: draft.project,
+        hours,
+        rate,
+      },
+    ]);
+    pushToast("Timesheet row added");
+    setAdding(false);
+    setDraft({
+      date: new Date().toISOString().slice(0, 10),
+      project: projects[0]?.title ?? "",
+      hours: "",
+      rate: "",
+    });
+  }
+
+  function remove(id: string) {
+    setRows((cur) => cur.filter((r) => r.id !== id));
+  }
+
+  const totalAll = rows.reduce((sum, r) => sum + r.hours * r.rate, 0);
+
+  return (
+    <div className="max-w-[1100px] px-8 py-6">
+      <div className="mb-6 flex items-end justify-between">
+        <div>
+          <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">
+            Timesheets
+          </h1>
+          <p className="mt-1 text-[13px] text-muted">
+            {rows.length} row{rows.length === 1 ? "" : "s"} · billed total ₹{totalAll.toLocaleString("en-IN")}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setAdding((v) => !v)}
+          className="h-auto px-3 py-1.5 text-[12px] focus-visible:ring-foreground"
+        >
+          {adding ? "Close" : "Add row"}
+        </Button>
+      </div>
+
+      {adding ? (
+        <Card className="mb-4 rounded-lg border-border bg-background">
+          <CardContent className="grid grid-cols-1 gap-3 px-[18px] py-4 md:grid-cols-5">
+            <label className="block md:col-span-1">
+              <span className="text-[12px] font-medium text-secondary">Date</span>
+              <Input
+                type="date"
+                value={draft.date}
+                onChange={(e) => setDraft((cur) => ({ ...cur, date: e.target.value }))}
+                className="mt-1 h-[34px] text-[13px]"
+              />
+            </label>
+            <label className="block md:col-span-2">
+              <span className="text-[12px] font-medium text-secondary">Project</span>
+              <select
+                value={draft.project}
+                onChange={(e) => setDraft((cur) => ({ ...cur, project: e.target.value }))}
+                className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
+              >
+                {projects.length === 0 ? (
+                  <option value="">No projects</option>
+                ) : (
+                  projects.map((p) => (
+                    <option key={p.id} value={p.title}>
+                      {p.title}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[12px] font-medium text-secondary">Hours</span>
+              <Input
+                type="number"
+                step="0.25"
+                value={draft.hours}
+                onChange={(e) => setDraft((cur) => ({ ...cur, hours: e.target.value }))}
+                className="mt-1 h-[34px] text-[13px]"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[12px] font-medium text-secondary">Rate (₹/hr)</span>
+              <Input
+                type="number"
+                value={draft.rate}
+                onChange={(e) => setDraft((cur) => ({ ...cur, rate: e.target.value }))}
+                className="mt-1 h-[34px] text-[13px]"
+              />
+            </label>
+            <div className="md:col-span-5 flex justify-end">
+              <Button
+                type="button"
+                onClick={save}
+                className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+              >
+                Save row
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card className="rounded-lg border-border bg-background">
+        <CardContent className="p-0">
+          <table className="w-full text-[12px]">
+            <thead>
+              <tr className="border-b border-border bg-subtle text-left text-[11px] uppercase tracking-[0.04em] text-muted">
+                <th className="px-3.5 py-2">Date</th>
+                <th className="px-3.5 py-2">Project</th>
+                <th className="px-3.5 py-2 text-right">Hours</th>
+                <th className="px-3.5 py-2 text-right">Rate</th>
+                <th className="px-3.5 py-2 text-right">Total</th>
+                <th className="px-3.5 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-3.5 py-6 text-center text-muted">
+                    No timesheet rows yet.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((r) => (
+                  <tr key={r.id} className="border-b border-border-subtle last:border-b-0">
+                    <td className="px-3.5 py-2 text-foreground">{r.date}</td>
+                    <td className="px-3.5 py-2 text-foreground">{r.project}</td>
+                    <td className="px-3.5 py-2 text-right text-secondary">{r.hours.toFixed(2)}</td>
+                    <td className="px-3.5 py-2 text-right text-secondary">
+                      ₹{r.rate.toLocaleString("en-IN")}
+                    </td>
+                    <td className="px-3.5 py-2 text-right font-semibold text-foreground">
+                      ₹{(r.hours * r.rate).toLocaleString("en-IN")}
+                    </td>
+                    <td className="px-3.5 py-2 text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => remove(r.id)}
+                        className="h-auto px-2 py-1 text-[11px] text-secondary hover:text-destructive focus-visible:ring-foreground"
+                      >
+                        Remove
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </CardContent>
       </Card>
     </div>
