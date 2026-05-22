@@ -65,9 +65,12 @@ export function createApp(): Express {
     auth_mode: config.AUTH_MODE,
     time: new Date().toISOString(),
   });
-  // Liveness (/health kept for back-compat with render.yaml + existing tests).
-  app.get("/health", (_req, res) => res.json(healthBody()));
-  app.get("/healthz", (_req, res) => res.json(healthBody()));
+  // Liveness — /health kept for back-compat; /api/health is the Vercel-friendly alias
+  // (Vercel routes /api/* to the serverless fn; bare /health falls through to SPA static).
+  app.get("/health",      (_req, res) => res.json(healthBody()));
+  app.get("/healthz",     (_req, res) => res.json(healthBody()));
+  app.get("/api/health",  (_req, res) => res.json(healthBody()));
+  app.get("/api/healthz", (_req, res) => res.json(healthBody()));
   // Readiness — the in-memory store is always ready; a real DB provider would
   // ping its connection here.
   app.get("/readyz", (_req, res) =>
