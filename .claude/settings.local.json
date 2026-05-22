@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git -c http.sslVerify=false push origin claude/confident-archimedes-a4d918)"
     ]
   }
 }

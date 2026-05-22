@@ -299,7 +299,7 @@ function OpportunityCard({ card }: { card: OpportunityCard }) {
   );
 }
 
-function KanbanColumn({ column }: { column: PipelineColumn }) {
+function KanbanColumn({ column, stageId }: { column: PipelineColumn; stageId?: string }) {
   return (
     <div className="flex w-[280px] min-w-[280px] flex-col rounded-lg border border-border bg-subtle">
       <div className="flex items-center justify-between border-b border-border px-3.5 py-3 text-[12px] font-semibold text-foreground">
@@ -308,7 +308,10 @@ function KanbanColumn({ column }: { column: PipelineColumn }) {
           <span>{column.title}</span>
           <span className="font-normal text-muted">{column.count}</span>
         </div>
-        <IconButton title={`Add ${column.title} opportunity`} className="size-6">
+        <IconButton title={`Add ${column.title} opportunity`} className="size-6" onClick={() => {
+          if (stageId) useUIStore.getState().openCreateWithDefaults?.("pipeline-deals", { pipeline_stage_id: stageId, owner: "M", currency: "INR", age: "0d" });
+          else useUIStore.getState().openCreate("pipeline-deals");
+        }}>
           <Plus className={iconClass} aria-hidden="true" />
         </IconButton>
       </div>
@@ -335,12 +338,15 @@ export default function Pipelines() {
   const _deals =
     useList<{
       id: string;
+      pipeline_stage_id?: string;
       pipelineStageId?: string;
+      contact_name?: string;
       contactName?: string;
       note?: string;
       value?: number;
       currency?: string;
-      createdAt?: string;
+      age?: string;
+      owner?: string;
     }>("pipeline-deals").data?.data ?? [];
   const _pl1Stages = _st
     .filter((stage) => stage.pipeline_id === "pl1")
@@ -350,15 +356,15 @@ export default function Pipelines() {
       ? pipelineColumns.map((column, index) => {
           const stage = _pl1Stages[index];
           if (!stage) return column;
-          const stageDeals = _deals.filter((d) => d.pipelineStageId === stage.id);
+          const stageDeals = _deals.filter((d) => (d.pipeline_stage_id ?? d.pipelineStageId) === stage.id);
           const liveCards =
             stageDeals.length > 0
               ? stageDeals.map<OpportunityCard>((d) => ({
-                  title: d.contactName ?? "—",
+                  title: d.contact_name ?? d.contactName ?? "—",
                   detail: d.note ?? "—",
                   value: `${d.currency ?? "₹"} ${(d.value ?? 0).toLocaleString("en-IN")}`,
-                  age: "—",
-                  owner: (d.contactName ?? "?").slice(0, 1).toUpperCase(),
+                  age: d.age ?? "—",
+                  owner: d.owner ?? (d.contact_name ?? d.contactName ?? "?").slice(0, 1).toUpperCase(),
                 }))
               : column.cards;
           const liveTotal =
@@ -486,7 +492,7 @@ export default function Pipelines() {
                   <Filter className={iconClass} aria-hidden="true" />
                   Filter
                 </Button>
-                <Button type="button" onClick={() => useUIStore.getState().openCreate("pipelines")} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
+                <Button type="button" onClick={() => useUIStore.getState().openCreate("pipeline-deals")} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
                   <Plus className={iconClass} aria-hidden="true" />
                   New opportunity
                 </Button>
@@ -514,7 +520,7 @@ export default function Pipelines() {
               <div className="flex-1 overflow-x-auto">
                 <div className="flex min-w-min gap-4 p-6">
                   {pipelineColumns.map((column, index) => (
-                    <KanbanColumn key={column.title} column={_pipelineColumns[index] ?? column} />
+                    <KanbanColumn key={column.title} column={_pipelineColumns[index] ?? column} stageId={_pl1Stages[index]?.id} />
                   ))}
                 </div>
               </div>

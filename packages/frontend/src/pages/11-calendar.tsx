@@ -375,7 +375,19 @@ function CalendarGridRow({ row, _ev }: { row: TimeRow; _ev: unknown[] }) {
         return (
           <div
             key={`${row.label}-${index}`}
-            className="relative h-[60px] border-b border-r border-border-subtle"
+            onClick={() => {
+              if (renderEvent) return;
+              useUIStore.getState().openCreateWithDefaults("calendar-events", {
+                title: "",
+                time: timeLabel,
+                dayIndex: col,
+                detail: "",
+              });
+            }}
+            className={cn(
+              "relative h-[60px] border-b border-r border-border-subtle",
+              !renderEvent && "cursor-pointer hover:bg-hover/40",
+            )}
           >
             {renderEvent ? <CalendarEventBlock event={renderEvent} /> : null}
           </div>

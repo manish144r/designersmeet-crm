@@ -70,8 +70,9 @@ const REGISTRY: Record<string, { title: string; fields: Field[] }> = {
     title: "Event",
     fields: [
       { name: "title", label: "Title" },
-      { name: "start_at", label: "Start", type: "date" },
-      { name: "end_at", label: "End", type: "date" },
+      { name: "detail", label: "Detail" },
+      { name: "time", label: "Time slot (e.g. 10 AM)" },
+      { name: "dayIndex", label: "Day index (0=Mon…6=Sun)", type: "number" },
     ],
   },
   workflows: {
@@ -89,15 +90,63 @@ const REGISTRY: Record<string, { title: string; fields: Field[] }> = {
       { name: "public_slug", label: "Public slug" },
     ],
   },
+  "pipeline-deals": {
+    title: "Deal",
+    fields: [
+      { name: "contact_name", label: "Contact" },
+      { name: "value", label: "Value (₹)", type: "number" },
+      { name: "note", label: "Note" },
+      { name: "owner", label: "Owner" },
+      { name: "pipeline_stage_id", label: "Stage ID (ps1..ps5)" },
+    ],
+  },
+  pipelines: {
+    title: "Deal",
+    fields: [
+      { name: "contact_name", label: "Contact" },
+      { name: "value", label: "Value (₹)", type: "number" },
+      { name: "note", label: "Note" },
+      { name: "owner", label: "Owner" },
+    ],
+  },
+  users: {
+    title: "User",
+    fields: [
+      { name: "name", label: "Name" },
+      { name: "email", label: "Email", type: "email" },
+      { name: "role", label: "Role" },
+    ],
+  },
+  campaigns: {
+    title: "Campaign",
+    fields: [
+      { name: "name", label: "Name" },
+      { name: "subject", label: "Subject" },
+      { name: "from_address", label: "From", type: "email" },
+      { name: "target_tag", label: "Target tag" },
+    ],
+  },
+  "project-stages": {
+    title: "Milestone",
+    fields: [
+      { name: "name", label: "Title" },
+      { name: "label", label: "Label" },
+      { name: "status", label: "Status" },
+    ],
+  },
 };
 
-function RecordForm({ resource, recordId }: { resource: string; recordId: string | null }) {
+function RecordForm({ resource, recordId, defaults }: { resource: string; recordId: string | null; defaults?: Record<string, string | number | boolean | null> | null }) {
   const spec = REGISTRY[resource] ?? { title: resource, fields: [{ name: "name", label: "Name" }] };
   const closeModal = useUIStore((s) => s.closeModal);
   const create = useCreate(resource);
   const update = useUpdate(resource);
   const existing = useItem<Record<string, unknown>>(resource, recordId ?? undefined);
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<Record<string, string>>(() => {
+    const seed: Record<string, string> = {};
+    if (defaults) for (const [k, v] of Object.entries(defaults)) seed[k] = v == null ? "" : String(v);
+    return seed;
+  });
 
   useEffect(() => {
     if (recordId && existing.data) {
@@ -109,8 +158,15 @@ function RecordForm({ resource, recordId }: { resource: string; recordId: string
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (recordId) await update.mutateAsync({ id: recordId, patch: form });
-    else await create.mutateAsync(form);
+    // Coerce numeric fields and merge defaults (e.g. pre-filled stage id).
+    const payload: Record<string, unknown> = { ...(defaults ?? {}) };
+    for (const f of spec.fields) {
+      const raw = form[f.name] ?? "";
+      if (f.type === "number") payload[f.name] = raw === "" ? 0 : Number(raw);
+      else payload[f.name] = raw;
+    }
+    if (recordId) await update.mutateAsync({ id: recordId, patch: payload });
+    else await create.mutateAsync(payload);
     closeModal();
   };
 
@@ -183,7 +239,7 @@ export function CrmModals() {
                 {modal.kind === "edit" ? `Edit ${title}` : `New ${title}`}
               </DialogTitle>
             </DialogHeader>
-            <RecordForm resource={modal.resource} recordId={modal.recordId} />
+            <RecordForm resource={modal.resource} recordId={modal.recordId} defaults={modal.defaults} />
           </>
         )}
       </DialogContent>

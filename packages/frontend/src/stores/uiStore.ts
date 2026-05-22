@@ -9,6 +9,7 @@ export interface ModalState {
   kind: "create" | "edit" | "confirm-delete" | null;
   resource: string | null;
   recordId: string | null;
+  defaults?: Record<string, string | number | boolean | null> | null;
 }
 
 const SIDEBAR_KEY = "dm.sidebarCollapsed";
@@ -42,6 +43,10 @@ interface UIState {
   // — modals —
   modal: ModalState;
   openCreate: (resource: string) => void;
+  openCreateWithDefaults: (
+    resource: string,
+    defaults: Record<string, string | number | boolean | null>,
+  ) => void;
   openEdit: (resource: string, recordId: string) => void;
   openConfirmDelete: (resource: string, recordId: string) => void;
   closeModal: () => void;
@@ -77,10 +82,12 @@ export const useUIStore = create<UIState>((set) => ({
   setSearch: (search) => set({ search }),
 
   modal: NO_MODAL,
-  openCreate: (resource) => set({ modal: { kind: "create", resource, recordId: null } }),
-  openEdit: (resource, recordId) => set({ modal: { kind: "edit", resource, recordId } }),
+  openCreate: (resource) => set({ modal: { kind: "create", resource, recordId: null, defaults: null } }),
+  openCreateWithDefaults: (resource, defaults) =>
+    set({ modal: { kind: "create", resource, recordId: null, defaults } }),
+  openEdit: (resource, recordId) => set({ modal: { kind: "edit", resource, recordId, defaults: null } }),
   openConfirmDelete: (resource, recordId) =>
-    set({ modal: { kind: "confirm-delete", resource, recordId } }),
+    set({ modal: { kind: "confirm-delete", resource, recordId, defaults: null } }),
   closeModal: () => set({ modal: NO_MODAL }),
 
   filters: {},

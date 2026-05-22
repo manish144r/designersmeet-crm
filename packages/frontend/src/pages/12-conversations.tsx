@@ -379,6 +379,60 @@ export default function Conversations() {
     setReplyBody("");
   }
 
+  // BRIEF-26 Compose: open a custom modal that creates the conversation AND
+  // the first message in one go so the new thread is immediately viewable.
+  const createConversation = useCreate("conversations");
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeTo, setComposeTo] = useState("");
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [composeChannel, setComposeChannel] = useState<Channel>("email");
+  function submitCompose() {
+    const subject = composeSubject.trim() || "(no subject)";
+    const body = composeBody.trim();
+    const to = composeTo.trim();
+    const nowIso = new Date().toISOString();
+    const newConvId = `cv-${Date.now()}`;
+    const initials = (to.match(/[A-Za-z]/g) ?? ["?"])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+    createConversation.mutate({
+      id: newConvId,
+      contact_id: "",
+      initials,
+      name: to || "(new)",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      subject,
+      preview: body.slice(0, 80),
+      channel: composeChannel,
+      unread: false,
+      unread_count: 0,
+      starred: false,
+      assigned_user_id: "u1",
+      last_message_at: nowIso,
+    });
+    if (body) {
+      createMessage.mutate({
+        conversation_id: newConvId,
+        channel: composeChannel,
+        direction: "outbound",
+        from_address: composeChannel === "email" ? "manish@designersmeet.com" : "DM",
+        to_address: to,
+        body,
+        sent_at: nowIso,
+        initials: "MS",
+        sender: "Manish",
+        meta: `Sent · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+      });
+    }
+    setComposeTo("");
+    setComposeSubject("");
+    setComposeBody("");
+    setShowCompose(false);
+    setSelectedConvId(newConvId);
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -485,7 +539,7 @@ export default function Conversations() {
               <div className="border-b border-border px-4 py-3">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-[15px] font-semibold text-foreground">Inbox</h2>
-                  <Button onClick={() => useUIStore.getState().openCreate("conversations")} className="h-auto gap-1.5 bg-primary px-2.5 py-1 text-[12px] text-background hover:bg-primary-hover">
+                  <Button onClick={() => setShowCompose(true)} className="h-auto gap-1.5 bg-primary px-2.5 py-1 text-[12px] text-background hover:bg-primary-hover">
                     <Pencil className={iconClass} aria-hidden="true" />
                     Compose
                   </Button>
@@ -749,6 +803,43 @@ export default function Conversations() {
           </div>
         </main>
       </div>
+
+      {showCompose ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4" onClick={() => setShowCompose(false)}>
+          <div className="w-full max-w-[560px] rounded-lg border border-border bg-background p-6 shadow-card" onClick={(e) => e.stopPropagation()}>
+            <div className="text-[16px] font-semibold text-foreground">New message</div>
+            <p className="mt-1 text-[12px] text-muted">Demo mode: messages are stored in-memory and appear on the inbox immediately. No SMTP send.</p>
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center gap-2">
+                {(["email", "sms", "whatsapp"] as const).map((c) => (
+                  <button key={c} type="button" onClick={() => setComposeChannel(c)} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", composeChannel === c ? "bg-primary-tint text-primary" : "bg-border-subtle text-secondary")}>{c}</button>
+                ))}
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium uppercase tracking-[0.06em] text-muted">To</label>
+                <Input value={composeTo} onChange={(e) => setComposeTo(e.target.value)} placeholder={composeChannel === "email" ? "name@example.com" : "+91 …"} className="mt-1" />
+              </div>
+              {composeChannel === "email" ? (
+                <div>
+                  <label className="block text-[11px] font-medium uppercase tracking-[0.06em] text-muted">Subject</label>
+                  <Input value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} placeholder="Subject" className="mt-1" />
+                </div>
+              ) : null}
+              <div>
+                <label className="block text-[11px] font-medium uppercase tracking-[0.06em] text-muted">Body</label>
+                <textarea value={composeBody} onChange={(e) => setComposeBody(e.target.value)} rows={5} className="mt-1 w-full rounded-md border border-border-strong bg-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-foreground" placeholder="Write your message…" />
+              </div>
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setShowCompose(false)} className="h-auto px-3.5 py-[7px] text-[12px]">Cancel</Button>
+              <Button type="button" onClick={submitCompose} disabled={!composeTo || !composeBody} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
+                <Send className={iconClass} aria-hidden="true" />
+                Send
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
