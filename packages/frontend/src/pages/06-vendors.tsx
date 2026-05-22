@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/06-vendors.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import { useRef, useState, type ChangeEventHandler, type MouseEventHandler, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ChangeEventHandler, type MouseEventHandler, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -242,6 +242,67 @@ function StatusBadge({ status }: { status: Vendor["status"] }) {
   );
 }
 
+function useDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+  return { open, setOpen, ref };
+}
+
+function FilterDropdown({
+  label,
+  icon: Icon,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  icon?: React.ElementType;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const dd = useDropdown();
+  return (
+    <div className="relative" ref={dd.ref}>
+      <Button
+        type="button"
+        variant="secondary"
+        className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
+        onClick={() => dd.setOpen((v) => !v)}
+      >
+        {Icon && <Icon className={iconClass} aria-hidden="true" />}
+        {label}: {value}
+        <ChevronDown className="size-4 text-muted" aria-hidden="true" />
+      </Button>
+      {dd.open && (
+        <div className="absolute left-0 top-full z-50 mt-1 min-w-[150px] rounded-lg border border-border bg-background py-1 shadow-lg">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => { onChange(opt); dd.setOpen(false); }}
+              className={cn(
+                "flex w-full items-center px-3 py-2 text-left text-[13px] hover:bg-hover",
+                opt === value ? "font-medium text-primary" : "text-foreground",
+              )}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AgreementStatus({ agreement }: { agreement: Vendor["agreement"] }) {
   if (agreement === "Signed") {
     return (
@@ -439,43 +500,10 @@ export default function Vendors() {
                 value={q}
                 onChange={(event) => setQ(event.target.value)}
               />
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => { const v = prompt("Filter by skill (e.g. Design, Dev, Video):", skillFilter); if (v !== null) setSkillFilter(v || "Any"); }}
-                className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
-              >
-                <Filter className={iconClass} aria-hidden="true" />
-                Skill: {skillFilter}
-                <ChevronDown className="size-4 text-muted" aria-hidden="true" />
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => { const v = prompt("Filter by region:", regionFilter); if (v !== null) setRegionFilter(v || "Any"); }}
-                className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
-              >
-                Region: {regionFilter}
-                <ChevronDown className="size-4 text-muted" aria-hidden="true" />
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => { const v = prompt("Filter by tier (1, 2, or Any):", tierFilter); if (v !== null) setTierFilter(v || "Any"); }}
-                className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
-              >
-                Tier: {tierFilter}
-                <ChevronDown className="size-4 text-muted" aria-hidden="true" />
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => { const v = prompt("Filter by status (Active, Invited, Inactive, Any):", statusFilter); if (v !== null) setStatusFilter(v || "Any"); }}
-                className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
-              >
-                Status: {statusFilter}
-                <ChevronDown className="size-4 text-muted" aria-hidden="true" />
-              </Button>
+              <FilterDropdown label="Skill" icon={Filter} options={["Any","Design","Video","Motion","Web","Brand"]} value={skillFilter} onChange={setSkillFilter} />
+              <FilterDropdown label="Region" options={["Any","VIC","NSW","QLD","SA","WA"]} value={regionFilter} onChange={setRegionFilter} />
+              <FilterDropdown label="Tier" options={["Any","Tier-1","Tier-2","Tier-3"]} value={tierFilter} onChange={setTierFilter} />
+              <FilterDropdown label="Status" options={["Any","Active","Paused","Onboarding"]} value={statusFilter} onChange={setStatusFilter} />
               <div className="flex-1" />
               <Button
                 type="button"
