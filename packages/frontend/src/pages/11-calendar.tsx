@@ -1,4 +1,4 @@
-/* Generated from brief/mockups/11-calendar.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
+﻿/* Generated from brief/mockups/11-calendar.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
 import { useNavigate } from "react-router-dom";
 import { useState, type ReactNode } from "react";
@@ -778,8 +778,5 @@ export default function Calendar() {
         </main>
       </div>
     </div>
-  );
-}
-
   );
 }
