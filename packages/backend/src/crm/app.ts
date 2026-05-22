@@ -144,9 +144,12 @@ export function createApp(): Express {
 
   app.use(errorHandler);
 
-  // Production: serve the Vite-built frontend as static files.
-  // Compiled file is packages/backend/dist/crm/app.js, so frontend/dist is 3 levels up.
-  if (config.NODE_ENV === "production") {
+  // Production static-file serving: only when running outside Vercel.
+  // On Vercel, outputDirectory:public + the SPA catch-all rewrite in vercel.json
+  // handle all static / SPA routing at the CDN edge — the Lambda must never serve
+  // index.html or it intercepts unmatched /api/* routes and returns HTML instead of
+  // a proper 404.  For non-Vercel production hosts, serve from the Express process.
+  if (config.NODE_ENV === "production" && !process.env.VERCEL) {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
     const distPath = path.resolve(__dirname, "../../../frontend/dist");
     app.use(express.static(distPath, { index: "index.html" }));
