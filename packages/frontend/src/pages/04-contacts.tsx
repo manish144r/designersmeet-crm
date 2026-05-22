@@ -43,7 +43,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { SortChevron } from "../components/SortChevron.js";
-import { useList } from "../hooks/useResource.js";
+import { useList, useUpdate } from "../hooks/useResource.js";
 import { useUIStore } from "../stores/uiStore.js";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider.js";
@@ -80,8 +80,16 @@ type Contact = {
   type: string;
   project: string;
   tag: string;
+  tags?: string[];
   owner: string;
   lastContact: string;
+};
+
+type Segment = {
+  id: string;
+  name: string;
+  filter_json?: { tags?: string[] } | Record<string, unknown>;
+  contact_count?: number;
 };
 
 const workspaceNavItems: NavItem[] = [
@@ -373,10 +381,21 @@ export default function Contacts() {
   if (ownerFilter !== "Anyone") listParams.owner = ownerFilter;
 
   const { data } = useList<Contact>("contacts", listParams);
-  const contacts = data?.data ?? [];
+  const updateContact = useUpdate("contacts");
+  const allContacts = data?.data ?? [];
   const total = data?.total ?? 2438;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const selectedContactIds = selectedContacts ?? [];
+
+  // BRIEF-28: segments + bulk filter by tag
+  const { data: segmentsResp } = useList<Segment>("segments");
+  const segments = segmentsResp?.data ?? [];
+  const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
+  const activeSegment = segments.find((s) => s.id === activeSegmentId);
+  const activeSegmentTags: string[] = ((activeSegment?.filter_json as any)?.tags ?? []) as string[];
+  const contacts = activeSegmentTags.length
+    ? allContacts.filter((c) => (c.tags ?? []).some((t) => activeSegmentTags.includes(t)))
+    : allContacts;
 
   // hidden CSV file input ref
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -404,7 +423,64 @@ export default function Contacts() {
   }
 
   function handleExport() {
-    window.print();
+    // BRIEF-28: prefer selected rows; else export all visible.
+    const rows = selectedContactIds.length
+      ? contacts.filter((c) => selectedContactIds.includes(c.id))
+      : contacts;
+    if (rows.length === 0) {
+      window.print();
+      return;
+    }
+    const header = ["id", "name", "email", "type", "tags", "owner", "project", "lastContact"];
+    const csv = [header.join(",")]
+      .concat(rows.map((c) => [
+        c.id,
+        JSON.stringify(c.name ?? ""),
+        JSON.stringify(c.email ?? ""),
+        JSON.stringify(c.type ?? ""),
+        JSON.stringify((c.tags ?? []).join("|")),
+        JSON.stringify(c.owner ?? ""),
+        JSON.stringify(c.project ?? ""),
+        JSON.stringify(c.lastContact ?? ""),
+      ].join(",")))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `contacts-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function bulkAddTag() {
+    if (selectedContactIds.length === 0) return;
+    const tag = window.prompt("Add tag to selected contacts:")?.trim();
+    if (!tag) return;
+    selectedContactIds.forEach((id) => {
+      const c = contacts.find((x) => x.id === id);
+      const current = (c?.tags ?? []) as string[];
+      if (current.includes(tag)) return;
+      updateContact.mutate({ id, patch: { tags: [...current, tag] } });
+    });
+  }
+
+  function bulkRemoveTag() {
+    if (selectedContactIds.length === 0) return;
+    const tag = window.prompt("Remove tag from selected contacts:")?.trim();
+    if (!tag) return;
+    selectedContactIds.forEach((id) => {
+      const c = contacts.find((x) => x.id === id);
+      const current = (c?.tags ?? []) as string[];
+      if (!current.includes(tag)) return;
+      updateContact.mutate({ id, patch: { tags: current.filter((x) => x !== tag) } });
+    });
+  }
+
+  function clearSelection() {
+    selectedContactIds.forEach((id) => toggleSelected("contacts", id));
   }
 
   function buildPageNumbers() {
@@ -617,6 +693,55 @@ export default function Contacts() {
               </div>
             </div>
 
+            {/* BRIEF-28 segments — saved filter shortcuts */}
+            {segments.length > 0 ? (
+              <div className="flex items-center gap-2 border-b border-border-subtle px-8 pb-3 pt-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Segments</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveSegmentId(null)}
+                  className={cn(badgeClass, "hover:bg-border focus-visible:outline-foreground transition-colors", activeSegmentId === null && "bg-primary-tint text-primary")}
+                >
+                  All
+                </button>
+                {segments.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setActiveSegmentId(s.id === activeSegmentId ? null : s.id)}
+                    className={cn(badgeClass, "hover:bg-border focus-visible:outline-foreground transition-colors", activeSegmentId === s.id && "bg-primary-tint text-primary")}
+                    title={`Filter by ${s.name}`}
+                  >
+                    {s.name}
+                    {typeof s.contact_count === "number" ? <span className="ml-1 text-muted">{s.contact_count}</span> : null}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {/* BRIEF-28 bulk action bar (visible only when rows are selected) */}
+            {selectedContactIds.length > 0 ? (
+              <div className="flex items-center gap-2 border-b border-border-subtle bg-primary-tint/40 px-8 py-2">
+                <span className="text-[12px] font-semibold text-foreground">{selectedContactIds.length} selected</span>
+                <Button type="button" variant="secondary" onClick={bulkAddTag} className="h-auto gap-1.5 px-2.5 py-1 text-[12px]">
+                  <Plus className="size-3.5" /> Add tag
+                </Button>
+                <Button type="button" variant="secondary" onClick={bulkRemoveTag} className="h-auto gap-1.5 px-2.5 py-1 text-[12px]">
+                  Remove tag
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => navigate("/campaigns")} className="h-auto gap-1.5 px-2.5 py-1 text-[12px]">
+                  <Mail className="size-3.5" /> Add to campaign
+                </Button>
+                <Button type="button" variant="secondary" onClick={handleExport} className="h-auto gap-1.5 px-2.5 py-1 text-[12px]">
+                  <Download className="size-3.5" /> Export CSV
+                </Button>
+                <div className="flex-1" />
+                <Button type="button" variant="ghost" onClick={clearSelection} className="h-auto px-2.5 py-1 text-[12px] text-secondary hover:bg-hover">
+                  Clear
+                </Button>
+              </div>
+            ) : null}
+
             {/* Saved filter pills */}
             <div className="flex items-center gap-2 border-b border-border-subtle px-8 pb-3">
               {savedFilters.map((filter) => {
@@ -811,7 +936,14 @@ export default function Contacts() {
                             <span className="text-secondary">{contact.project}</span>
                           </td>
                           <td className={cn(tableCellClass, isLast && "border-border")}>
-                            <span className={badgeClass}>{contact.tag}</span>
+                            <div className="flex flex-wrap gap-1">
+                              {(contact.tags ?? []).length > 0
+                                ? (contact.tags ?? []).slice(0, 3).map((t) => (
+                                    <span key={t} className={cn(badgeClass, "bg-primary-tint text-primary")}>{t}</span>
+                                  ))
+                                : <span className={badgeClass}>{contact.tag}</span>}
+                              {(contact.tags ?? []).length > 3 ? <span className="text-[11px] text-muted">+{(contact.tags ?? []).length - 3}</span> : null}
+                            </div>
                           </td>
                           <td className={cn(tableCellClass, isLast && "border-border")}>
                             <span className="text-secondary">{contact.owner}</span>
