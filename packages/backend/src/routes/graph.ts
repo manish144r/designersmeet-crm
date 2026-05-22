@@ -205,8 +205,3 @@ export function graphRouter(): Router {
 
   return router;
 }
-    }),
-  );
-
-  return router;
-}
