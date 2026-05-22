@@ -44,7 +44,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useList, useCreate, useUpdate } from "../hooks/useResource.js";
+import { useList, useCreate, useUpdate, useItem } from "../hooks/useResource.js";
 import { useUIStore } from "../stores/uiStore.js";
 
 type NavItem = {
@@ -53,7 +53,7 @@ type NavItem = {
   active?: boolean;
 };
 
-type Channel = "email" | "whatsapp" | "note";
+type Channel = "email" | "whatsapp" | "note" | "sms";
 
 type InboxItem = {
   id: string;
@@ -65,7 +65,10 @@ type InboxItem = {
   channel: Channel;
   active?: boolean;
   unread?: boolean;
+  unread_count?: number;
+  starred?: boolean;
   assigned_user_id?: string;
+  contact_id?: string;
 };
 
 type ThreadMessage = {
@@ -102,6 +105,7 @@ const iconClass = "size-4 shrink-0";
 const channelBadgeClasses: Record<Channel, string> = {
   email: "bg-border-subtle text-secondary",
   whatsapp: "bg-border-subtle text-secondary",
+  sms: "bg-border-subtle text-secondary",
   note: "bg-warning-tint text-warning",
 };
 
@@ -332,16 +336,48 @@ export default function Conversations() {
   const [replyBody, setReplyBody] = useState("");
   const { data } = useList<InboxItem>("conversations");
   const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "assigned">("all");
+  const [channelFilter, setChannelFilter] = useState<"all" | "email" | "sms" | "whatsapp">("all");
   const inboxItems = data?.data ?? [];
   const filteredInboxItems = inboxItems.filter(item => {
-    if (activeFilter === "unread") return item.unread;
-    if (activeFilter === "assigned") return item.assigned_user_id === "u1";
+    if (activeFilter === "unread" && !(item.unread || (item.unread_count ?? 0) > 0)) return false;
+    if (activeFilter === "assigned" && item.assigned_user_id !== "u1") return false;
+    if (channelFilter !== "all" && item.channel !== channelFilter) return false;
     return true;
   });
-  const _m = useList<ThreadMessage & { conversation_id: string }>("messages").data?.data ?? [];
+  const _m = useList<ThreadMessage & { conversation_id: string; direction?: string; sent_at?: string }>("messages").data?.data ?? [];
   const threadMessages = _m.filter((x: any) => x.conversation_id === selectedConvId);
   const createMessage = useCreate("messages");
   const updateConversation = useUpdate("conversations");
+  const selectedConv = inboxItems.find((x) => x.id === selectedConvId);
+  const selectedChannel = (selectedConv?.channel ?? "email") as Channel;
+  const selectedContact = useItem<{ first_name?: string; last_name?: string; name?: string; primary_email?: string; email?: string; primary_phone?: string; tags?: string[]; initials?: string }>("contacts", selectedConv?.contact_id ?? "").data?.data;
+  const selectContactDisplayName = selectedContact?.name ?? [selectedContact?.first_name, selectedContact?.last_name].filter(Boolean).join(" ") ?? selectedConv?.name ?? "—";
+  const selectContactEmail = selectedContact?.email ?? selectedContact?.primary_email ?? "";
+  function handleSelectConv(id: string) {
+    setSelectedConvId(id);
+    const c = inboxItems.find((x) => x.id === id);
+    if (c && ((c.unread_count ?? 0) > 0 || c.unread)) {
+      updateConversation.mutate({ id, patch: { unread_count: 0, unread: false } });
+    }
+  }
+  function sendReply() {
+    const body = replyBody.trim();
+    if (!body) return;
+    createMessage.mutate({
+      conversation_id: selectedConvId,
+      direction: "outbound",
+      channel: selectedChannel,
+      body,
+      from_address: selectedChannel === "email" ? "manish@designersmeet.com" : "DM",
+      to_address: selectContactEmail || "",
+      sent_at: new Date().toISOString(),
+      initials: "MS",
+      sender: "Manish",
+      meta: `Sent · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+    });
+    updateConversation.mutate({ id: selectedConvId, patch: { last_message_at: new Date().toISOString(), preview: body.slice(0, 80) } });
+    setReplyBody("");
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
@@ -458,18 +494,29 @@ export default function Conversations() {
                 <SearchField placeholder="Search messages…" />
 
                 <div className="mt-3 flex items-center gap-1 text-[11px]">
-                  <FilterBadge active={activeFilter === "all"} count="137" onClick={() => setActiveFilter("all")}>
+                  <FilterBadge active={activeFilter === "all"} count={String(inboxItems.length)} onClick={() => setActiveFilter("all")}>
                     All
                   </FilterBadge>
-                  <FilterBadge count="12">Unread</FilterBadge>
-                  <FilterBadge count="8">Assigned to me</FilterBadge>
+                  <FilterBadge active={activeFilter === "unread"} count={String(inboxItems.filter(i => i.unread || (i.unread_count ?? 0) > 0).length)} onClick={() => setActiveFilter("unread")}>Unread</FilterBadge>
+                  <FilterBadge active={activeFilter === "assigned"} count={String(inboxItems.filter(i => i.assigned_user_id === "u1").length)} onClick={() => setActiveFilter("assigned")}>Assigned to me</FilterBadge>
+                </div>
+
+                <div className="mt-2 flex items-center gap-1 text-[11px]">
+                  <FilterBadge active={channelFilter === "all"} count={String(inboxItems.length)} onClick={() => setChannelFilter("all")}>All</FilterBadge>
+                  <FilterBadge active={channelFilter === "email"} count={String(inboxItems.filter(i => i.channel === "email").length)} onClick={() => setChannelFilter("email")}>Email</FilterBadge>
+                  <FilterBadge active={channelFilter === "sms"} count={String(inboxItems.filter(i => i.channel === "sms").length)} onClick={() => setChannelFilter("sms")}>SMS</FilterBadge>
+                  <FilterBadge active={channelFilter === "whatsapp"} count={String(inboxItems.filter(i => i.channel === "whatsapp").length)} onClick={() => setChannelFilter("whatsapp")}>WhatsApp</FilterBadge>
                 </div>
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                {filteredInboxItems.map((item) => (
-                  <InboxRow key={`${item.name}-${item.subject}`} item={item} onClick={() => setSelectedConvId(item.id)} />
-                ))}
+                {filteredInboxItems.length === 0 ? (
+                  <div className="px-4 py-10 text-center text-[12px] text-muted">No conversations match this filter.</div>
+                ) : (
+                  filteredInboxItems.map((item) => (
+                    <InboxRow key={item.id} item={{ ...item, active: item.id === selectedConvId }} onClick={() => handleSelectConv(item.id)} />
+                  ))
+                )}
               </div>
             </aside>
 
@@ -477,13 +524,13 @@ export default function Conversations() {
               <div className="flex items-center gap-3 border-b border-border px-6 py-3">
                 <div className="flex-1">
                   <div className="text-[15px] font-semibold text-foreground">
-                    RE: Lumen concept board v2
+                    {selectedConv?.subject ?? "—"}
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-[12px] text-muted">
-                    <span>3 participants</span>
+                    <span>{threadMessages.length} message{threadMessages.length === 1 ? "" : "s"}</span>
                     <span>·</span>
-                    <ChannelBadge channel="email">email</ChannelBadge>
-                    <ChannelBadge channel="note">internal note</ChannelBadge>
+                    <ChannelBadge channel={selectedChannel}>{selectedChannel}</ChannelBadge>
+                    {selectedConv?.starred ? <ChannelBadge channel="note">starred</ChannelBadge> : null}
                   </div>
                 </div>
                 <Button
@@ -512,9 +559,25 @@ export default function Conversations() {
               </div>
 
               <div className="flex-1 space-y-4 overflow-auto bg-subtle/30 px-6 py-5">
-                {threadMessages.map((message) => (
-                  <ThreadMessageItem key={`${message.sender}-${message.meta}`} message={message} />
-                ))}
+                {threadMessages.length === 0 ? (
+                  <div className="py-10 text-center text-[12px] text-muted">No messages in this thread yet.</div>
+                ) : (selectedChannel === "sms" || selectedChannel === "whatsapp") ? (
+                  threadMessages.map((m: any) => {
+                    const outbound = m.direction === "outbound";
+                    return (
+                      <div key={m.id ?? `${m.sender}-${m.meta}`} className={cn("flex", outbound ? "justify-end" : "justify-start")}>
+                        <div className={cn("max-w-[70%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed", outbound ? "bg-primary-tint text-foreground" : "bg-border-subtle text-secondary")}>
+                          <div>{m.body}</div>
+                          <div className={cn("mt-1 text-[10px]", outbound ? "text-muted" : "text-muted")}>{m.meta}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  threadMessages.map((message: any) => (
+                    <ThreadMessageItem key={message.id ?? `${message.sender}-${message.meta}`} message={message} />
+                  ))
+                )}
               </div>
 
               <div className="border-t border-border bg-background">
@@ -545,13 +608,12 @@ export default function Conversations() {
                   <textarea
                     className="w-full resize-none bg-background text-[13.5px] text-foreground placeholder:text-muted focus:outline-none"
                     rows={4}
-                    placeholder="Type your reply… (⌘+Enter to send)"
+                    placeholder={selectedChannel === "sms" ? "Type SMS… (160 char limit)" : selectedChannel === "whatsapp" ? "Type WhatsApp message…" : "Type your reply… (⌘+Enter to send)"}
                     value={replyBody}
                     onChange={(e) => setReplyBody(e.target.value)}
                     onKeyDown={(e) => {
-                      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && replyBody.trim()) {
-                        createMessage.mutate({ conversation_id: selectedConvId, direction: "outbound", body: replyBody.trim() });
-                        setReplyBody("");
+                      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                        sendReply();
                       }
                     }}
                   />
@@ -569,6 +631,11 @@ export default function Conversations() {
                       <IconButton title="Image">
                         <ImageIcon className={iconClass} aria-hidden="true" />
                       </IconButton>
+                      {selectedChannel === "sms" ? (
+                        <span className={cn("ml-2 text-[11px]", replyBody.length > 160 ? "text-danger" : "text-muted")}>
+                          {replyBody.length}/160
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -579,7 +646,7 @@ export default function Conversations() {
                       >
                         Save draft
                       </Button>
-                      <Button onClick={() => { if (replyBody.trim()) { createMessage.mutate({ conversation_id: selectedConvId, direction: "outbound", body: replyBody.trim() }); setReplyBody(""); } }} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
+                      <Button onClick={sendReply} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
                         <Send className={iconClass} aria-hidden="true" />
                         Send
                       </Button>
@@ -592,12 +659,14 @@ export default function Conversations() {
             <aside className="w-[300px] overflow-auto border-l border-border bg-background">
               <div className="border-b border-border bg-background p-5">
                 <div className="flex items-center gap-3">
-                  <Avatar size="lg">PR</Avatar>
+                  <Avatar size="lg">{(selectedContact?.initials ?? selectedConv?.initials ?? "??")}</Avatar>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[14px] font-semibold text-foreground">
-                      Priya Raghavan
+                      {selectContactDisplayName}
                     </div>
-                    <div className="truncate text-[11px] text-muted">Founder · Lumen Café</div>
+                    <div className="truncate text-[11px] text-muted">
+                      {selectContactEmail || selectedConv?.subject || "Conversation"}
+                    </div>
                   </div>
                 </div>
 

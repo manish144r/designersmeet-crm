@@ -308,4 +308,111 @@ export const demoFixtures: Record<string, DemoRow[]> = {
   "webhook-subscriptions": [
     { id: "wh1", url: "https://hooks.example.com/dm", events: ["order.created", "project.stage_moved"], signing_secret: "***", enabled: true, last_fired_at: null, last_status: null, created_at: "2026-05-01T00:00:00Z" },
   ],
+
+  // ── Phase 2 (2026-05-23) — BRIEF-26..30 -----------------------------------
+  // pipeline-deals — kanban opportunities flattened. Mirrors backend seed.
+  "pipeline-deals": [
+    { id: "pd1", pipeline_stage_id: "ps1", contact_name: "Suri Kapoor", contact_id: "ct3", value: 240000, currency: "INR", note: "Residential · 3BHK · HSR", owner: "R", age: "4d" },
+    { id: "pd2", pipeline_stage_id: "ps1", contact_name: "Arjun K. (Signal)", contact_id: "ct10", value: 580000, currency: "INR", note: "Co-work expansion · Indiranagar", owner: "A", age: "2d" },
+    { id: "pd3", pipeline_stage_id: "ps1", contact_name: "Tanvi Joshi", contact_id: "", value: 180000, currency: "INR", note: "Café fit-out · MG Road", owner: "M", age: "1d" },
+    { id: "pd4", pipeline_stage_id: "ps2", contact_name: "Mehta Family", contact_id: "", value: 840000, currency: "INR", note: "Villa · Whitefield", owner: "A", age: "6d" },
+    { id: "pd5", pipeline_stage_id: "ps2", contact_name: "Lumen Café (2)", contact_id: "ct1", value: 460000, currency: "INR", note: "Pune outlet expansion", owner: "M", age: "3d" },
+    { id: "pd6", pipeline_stage_id: "ps2", contact_name: "Kotha Bros LLP", contact_id: "", value: 280000, currency: "INR", note: "Showroom · Koramangala", owner: "R", age: "1d" },
+    { id: "pd7", pipeline_stage_id: "ps3", contact_name: "Marlowe Residence", contact_id: "ct6", value: 920000, currency: "INR", note: "Kitchen + Living detail", owner: "M", age: "8d" },
+    { id: "pd8", pipeline_stage_id: "ps4", contact_name: "Atrium Offices", contact_id: "", value: 1890000, currency: "INR", note: "Level 3 fitout proposal", owner: "M", age: "12d" },
+    { id: "pd9", pipeline_stage_id: "ps5", contact_name: "HSR Penthouse", contact_id: "ct1", value: 1260000, currency: "INR", note: "Closed — install Aug", owner: "A", age: "21d" },
+  ],
+
+  // segments — saved filter shortcuts. BRIEF-28.
+  segments: [
+    { id: "sg1", name: "VIP Clients", filter_json: { tags: ["VIP"] }, contact_count: 3, created_at: "2026-05-01T00:00:00Z" },
+    { id: "sg2", name: "Cold Leads", filter_json: { tags: ["Cold"] }, contact_count: 2, created_at: "2026-05-01T00:00:00Z" },
+    { id: "sg3", name: "Active Vendors", filter_json: { tags: ["Vendor"] }, contact_count: 7, created_at: "2026-05-01T00:00:00Z" },
+    { id: "sg4", name: "Prospects", filter_json: { tags: ["Prospect"] }, contact_count: 1, created_at: "2026-05-01T00:00:00Z" },
+  ],
+
+  // campaigns — GHL-style email sequences. BRIEF-27.
+  campaigns: [
+    {
+      id: "cm1",
+      name: "May Newsletter",
+      subject: "DM May update — new vendors, fresh case studies",
+      body: "Hey {{first_name}},\n\nA quick update from the studio: three new projects on the boards, a new vendor onboarded in Pune, and a fresh look at our brand-refresh package.\n\nReply if you'd like a 20-min walk-through.\n\nManish",
+      from_address: "hello@designersmeet.com",
+      status: "active",
+      target_tag: "Client",
+      scheduled_at: null,
+      sent_count: 5,
+      open_rate: 0.62,
+      click_rate: 0.21,
+      created_at: "2026-05-20T00:00:00Z",
+    },
+    {
+      id: "cm2",
+      name: "Cold Lead Re-engagement",
+      subject: "Still thinking about that fitout?",
+      body: "Hey {{first_name}},\n\nNoticed we never finished the chat about your fitout. Want a 15-min call this week?\n\nManish",
+      from_address: "hello@designersmeet.com",
+      status: "draft",
+      target_tag: "Cold",
+      scheduled_at: null,
+      sent_count: 0,
+      open_rate: 0,
+      click_rate: 0,
+      created_at: "2026-05-22T00:00:00Z",
+    },
+    {
+      id: "cm3",
+      name: "VIP Quarterly Touch",
+      subject: "Q3 line-up — early access for VIPs",
+      body: "Hey {{first_name}},\n\nQ3 line-up drops next week. Heads-up so you can lock dates ahead of the rush.\n\nManish",
+      from_address: "hello@designersmeet.com",
+      status: "scheduled",
+      target_tag: "VIP",
+      scheduled_at: "2026-06-01T09:00:00Z",
+      sent_count: 0,
+      open_rate: 0,
+      click_rate: 0,
+      created_at: "2026-05-22T00:00:00Z",
+    },
+  ],
+
+  // campaign-recipients — per-contact delivery + tracking rows. BRIEF-27.
+  "campaign-recipients": [
+    { id: "cr1", campaign_id: "cm1", contact_id: "ct1", email: "priya@lumencafe.in", status: "clicked", sent_at: "2026-05-20T09:10:00Z", opened_at: "2026-05-20T09:22:00Z", clicked_at: "2026-05-20T09:25:00Z" },
+    { id: "cr2", campaign_id: "cm1", contact_id: "ct6", email: "lakshmi.ravi@gmail.com", status: "opened", sent_at: "2026-05-20T09:10:00Z", opened_at: "2026-05-20T09:18:00Z", clicked_at: null },
+    { id: "cr3", campaign_id: "cm1", contact_id: "ct8", email: "deepa.nair@kestrel.in", status: "opened", sent_at: "2026-05-20T09:10:00Z", opened_at: "2026-05-20T09:30:00Z", clicked_at: null },
+    { id: "cr4", campaign_id: "cm1", contact_id: "ct12", email: "priti@studiosaffron.in", status: "sent", sent_at: "2026-05-20T09:10:00Z", opened_at: null, clicked_at: null },
+    { id: "cr5", campaign_id: "cm1", contact_id: "ct10", email: "arjun.k@signalpoint.com", status: "bounced", sent_at: "2026-05-20T09:10:00Z", opened_at: null, clicked_at: null },
+    { id: "cr6", campaign_id: "cm2", contact_id: "ct10", email: "arjun.k@signalpoint.com", status: "queued", sent_at: null, opened_at: null, clicked_at: null },
+    { id: "cr7", campaign_id: "cm2", contact_id: "ct12", email: "priti@studiosaffron.in", status: "queued", sent_at: null, opened_at: null, clicked_at: null },
+    { id: "cr8", campaign_id: "cm3", contact_id: "ct1", email: "priya@lumencafe.in", status: "queued", sent_at: null, opened_at: null, clicked_at: null },
+    { id: "cr9", campaign_id: "cm3", contact_id: "ct6", email: "lakshmi.ravi@gmail.com", status: "queued", sent_at: null, opened_at: null, clicked_at: null },
+  ],
+
+  // role-permissions — RBAC matrix. BRIEF-24.
+  "role-permissions": [
+    ...["contacts","vendors","projects","pipelines","calendar","conversations","workflows","forms","settings","campaigns"].map((page) => ({
+      id: `rp_admin_${page}`, role: "admin", page, can_view: true, can_create: true, can_edit: true, can_delete: true, updated_at: "2026-05-01T00:00:00Z",
+    })),
+    { id: "rp_pm_contacts", role: "pm", page: "contacts", can_view: true, can_create: true, can_edit: false, can_delete: false, updated_at: "2026-05-01T00:00:00Z" },
+    { id: "rp_pm_projects", role: "pm", page: "projects", can_view: true, can_create: true, can_edit: true, can_delete: true, updated_at: "2026-05-01T00:00:00Z" },
+    { id: "rp_pm_pipelines", role: "pm", page: "pipelines", can_view: true, can_create: true, can_edit: true, can_delete: true, updated_at: "2026-05-01T00:00:00Z" },
+    { id: "rp_pm_conversations", role: "pm", page: "conversations", can_view: true, can_create: true, can_edit: false, can_delete: false, updated_at: "2026-05-01T00:00:00Z" },
+    { id: "rp_pm_settings", role: "pm", page: "settings", can_view: true, can_create: false, can_edit: false, can_delete: false, updated_at: "2026-05-01T00:00:00Z" },
+    ...["contacts","vendors","projects","calendar","conversations"].map((page) => ({
+      id: `rp_designer_${page}`, role: "designer", page, can_view: true, can_create: false, can_edit: false, can_delete: false, updated_at: "2026-05-01T00:00:00Z",
+    })),
+    ...["contacts","vendors","projects","pipelines","calendar","conversations"].map((page) => ({
+      id: `rp_viewer_${page}`, role: "viewer", page, can_view: true, can_create: false, can_edit: false, can_delete: false, updated_at: "2026-05-01T00:00:00Z",
+    })),
+    { id: "rp_vendor_conversations", role: "vendor", page: "conversations", can_view: true, can_create: false, can_edit: false, can_delete: false, updated_at: "2026-05-01T00:00:00Z" },
+  ],
+
+  // form-responses — submissions captured against fm1 (BRIEF-11).
+  "form-responses": [
+    { id: "fr1", form_id: "fm1", submitted_at: "2026-05-22T04:30:00Z", data: { Name: "Suri Kapoor", Email: "suri@example.com", Phone: "+61 412 776 902" } },
+    { id: "fr2", form_id: "fm1", submitted_at: "2026-05-22T06:10:00Z", data: { Name: "Mehta Family", Email: "mehta@example.com", Phone: "+61 401 998 207" } },
+    { id: "fr3", form_id: "fm1", submitted_at: "2026-05-22T07:50:00Z", data: { Name: "Kotha Bros LLP", Email: "ops@kothabros.in", Phone: "+91 80 5566 7788" } },
+  ],
 };
