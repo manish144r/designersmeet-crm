@@ -1,5 +1,6 @@
 /* Generated from brief/mockups/10-pipelines.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
+import { useNavigate } from "react-router-dom";
 import { useState, type ReactNode } from "react";
 import {
   BarChart3,
@@ -153,7 +154,7 @@ const pipelineColumns: PipelineColumn[] = [
 
 const iconClass = "size-4 shrink-0";
 
-function IconButton({ title, children, className }: { title?: string; children: ReactNode; className?: string }) {
+function IconButton({ title, children, className, onClick }: { title?: string; children: ReactNode; className?: string; onClick?: () => void }) {
   return (
     <Button
       type="button"
@@ -208,20 +209,19 @@ function SearchField({ placeholder, className, shortcut }: { placeholder: string
   );
 }
 
-function SidebarNavItem({ item }: { item: NavItem }) {
+function SidebarNavItem({ item, onClick }: { item: NavItem; onClick: () => void }) {
   const Icon = item.icon;
 
   return (
-    <div
-      className={cn(
-        "flex cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors",
-        item.active ? "bg-primary-tint text-primary" : "text-secondary hover:bg-border-subtle hover:text-foreground",
-      )}
-      data-active={item.active ? "true" : "false"}
-    >
+    <button type="button" onClick={onClick} className={cn(
+        "flex w-full cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors",
+        item.active
+          ? "bg-primary-tint text-primary"
+          : "text-secondary hover:bg-border-subtle hover:text-foreground",
+      )}>
       <Icon className={cn("size-4 shrink-0", item.active ? "text-primary" : "text-muted")} aria-hidden="true" />
       <span>{item.label}</span>
-    </div>
+    </button>
   );
 }
 
@@ -325,6 +325,8 @@ function KanbanColumn({ column }: { column: PipelineColumn }) {
 }
 
 export default function Pipelines() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const navigate = useNavigate();
   const [activePipelineFilter, setActivePipelineFilter] = useState<string | null>(null);
   const _st = useList<PipelineStageRow & { id?: string }>("pipeline-stages").data?.data ?? [];
   const _pp = useList<PipelineRow>("pipelines").data?.data ?? [];
@@ -384,7 +386,7 @@ export default function Pipelines() {
             </span>
             <span>DesignersMeet</span>
           </div>
-          <IconButton title="Collapse">
+          <IconButton title="Collapse sidebar" onClick={() => setSidebarCollapsed(v => !v)}>
             <PanelLeftClose className={iconClass} aria-hidden="true" />
           </IconButton>
         </div>
@@ -408,13 +410,13 @@ export default function Pipelines() {
           <div className="mb-1.5 mt-3.5 px-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Workspace</div>
           <div className="flex flex-col gap-0.5">
             {workspaceNavItems.map((item) => (
-              <SidebarNavItem key={item.label} item={item} />
+              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/pipelines",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
             ))}
           </div>
           <div className="mb-1.5 mt-3.5 px-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Surfaces</div>
           <div className="flex flex-col gap-0.5">
             {surfaceNavItems.map((item) => (
-              <SidebarNavItem key={item.label} item={item} />
+              <SidebarNavItem key={item.label} item={item} onClick={() => { const urls: Record<string,string> = {"Outlook add-in":"https://outlook.office.com","Teams app":"https://teams.microsoft.com","M365 launcher":"https://microsoft365.com/apps"}; const u = urls[item.label]; if (u) window.open(u,"_blank","noopener,noreferrer"); }} />
             ))}
           </div>
         </nav>
@@ -444,10 +446,10 @@ export default function Pipelines() {
           <SearchField placeholder="Search contacts, projects, vendors…" shortcut="⌘K" className="ml-auto mr-auto max-w-[480px] flex-1" />
 
           <div className="ml-auto flex items-center gap-1">
-            <IconButton title="Help">
+            <IconButton title="Help" onClick={() => window.open("https://support.microsoft.com","_blank","noopener,noreferrer")}>
               <CircleHelp className={iconClass} aria-hidden="true" />
             </IconButton>
-            <IconButton title="Notifications" className="relative">
+            <IconButton title="Notifications" className="relative" onClick={() => navigate("/conversations")}>
               <Bell className={iconClass} aria-hidden="true" />
               <span className="absolute right-1 top-1 size-1.5 rounded-full bg-foreground" />
             </IconButton>

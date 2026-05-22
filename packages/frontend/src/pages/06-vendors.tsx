@@ -195,25 +195,22 @@ function SearchField({
   );
 }
 
-function SidebarNavItem({ item }: { item: NavItem }) {
+function SidebarNavItem({ item, onClick }: { item: NavItem; onClick: () => void }) {
   const Icon = item.icon;
 
   return (
-    <div
-      className={cn(
-        "flex cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors",
+    <button type="button" onClick={onClick} className={cn(
+        "flex w-full cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors",
         item.active
           ? "bg-primary-tint text-primary"
           : "text-secondary hover:bg-border-subtle hover:text-foreground",
-      )}
-      data-active={item.active ? "true" : "false"}
-    >
+      )}>
       <Icon
         className={cn("size-4 shrink-0", item.active ? "text-primary" : "text-muted")}
         aria-hidden="true"
       />
       <span>{item.label}</span>
-    </div>
+    </button>
   );
 }
 
@@ -259,6 +256,7 @@ function AgreementStatus({ agreement }: { agreement: Vendor["agreement"] }) {
 }
 
 export default function Vendors() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [q, setQ] = useState("");
   const [sort, setSortField] = useState("name");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
@@ -285,7 +283,7 @@ export default function Vendors() {
             </span>
             <span>DesignersMeet</span>
           </div>
-          <IconButton title="Collapse">
+          <IconButton title="Collapse sidebar" onClick={() => setSidebarCollapsed(v => !v)}>
             <PanelLeftClose className={iconClass} aria-hidden="true" />
           </IconButton>
         </div>
@@ -313,7 +311,7 @@ export default function Vendors() {
           </div>
           <div className="flex flex-col gap-0.5">
             {workspaceNavItems.map((item) => (
-              <SidebarNavItem key={item.label} item={item} />
+              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/pipelines",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
             ))}
           </div>
 
@@ -322,7 +320,7 @@ export default function Vendors() {
           </div>
           <div className="flex flex-col gap-0.5">
             {surfaceNavItems.map((item) => (
-              <SidebarNavItem key={item.label} item={item} />
+              <SidebarNavItem key={item.label} item={item} onClick={() => { const urls: Record<string,string> = {"Outlook add-in":"https://outlook.office.com","Teams app":"https://teams.microsoft.com","M365 launcher":"https://microsoft365.com/apps"}; const u = urls[item.label]; if (u) window.open(u,"_blank","noopener,noreferrer"); }} />
             ))}
           </div>
         </nav>
@@ -356,10 +354,10 @@ export default function Vendors() {
           />
 
           <div className="ml-auto flex items-center gap-1">
-            <IconButton title="Help">
+            <IconButton title="Help" onClick={() => window.open("https://support.microsoft.com","_blank","noopener,noreferrer")}>
               <CircleHelp className={iconClass} aria-hidden="true" />
             </IconButton>
-            <IconButton title="Notifications" className="relative">
+            <IconButton title="Notifications" className="relative" onClick={() => navigate("/conversations")}>
               <Bell className={iconClass} aria-hidden="true" />
               <span className="absolute right-1 top-1 size-1.5 rounded-full bg-foreground" />
             </IconButton>

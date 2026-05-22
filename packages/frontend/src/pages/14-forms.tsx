@@ -1,6 +1,8 @@
 /* Generated from brief/mockups/14-forms.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
+import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import {
   AlignLeft,
   BarChart3,
@@ -164,7 +166,7 @@ const inspectorOptions = [
 const iconClass = "size-4 shrink-0";
 const inputFocusClass = "focus:border-border-strong focus:ring-0";
 
-function IconButton({ title, children, className }: { title?: string; children: ReactNode; className?: string }) {
+function IconButton({ title, children, className, onClick }: { title?: string; children: ReactNode; className?: string; onClick?: () => void }) {
   return (
     <Button
       type="button"
@@ -219,20 +221,19 @@ function SearchField({ placeholder, className, shortcut }: { placeholder: string
   );
 }
 
-function SidebarNavItem({ item }: { item: NavItem }) {
+function SidebarNavItem({ item, onClick }: { item: NavItem; onClick: () => void }) {
   const Icon = item.icon;
 
   return (
-    <div
-      className={cn(
-        "flex cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors",
-        item.active ? "bg-primary-tint text-primary" : "text-secondary hover:bg-border-subtle hover:text-foreground",
-      )}
-      data-active={item.active ? "true" : "false"}
-    >
+    <button type="button" onClick={onClick} className={cn(
+        "flex w-full cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors",
+        item.active
+          ? "bg-primary-tint text-primary"
+          : "text-secondary hover:bg-border-subtle hover:text-foreground",
+      )}>
       <Icon className={cn(iconClass, item.active ? "text-primary" : "text-muted")} aria-hidden="true" />
       <span>{item.label}</span>
-    </div>
+    </button>
   );
 }
 
@@ -325,6 +326,8 @@ function FormFieldCard({ field }: { field: FormField }) {
 }
 
 export default function Forms() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const navigate = useNavigate();
   const _f = useItem("forms", "fm1").data as any;
   const updateForm = useUpdate("forms");
   const responsesCount = useList("form-responses", { formId: "fm1" }).data?.data?.length ?? 0;
@@ -358,7 +361,7 @@ export default function Forms() {
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <Brand />
-          <IconButton title="Collapse">
+          <IconButton title="Collapse sidebar" onClick={() => setSidebarCollapsed(v => !v)}>
             <PanelLeftClose className={iconClass} aria-hidden="true" />
           </IconButton>
         </div>
@@ -376,9 +379,9 @@ export default function Forms() {
         </div>
         <nav className="flex-1 overflow-y-auto px-2 pt-3">
           <div className="mb-1.5 mt-3.5 px-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Workspace</div>
-          <div className="flex flex-col gap-0.5">{workspaceNavItems.map((item) => <SidebarNavItem key={item.label} item={item} />)}</div>
+          <div className="flex flex-col gap-0.5">{workspaceNavItems.map((item) => <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/pipelines",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />)}</div>
           <div className="mb-1.5 mt-3.5 px-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Surfaces</div>
-          <div className="flex flex-col gap-0.5">{surfaceNavItems.map((item) => <SidebarNavItem key={item.label} item={item} />)}</div>
+          <div className="flex flex-col gap-0.5">{surfaceNavItems.map((item) => <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/pipelines",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />)}</div>
         </nav>
         <div className="border-t border-border px-3 py-3">
           <div className="flex items-center gap-2 px-1">
@@ -403,10 +406,10 @@ export default function Forms() {
           </nav>
           <SearchField placeholder="Search contacts, projects, vendors..." shortcut={"\u2318K"} className="ml-auto mr-auto max-w-[480px] flex-1" />
           <div className="ml-auto flex items-center gap-1">
-            <IconButton title="Help">
+            <IconButton title="Help" onClick={() => window.open("https://support.microsoft.com","_blank","noopener,noreferrer")}>
               <CircleHelp className={iconClass} aria-hidden="true" />
             </IconButton>
-            <IconButton title="Notifications" className="relative">
+            <IconButton title="Notifications" className="relative" onClick={() => navigate("/conversations")}>
               <Bell className={iconClass} aria-hidden="true" />
               <span className="absolute right-1 top-1 size-1.5 rounded-full bg-foreground" />
             </IconButton>
