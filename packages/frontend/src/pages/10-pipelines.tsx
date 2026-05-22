@@ -466,7 +466,7 @@ export default function Pipelines() {
             <div className="flex items-center justify-between px-8 pb-3 pt-6">
               <div className="flex items-center gap-3">
                 <h1 className="font-display text-[22px] font-semibold tracking-tight text-foreground">Sales pipeline</h1>
-                <Button type="button" variant="ghost" className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground">
+                <Button type="button" variant="ghost" onClick={() => alert("Pipeline selector — multiple pipelines coming soon")} className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground">
                   <ChevronDown className="size-4 text-muted" aria-hidden="true" />
                 </Button>
                 <Badge>5 stages</Badge>
@@ -480,7 +480,7 @@ export default function Pipelines() {
                   <ViewButton icon={List}>List</ViewButton>
                   <ViewButton icon={BarChart3}>Forecast</ViewButton>
                 </div>
-                <Button type="button" variant="secondary" className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground">
+                <Button type="button" variant="secondary" onClick={() => alert("Filter panel — coming soon")} className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground">
                   <Filter className={iconClass} aria-hidden="true" />
                   Filter
                 </Button>

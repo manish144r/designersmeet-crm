@@ -484,7 +484,7 @@ export default function Forms() {
                         <input type="checkbox" className="rounded border-border-strong accent-foreground" />
                         I agree to the vendor terms.
                       </label>
-                      <Button type="button" disabled className="h-[34px] px-3.5 py-[7px] text-[13px] disabled:opacity-70">Submit application</Button>
+                      <Button type="submit" className="h-[34px] px-3.5 py-[7px] text-[13px] bg-primary text-background hover:bg-primary-hover">Submit application</Button>
                     </div>
                   </div>
                 </Card>
@@ -525,7 +525,7 @@ export default function Forms() {
                         </IconButton>
                       </div>
                     ))}
-                    <Button type="button" variant="ghost" className="h-auto justify-start gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground">
+                    <Button type="button" variant="ghost" onClick={() => alert("Field palette — drag a field type from the panel to add it")} className="h-auto justify-start gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground">
                       <Plus className={iconClass} aria-hidden="true" />
                       Add option
                     </Button>
