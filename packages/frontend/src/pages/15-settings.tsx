@@ -603,7 +603,7 @@ function GeneralPanel() {
             <span className="text-[12px] font-medium text-secondary">Workspace name</span>
             <Input
               value={workspaceName}
-              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 setWorkspaceName(e.target.value);
                 setSaved(false);
               }}
@@ -614,7 +614,7 @@ function GeneralPanel() {
             <span className="text-[12px] font-medium text-secondary">Subdomain</span>
             <Input
               value={subdomain}
-              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 setSubdomain(e.target.value);
                 setSaved(false);
               }}
@@ -659,7 +659,7 @@ function BrandingPanel() {
             <span className="text-[12px] font-medium text-secondary">Primary colour (hex)</span>
             <Input
               value={primary}
-              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setPrimary(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setPrimary(e.target.value)}
               placeholder="var(--color-foreground)"
               className="mt-1 h-[34px] text-[13px]"
             />
@@ -716,7 +716,7 @@ function UsersRolesPanel() {
               </div>
               <select
                 value={u.role}
-                onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => updateUser({ id: u.id, patch: { role: e.target.value } })}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => updateUser({ id: u.id, patch: { role: e.target.value } })}
                 className="text-[11px] font-medium text-secondary bg-transparent border-none focus:outline-none"
               >
                 <option value="Owner">Owner</option>
@@ -842,7 +842,7 @@ function WorkspacesPanel() {
               <span className="text-[12px] font-medium text-secondary">Name</span>
               <Input
                 value={draftName}
-                onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setDraftName(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setDraftName(e.target.value)}
                 placeholder="DesignersMeet Mumbai"
                 className="mt-1 h-[34px] text-[13px]"
               />
@@ -851,7 +851,7 @@ function WorkspacesPanel() {
               <span className="text-[12px] font-medium text-secondary">Slug</span>
               <Input
                 value={draftSlug}
-                onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setDraftSlug(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setDraftSlug(e.target.value)}
                 placeholder="dm-mumbai"
                 className="mt-1 h-[34px] text-[13px]"
               />
@@ -1142,7 +1142,7 @@ function LocaleTimePanel() {
             <span className="text-[12px] font-medium text-secondary">Timezone</span>
             <select
               value={prefs.timezone}
-              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => save("timezone", e.target.value)}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => save("timezone", e.target.value)}
               className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
             >
               {TIMEZONES.map((tz: string) => (
@@ -1154,7 +1154,7 @@ function LocaleTimePanel() {
             <span className="text-[12px] font-medium text-secondary">Language</span>
             <select
               value={prefs.language}
-              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => save("language", e.target.value as typeof prefs.language)}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => save("language", e.target.value as typeof prefs.language)}
               className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
             >
               {LANGUAGES.map((l: { code: string; label: string }) => (
@@ -1166,7 +1166,7 @@ function LocaleTimePanel() {
             <span className="text-[12px] font-medium text-secondary">Date format</span>
             <select
               value={prefs.dateFormat}
-              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => save("dateFormat", e.target.value as typeof prefs.dateFormat)}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => save("dateFormat", e.target.value as typeof prefs.dateFormat)}
               className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
             >
               {DATE_FORMATS.map((f: { code: string; label: string }) => (
@@ -1276,7 +1276,7 @@ function TeamsPanel() {
               <span className="text-[12px] font-medium text-secondary">Team name</span>
               <Input
                 value={draftName}
-                onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setDraftName(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setDraftName(e.target.value)}
                 placeholder="Procurement"
                 className="mt-1 h-[34px] text-[13px]"
               />
