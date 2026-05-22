@@ -1,5 +1,6 @@
 /* Generated from brief/mockups/02-onboarding.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
+import { useNavigate } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
@@ -146,6 +147,7 @@ function IntegrationCard({
 }
 
 export default function Onboarding() {
+  const navigate = useNavigate();
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] flex-shrink-0 flex-col border-r border-border bg-sidebar">
@@ -257,7 +259,7 @@ export default function Onboarding() {
                   Let's set up DesignersMeet HQ. You can come back to any step from Settings.
                 </p>
               </div>
-              <Button variant="ghost" className="h-auto px-2.5 py-1.5 text-[13px] font-medium text-secondary hover:bg-hover hover:text-foreground">
+              <Button type="button" variant="ghost" onClick={() => navigate("/dashboard")} className="h-auto px-2.5 py-1.5 text-[13px] font-medium text-secondary hover:bg-hover hover:text-foreground">
                 Skip for now
               </Button>
             </div>
@@ -309,7 +311,7 @@ export default function Onboarding() {
                     </div>
                   </div>
                 </div>
-                <Button className="h-auto gap-1.5 rounded-md px-3.5 py-[7px] text-[13px] font-medium">
+                <Button type="button" onClick={() => alert("Connect M365 tenant — configure VITE_MSAL_CLIENT_ID in environment")} className="h-auto gap-1.5 rounded-md px-3.5 py-[7px] text-[13px] font-medium">
                   <LinkIcon data-icon="inline-start" className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
                   Connect tenant
                 </Button>
@@ -366,7 +368,7 @@ export default function Onboarding() {
                   <span className="inline-flex items-center gap-1 rounded-full bg-success-tint px-2 py-0.5 text-[11px] font-medium leading-[18px] tracking-[0.01em] text-success before:size-1.5 before:rounded-full before:bg-current before:content-['']">
                     Active
                   </span>
-                  <Button variant="ghost" className="h-auto px-2.5 py-1.5 text-[13px] font-medium text-secondary hover:bg-hover hover:text-foreground">
+                  <Button type="button" variant="ghost" onClick={() => navigate("/settings")} className="h-auto px-2.5 py-1.5 text-[13px] font-medium text-secondary hover:bg-hover hover:text-foreground">
                     Manage
                   </Button>
                 </div>
