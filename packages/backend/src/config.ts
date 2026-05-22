@@ -8,7 +8,7 @@ const Env = z.object({
 
   DATA_PROVIDER: z.enum(["memory", "dataverse", "sqlserver"]).default("memory"),
   QUEUE_PROVIDER: z.enum(["memory", "azure-service-bus", "supabase"]).default("memory"),
-  AUTH_MODE: z.enum(["dev", "entra"]).default("dev"),
+  AUTH_MODE: z.enum(["dev", "entra", "clerk"]).default("dev"),
 
   DATAVERSE_URL: z.string().optional(),
   AZURE_TENANT_ID: z.string().optional(),
@@ -30,6 +30,11 @@ const Env = z.object({
   SUPABASE_ANON_KEY: z.string().optional(),
   SUPABASE_QUEUE_TABLE: z.string().default("order_queue"),
 
+  // Clerk auth (replaces MSAL/Entra for identity)
+  CLERK_SECRET_KEY: z.string().optional(),
+  CLERK_PUBLISHABLE_KEY: z.string().optional(),
+
+  // Legacy Entra vars kept for backward compat / Dataverse service principal
   ENTRA_TENANT_ID: z.string().optional(),
   ENTRA_CLIENT_ID: z.string().optional(),
   ENTRA_AUDIENCE: z.string().optional(),
@@ -92,6 +97,11 @@ if (config.NODE_ENV === "production" && !config.DEMO_BYPASS) {
   if (config.AUTH_MODE === "entra" && (!config.ENTRA_TENANT_ID || !config.ENTRA_CLIENT_ID)) {
     throw new Error(
       "FATAL: AUTH_MODE=entra requires ENTRA_TENANT_ID and ENTRA_CLIENT_ID in production.",
+    );
+  }
+  if (config.AUTH_MODE === "clerk" && !config.CLERK_SECRET_KEY) {
+    throw new Error(
+      "FATAL: AUTH_MODE=clerk requires CLERK_SECRET_KEY in production.",
     );
   }
 }

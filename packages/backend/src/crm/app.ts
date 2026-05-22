@@ -12,6 +12,7 @@ import { asyncHandler } from "../middleware/asyncHandler.js";
 import { crmRouter } from "./router.js";
 import { domainRouter } from "./domain.js";
 import { waveBRouter } from "./waveBRouter.js";
+import { graphRouter } from "../routes/graph.js";
 import { integrationStatuses } from "../integrations/registry.js";
 import { meta } from "../integrations/meta/index.js";
 
@@ -97,6 +98,8 @@ export function createApp(): Express {
   // Wave B overrides mount BEFORE the generic CRUD so the targeted routes
   // (api-keys POST with plaintext-once, sessions DELETE-as-revoke, etc.) win.
   app.use("/api", waveBRouter());
+  // Microsoft Graph proxy -- user Graph access token via X-Graph-Token header; demo mode stubs all.
+  app.use("/api", graphRouter());
   app.use("/api", crmRouter());
   app.get(
     "/api/integrations",

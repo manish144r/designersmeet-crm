@@ -674,3 +674,41 @@ aider --model claude-sonnet-4-5 `
 - [ ] RBAC: viewer role cannot see Settings; vendor role cannot see Contacts; admin sees everything
 - [ ] Sort: clicking a column header twice reverses order (asc → desc)
 - [ ] Console: zero unhandled promise rejections
+
+---
+
+## BRIEF-25 — Clerk Auth Integration
+
+**Status:** DONE (implemented directly, not via Aider — infrastructure replacement)
+
+**What changed:**
+- `packages/frontend/src/auth/AuthProvider.tsx` → replaced MSAL with `@clerk/clerk-react`. Same `useAuth()` API surface preserved. Demo mode (no `VITE_CLERK_PUBLISHABLE_KEY`) works identically to before.
+- `packages/backend/src/auth/authMiddleware.ts` → replaced JWKS/jose verification with `@clerk/backend` `verifyToken()` + `clerkClient.users.getUser()`. `AUTH_MODE=clerk` is the new production value.
+- `packages/backend/src/config.ts` → added `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `AUTH_MODE=clerk` enum value.
+
+**Env vars to set in Vercel:**
+```
+# Frontend
+VITE_CLERK_PUBLISHABLE_KEY=pk_live_...   ← from Clerk dashboard → API Keys
+
+# Backend
+CLERK_SECRET_KEY=sk_live_...             ← from Clerk dashboard → API Keys
+AUTH_MODE=clerk
+
+# Remove / leave unused (kept for Dataverse service principal):
+# ENTRA_CLIENT_ID, ENTRA_TENANT_ID (still valid for Dataverse, not auth)
+# VITE_MSAL_CLIENT_ID, VITE_MSAL_TENANT (no longer needed for auth)
+```
+
+**Clerk dashboard setup (one-time):**
+1. Create app at clerk.com → name it "DesignersMeet CRM"
+2. Enable social connections: Microsoft 365 + Google
+3. For Microsoft — add Graph scopes: User.Read Mail.ReadWrite Mail.Send Calendars.ReadWrite Contacts.ReadWrite offline_access
+4. Create JWT template named "microsoft-graph" (for getGraphToken() — optional, Graph proxy still stubs without it)
+5. Add redirect URLs: https://designersmeet-crm-backend.vercel.app, http://localhost:5173
+
+**Acceptance:**
+- [ ] Sign in with Microsoft works → user lands on Dashboard
+- [ ] Sign in with Google works → freelancer lands on Dashboard
+- [ ] Demo mode (no VITE_CLERK_PUBLISHABLE_KEY) still works locally
+- [ ] Backend rejects requests without a valid Clerk session token (401)

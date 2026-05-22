@@ -1,82 +1,133 @@
-// Auth middleware. AUTH_MODE=dev injects a stub user (no token required).
-// AUTH_MODE=entra validates a JWT against Entra ID's JWKS.
-// SECURITY: dev mode is blocked in production (NODE_ENV=production requires AUTH_MODE=entra).
+/**
+ * authMiddleware.ts — Clerk-backed authentication for the Express backend.
+ *
+ * AUTH_MODE=dev  → inject stub user, no token required (local dev only)
+ * AUTH_MODE=clerk → validate Clerk session token via @clerk/express
+ *
+ * SECURITY: dev mode is blocked in production (NODE_ENV=production forces clerk mode).
+ *
+ * Required env vars (AUTH_MODE=clerk):
+ *   CLERK_SECRET_KEY   — from Clerk dashboard → API Keys
+ *
+ * The frontend sends the Clerk session token as: Authorization: Bearer <token>
+ * @clerk/express validates it against Clerk's JWKS automatically.
+ */
 import type { Request, Response, NextFunction } from "express";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createClerkClient, verifyToken } from "@clerk/backend";
 import { config } from "../config.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import { logger } from "../logger.js";
 
-// ─── Types ───────────────────────────────────────────────────────────────
-export type AppRole = "admin" | "designer" | "client";
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+export type AppRole = "admin" | "pm" | "designer" | "vendor" | "viewer";
 
 declare module "express-serve-static-core" {
   interface Request {
-    user?: { sub: string; email: string; name: string; roles: AppRole[] };
+    user?: {
+      sub: string;
+      email: string;
+      name: string;
+      roles: AppRole[];
+      clerkUserId?: string;
+    };
   }
 }
+
+// ─── Dev stub user ────────────────────────────────────────────────────────────
 
 const DEV_USER = {
   sub: "demo-user",
   email: config.DEMO_BYPASS_EMAIL,
-  name: "Demo Vendor Admin",
+  name: "Demo Admin",
   roles: ["admin"] as AppRole[],
 };
 
-// ─── JWKS singleton ──────────────────────────────────────────────────────
-let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
-function getJwks() {
-  if (!config.ENTRA_TENANT_ID) throw new Error("ENTRA_TENANT_ID required for AUTH_MODE=entra");
-  if (!jwks) {
-    jwks = createRemoteJWKSet(
-      new URL(`https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/discovery/v2.0/keys`),
-    );
+// ─── Clerk client singleton ───────────────────────────────────────────────────
+
+let _clerk: ReturnType<typeof createClerkClient> | null = null;
+
+function getClerkClient() {
+  if (!config.CLERK_SECRET_KEY) {
+    throw new Error("CLERK_SECRET_KEY is required when AUTH_MODE=clerk");
   }
-  return jwks;
+  if (!_clerk) {
+    _clerk = createClerkClient({ secretKey: config.CLERK_SECRET_KEY });
+  }
+  return _clerk;
 }
 
-// ─── Auth Middleware ─────────────────────────────────────────────────────
+// ─── Auth Middleware ──────────────────────────────────────────────────────────
+
 export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
   // SECURITY: Block dev mode in production unless DEMO_BYPASS=true
   if (config.AUTH_MODE === "dev" && config.NODE_ENV === "production" && !config.DEMO_BYPASS) {
-    logger.error("AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra or DEMO_BYPASS=true.");
+    logger.error("AUTH_MODE=dev is not allowed in production. Set CLERK_SECRET_KEY and AUTH_MODE=clerk.");
     return next(new HttpError(500, "Server misconfiguration"));
   }
 
-  if (config.AUTH_MODE === "dev") {
+  // Dev bypass — inject stub user without touching tokens
+  if (config.AUTH_MODE === "dev" || (config.DEMO_BYPASS && config.AUTH_MODE !== "clerk")) {
     req.user = DEV_USER;
     return next();
   }
 
+  // Clerk token validation
   try {
     const header = req.headers.authorization ?? "";
     const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-    if (!token) throw new HttpError(401, "Missing bearer token");
+    if (!token || token === "demo-token") {
+      throw new HttpError(401, "Missing or invalid bearer token");
+    }
 
-    const { payload } = await jwtVerify(token, getJwks(), {
-      audience: config.ENTRA_AUDIENCE ?? config.ENTRA_CLIENT_ID,
-      issuer: `https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/v2.0`,
+    // Verify the Clerk session token
+    const payload = await verifyToken(token, {
+      secretKey: config.CLERK_SECRET_KEY!,
     });
 
+    const clerkUserId = payload.sub;
+
+    // Fetch full user from Clerk to get email, name, and roles from publicMetadata
+    const clerk = getClerkClient();
+    const clerkUser = await clerk.users.getUser(clerkUserId);
+
+    const metaRoles = clerkUser.publicMetadata?.roles as string[] | undefined;
+    const roles: AppRole[] =
+      Array.isArray(metaRoles) && metaRoles.length > 0
+        ? (metaRoles as AppRole[])
+        : ["admin"]; // default until RBAC is configured in Clerk dashboard
+
     req.user = {
-      sub: String(payload.sub ?? ""),
-      email: String(payload.preferred_username ?? payload.email ?? ""),
-      name: String(payload.name ?? ""),
-      // Use app roles from token if present; otherwise default to admin.
-      // Azure App Registration app roles can be configured later for fine-grained RBAC.
-      roles: Array.isArray(payload.roles) && (payload.roles as string[]).length > 0
-        ? (payload.roles as AppRole[])
-        : ["admin"],
+      sub: clerkUserId,
+      email: clerkUser.emailAddresses?.[0]?.emailAddress ?? "",
+      name:
+        [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
+        clerkUser.username ||
+        "Unknown",
+      roles,
+      clerkUserId,
     };
+
     next();
   } catch (err) {
-    next(new HttpError(401, "Invalid or expired token", err instanceof Error ? err.message : undefined));
+    if (err instanceof HttpError) return next(err);
+    next(
+      new HttpError(
+        401,
+        "Invalid or expired session token",
+        err instanceof Error ? err.message : undefined,
+      ),
+    );
   }
 }
 
-// ─── RBAC Middleware ─────────────────────────────────────────────────────
+// ─── RBAC Middleware ──────────────────────────────────────────────────────────
+
 /**
  * Require the authenticated user to have at least one of the specified roles.
+ * Roles are set in Clerk dashboard → Users → publicMetadata → { roles: ["admin"] }
+ * or via Clerk webhooks when a user is created.
+ *
  * Usage: router.delete("/:id", requireRole("admin"), asyncHandler(...))
  */
 export function requireRole(...roles: AppRole[]) {
