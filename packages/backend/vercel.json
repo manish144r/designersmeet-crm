@@ -1,5 +1,12 @@
 {
   "buildCommand": "npm run vercel-build",
+  "env": {
+    "NODE_ENV": "production",
+    "AUTH_MODE": "dev",
+    "DEMO_BYPASS": "true",
+    "DATA_PROVIDER": "memory",
+    "QUEUE_PROVIDER": "memory"
+  },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/server" }
   ]
