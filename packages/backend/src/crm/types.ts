@@ -40,6 +40,7 @@ export const ContactSchema = z.object({
   primary_phone: z.string().optional().default(""),
   address: z.string().optional().default(""),
   custom_fields_json: z.record(z.any()).default({}),
+  tags: z.array(z.string()).default([]),
   owner_user_id: z.string().optional().default(""),
   created_at: z.string().optional(),
 });
@@ -86,6 +87,10 @@ export const ConversationSchema = z.object({
   status: z.enum(["open", "snoozed", "closed"]).default("open"),
   last_message_at: z.string().optional(),
   assigned_user_id: z.string().optional().default(""),
+  unread_count: z.number().int().default(0),
+  starred: z.boolean().default(false),
+  tags: z.array(z.string()).default([]),
+  preview: z.string().default(""),
 });
 export const MessageSchema = z.object({
   id: Id.optional(),
@@ -205,12 +210,92 @@ export const WebhookSubscriptionSchema = z.object({
   created_at: z.string().optional(),
 });
 
+// ── Phase 1 backfill (BRIEF-11) + Phase 2 (BRIEF-26..30) ────────────────────
+// pipeline-deals, form-responses, users, role-permissions, segments,
+// campaigns, campaign-recipients. All generic-router treatment.
+
+export const PipelineDealSchema = z.object({
+  id: Id.optional(),
+  pipeline_stage_id: z.string(),
+  contact_name: z.string(),
+  contact_id: z.string().optional().default(""),
+  value: z.number().default(0),
+  currency: z.string().default("INR"),
+  note: z.string().optional().default(""),
+  owner: z.string().optional().default(""),
+  age: z.string().optional().default(""),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const FormResponseSchema = z.object({
+  id: Id.optional(),
+  form_id: z.string(),
+  submitted_at: z.string().optional(),
+  data: z.record(z.unknown()).default({}),
+});
+
+export const UserSchema = z.object({
+  id: Id.optional(),
+  name: z.string(),
+  email: z.string().email(),
+  role: z.enum(["admin", "pm", "designer", "vendor", "viewer"]).default("admin"),
+  avatar_url: z.string().optional().default(""),
+  created_at: z.string().optional(),
+});
+
+export const RolePermissionSchema = z.object({
+  id: Id.optional(),
+  role: z.enum(["admin", "pm", "designer", "vendor", "viewer"]),
+  page: z.string(),
+  can_view: z.boolean().default(true),
+  can_create: z.boolean().default(false),
+  can_edit: z.boolean().default(false),
+  can_delete: z.boolean().default(false),
+  updated_at: z.string().optional(),
+});
+
+export const SegmentSchema = z.object({
+  id: Id.optional(),
+  name: z.string(),
+  filter_json: z.record(z.any()).default({}),
+  contact_count: z.number().int().default(0),
+  created_at: z.string().optional(),
+});
+
+export const CampaignSchema = z.object({
+  id: Id.optional(),
+  name: z.string(),
+  subject: z.string().default(""),
+  body: z.string().default(""),
+  from_address: z.string().default("hello@designersmeet.com"),
+  status: z.enum(["draft", "scheduled", "active", "paused", "completed"]).default("draft"),
+  target_tag: z.string().optional().default(""),
+  scheduled_at: z.string().nullable().default(null),
+  sent_count: z.number().int().default(0),
+  open_rate: z.number().default(0),
+  click_rate: z.number().default(0),
+  created_at: z.string().optional(),
+});
+
+export const CampaignRecipientSchema = z.object({
+  id: Id.optional(),
+  campaign_id: z.string(),
+  contact_id: z.string(),
+  email: z.string(),
+  status: z.enum(["queued", "sent", "opened", "clicked", "bounced", "failed"]).default("queued"),
+  sent_at: z.string().nullable().default(null),
+  opened_at: z.string().nullable().default(null),
+  clicked_at: z.string().nullable().default(null),
+});
+
 export const RESOURCES = {
   vendors: VendorSchema,
   clients: ClientSchema,
   contacts: ContactSchema,
   pipelines: PipelineSchema,
   "pipeline-stages": PipelineStageSchema,
+  "pipeline-deals": PipelineDealSchema,
   projects: ProjectSchema,
   "project-stages": ProjectStageSchema,
   conversations: ConversationSchema,
@@ -220,6 +305,12 @@ export const RESOURCES = {
   "workflow-runs": WorkflowRunSchema,
   forms: FormSchema,
   "form-submissions": FormSubmissionSchema,
+  "form-responses": FormResponseSchema,
+  users: UserSchema,
+  "role-permissions": RolePermissionSchema,
+  segments: SegmentSchema,
+  campaigns: CampaignSchema,
+  "campaign-recipients": CampaignRecipientSchema,
   // Wave B
   "api-keys": ApiKeySchema,
   sessions: SessionSchema,

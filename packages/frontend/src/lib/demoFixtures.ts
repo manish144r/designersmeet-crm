@@ -22,18 +22,18 @@ export const demoFixtures: Record<string, DemoRow[]> = {
   // Page 05 references one contact (Priya Raghavan) but as a static profile
   // header, not an iterable array, so 04 is the canonical contacts set.
   contacts: [
-    { id: "ct1", initials: "PR", name: "Priya Raghavan", email: "priya@lumencafe.in", type: "Client", project: "HSR Penthouse", tag: "Hot lead", owner: "Anita M.", lastContact: "2d ago" },
-    { id: "ct2", initials: "AS", name: "Aurora Studio", email: "hello@aurorastudio.in", type: "Vendor", project: "3 active projects", tag: "Tier-1 partner", owner: "Manish", lastContact: "5h ago" },
-    { id: "ct3", initials: "SK", name: "Suri Kapoor", email: "suri@example.com", type: "Lead", project: "—", tag: "Discovery scheduled", owner: "Manish", lastContact: "Today" },
-    { id: "ct4", initials: "MK", name: "Manjunath Karpenter Co", email: "manju@mkcarp.com", type: "Vendor", project: "2 active projects", tag: "Carpentry", owner: "Rohit", lastContact: "1d ago" },
-    { id: "ct5", initials: "VE", name: "Voltek Electricals", email: "ops@voltek.in", type: "Vendor", project: "1 active project", tag: "Electrical", owner: "Rohit", lastContact: "4h ago" },
-    { id: "ct6", initials: "LR", name: "Lakshmi & Ravi", email: "lakshmi.ravi@gmail.com", type: "Client", project: "JP Nagar Bungalow", tag: "Repeat client", owner: "Anita M.", lastContact: "3d ago" },
-    { id: "ct7", initials: "RB", name: "Render Boutique", email: "studio@renderboutique.co", type: "Vendor", project: "Whitefield Villa", tag: "3D + VR", owner: "Manish", lastContact: "6h ago" },
-    { id: "ct8", initials: "DN", name: "Deepa Nair", email: "deepa.nair@kestrel.in", type: "Client", project: "Brand Refresh — Lumen Café", tag: "Approved concept", owner: "Manish", lastContact: "Today" },
-    { id: "ct9", initials: "FT", name: "FabTextiles", email: "orders@fabtextiles.in", type: "Vendor", project: "Indiranagar Loft Reno", tag: "Soft furnishings", owner: "Anita M.", lastContact: "1w ago" },
-    { id: "ct10", initials: "AK", name: "Arjun Kapoor", email: "arjun.k@signalpoint.com", type: "Lead", project: "—", tag: "Cold inbound", owner: "Rohit", lastContact: "2d ago" },
-    { id: "ct11", initials: "MN", name: "Marble & Stone Mart", email: "sales@msmart.in", type: "Vendor", project: "JP Nagar Bungalow", tag: "Stone supplier", owner: "Anita M.", lastContact: "4d ago" },
-    { id: "ct12", initials: "PG", name: "Priti Goyal", email: "priti@studiosaffron.in", type: "Client", project: "—", tag: "Past client", owner: "Anita M.", lastContact: "1w ago" },
+    { id: "ct1", initials: "PR", name: "Priya Raghavan", email: "priya@lumencafe.in", type: "Client", project: "HSR Penthouse", tag: "Hot lead", owner: "Anita M.", lastContact: "2d ago", tags: ["VIP", "Client"] },
+    { id: "ct2", initials: "AS", name: "Aurora Studio", email: "hello@aurorastudio.in", type: "Vendor", project: "3 active projects", tag: "Tier-1 partner", owner: "Manish", lastContact: "5h ago", tags: ["Vendor", "Designer"] },
+    { id: "ct3", initials: "SK", name: "Suri Kapoor", email: "suri@example.com", type: "Lead", project: "—", tag: "Discovery scheduled", owner: "Manish", lastContact: "Today", tags: ["Prospect", "Lead"] },
+    { id: "ct4", initials: "MK", name: "Manjunath Karpenter Co", email: "manju@mkcarp.com", type: "Vendor", project: "2 active projects", tag: "Carpentry", owner: "Rohit", lastContact: "1d ago", tags: ["Vendor"] },
+    { id: "ct5", initials: "VE", name: "Voltek Electricals", email: "ops@voltek.in", type: "Vendor", project: "1 active project", tag: "Electrical", owner: "Rohit", lastContact: "4h ago", tags: ["Vendor"] },
+    { id: "ct6", initials: "LR", name: "Lakshmi & Ravi", email: "lakshmi.ravi@gmail.com", type: "Client", project: "JP Nagar Bungalow", tag: "Repeat client", owner: "Anita M.", lastContact: "3d ago", tags: ["Client", "VIP"] },
+    { id: "ct7", initials: "RB", name: "Render Boutique", email: "studio@renderboutique.co", type: "Vendor", project: "Whitefield Villa", tag: "3D + VR", owner: "Manish", lastContact: "6h ago", tags: ["Vendor", "Designer"] },
+    { id: "ct8", initials: "DN", name: "Deepa Nair", email: "deepa.nair@kestrel.in", type: "Client", project: "Brand Refresh — Lumen Café", tag: "Approved concept", owner: "Manish", lastContact: "Today", tags: ["Client"] },
+    { id: "ct9", initials: "FT", name: "FabTextiles", email: "orders@fabtextiles.in", type: "Vendor", project: "Indiranagar Loft Reno", tag: "Soft furnishings", owner: "Anita M.", lastContact: "1w ago", tags: ["Vendor"] },
+    { id: "ct10", initials: "AK", name: "Arjun Kapoor", email: "arjun.k@signalpoint.com", type: "Lead", project: "—", tag: "Cold inbound", owner: "Rohit", lastContact: "2d ago", tags: ["Lead", "Cold"] },
+    { id: "ct11", initials: "MN", name: "Marble & Stone Mart", email: "sales@msmart.in", type: "Vendor", project: "JP Nagar Bungalow", tag: "Stone supplier", owner: "Anita M.", lastContact: "4d ago", tags: ["Vendor"] },
+    { id: "ct12", initials: "PG", name: "Priti Goyal", email: "priti@studiosaffron.in", type: "Client", project: "—", tag: "Past client", owner: "Anita M.", lastContact: "1w ago", tags: ["Client", "Cold"] },
   ],
 
   // ── clients ── No page renders a distinct `clients` literal array;
@@ -111,25 +111,41 @@ export const demoFixtures: Record<string, DemoRow[]> = {
     { id: "pst7", project_id: "pj4", order: 6, label: "Handover", status: "pending" },
   ],
 
-  // ── conversations ── 12-conversations.tsx `const inboxItems` (8 rows).
+  // ── conversations ── 12-conversations.tsx inbox list. Now 10 rows across
+  // email/whatsapp/sms channels with unread_count, starred, contact_id for the
+  // dynamic right-panel lookup (BRIEF-26 + BRIEF-30).
   conversations: [
-    { id: "cv1", initials: "PR", name: "Priya Raghavan", time: "11:21", subject: "RE: Lumen concept board v2", preview: "Looks gorgeous. Two small tweaks — the brass detail above…", channel: "email", active: true, unread: true },
-    { id: "cv2", initials: "AS", name: "Aurora Studio", time: "10:02", subject: "Concept board v3 uploaded", preview: "Sharing v3 with the revisions we discussed yesterday. Brass…", channel: "email" },
-    { id: "cv3", initials: "VE", name: "Voltek Electricals", time: "9:14", subject: "Need MCB spec confirmation", preview: "Hi Manish, blocked on the MCB rating for the kitchen circuit…", channel: "whatsapp", unread: true },
-    { id: "cv4", initials: "MK", name: "Manjunath Karpenter Co", time: "Yesterday", subject: "Carpentry shop drawings — v1", preview: "Attaching the first cut. Will revise after tomorrow's site visit.", channel: "email" },
-    { id: "cv5", initials: "SK", name: "Suri Kapoor", time: "Yesterday", subject: "Discovery call confirmation", preview: "Confirming 4pm today on Teams.", channel: "email" },
-    { id: "cv6", initials: "LR", name: "Lakshmi & Ravi", time: "May 16", subject: "Snag list — site visit 4", preview: "Punch list attached. Most items resolved!", channel: "email" },
-    { id: "cv7", initials: "DN", name: "Deepa Nair", time: "May 15", subject: "Re: Studio Saffron — Q3 newsletter", preview: "Loved the project highlight! Sharing internally.", channel: "email" },
-    { id: "cv8", initials: "FT", name: "FabTextiles", time: "May 14", subject: "Cane fabric — alt swatches", preview: "Sending two alternates. Option B has the warmer undertone…", channel: "whatsapp" },
+    { id: "cv1", contact_id: "ct1", initials: "PR", name: "Priya Raghavan", time: "11:21", subject: "RE: Lumen concept board v2", preview: "Looks gorgeous. Two small tweaks — the brass detail above…", channel: "email", active: true, unread: true, unread_count: 2, starred: true, assigned_user_id: "u1" },
+    { id: "cv2", contact_id: "ct2", initials: "AS", name: "Aurora Studio", time: "10:02", subject: "Concept board v3 uploaded", preview: "Sharing v3 with the revisions we discussed yesterday. Brass…", channel: "email", unread_count: 0, starred: false, assigned_user_id: "u1" },
+    { id: "cv3", contact_id: "ct5", initials: "VE", name: "Voltek Electricals", time: "9:14", subject: "Need MCB spec confirmation", preview: "Hi Manish, blocked on the MCB rating for the kitchen circuit…", channel: "whatsapp", unread: true, unread_count: 1, starred: false, assigned_user_id: "u1" },
+    { id: "cv4", contact_id: "ct4", initials: "MK", name: "Manjunath Karpenter Co", time: "Yesterday", subject: "Carpentry shop drawings — v1", preview: "Attaching the first cut. Will revise after tomorrow's site visit.", channel: "email", unread_count: 0, starred: false, assigned_user_id: "u3" },
+    { id: "cv5", contact_id: "ct3", initials: "SK", name: "Suri Kapoor", time: "Yesterday", subject: "Discovery call confirmation", preview: "Confirming 4pm today on Teams.", channel: "email", unread_count: 0, starred: false, assigned_user_id: "u1" },
+    { id: "cv6", contact_id: "ct6", initials: "LR", name: "Lakshmi & Ravi", time: "May 16", subject: "Snag list — site visit 4", preview: "Punch list attached. Most items resolved!", channel: "email", unread_count: 0, starred: true, assigned_user_id: "u4" },
+    { id: "cv7", contact_id: "ct8", initials: "DN", name: "Deepa Nair", time: "May 15", subject: "Re: Studio Saffron — Q3 newsletter", preview: "Loved the project highlight! Sharing internally.", channel: "email", unread_count: 0, starred: false, assigned_user_id: "u1" },
+    { id: "cv8", contact_id: "ct9", initials: "FT", name: "FabTextiles", time: "May 14", subject: "Cane fabric — alt swatches", preview: "Sending two alternates. Option B has the warmer undertone…", channel: "whatsapp", unread_count: 0, starred: false, assigned_user_id: "u4" },
+    { id: "cv9", contact_id: "ct1", initials: "PR", name: "Priya Raghavan", time: "8:42", subject: "Site arrival ETA", preview: "On my way — 10 min.", channel: "sms", unread_count: 0, starred: false, assigned_user_id: "u1" },
+    { id: "cv10", contact_id: "ct10", initials: "AK", name: "Arjun Kapoor", time: "Yesterday", subject: "Indiranagar fitout enquiry", preview: "Hi! Got your card from Suri — can we chat about a fitout?", channel: "sms", unread: true, unread_count: 3, starred: false, assigned_user_id: "u1" },
   ],
 
-  // ── messages ── 12-conversations.tsx `const threadMessages` (4 rows, the
-  // thread for conversation cv1). `conversation_id` links to cv1.
+  // ── messages ── Multi-conversation thread store. cv1 keeps its 4-row Codex
+  // baseline; new threads (cv3, cv9, cv10) add bubble-chat seeds for SMS/WA.
   messages: [
-    { id: "ms1", conversation_id: "cv1", initials: "MS", sender: "Manish", meta: "Sent via Outlook · May 14 at 5:02 PM", body: "Hi Priya — sharing the latest concept board from Aurora. Let us know what jumps out; we can iterate before the Wednesday call." },
-    { id: "ms2", conversation_id: "cv1", initials: "PR", sender: "Priya Raghavan", meta: "Received via Outlook · Yesterday at 4:21 PM", body: "Looks gorgeous! Two small tweaks — the brass detail above the bar feels heavy, and I'd like to see the cane chair fabric in a warmer tone. Otherwise approved — let's move to procurement after this round." },
-    { id: "ms3", conversation_id: "cv1", initials: "MS", sender: "Manish (internal note)", meta: "Internal note · Today at 9:18 AM", body: "@Anita — let's get Aurora to revise just the brass + fabric. Also flag for cross-sell after this project: Priya mentioned a Pune outlet.", tone: "note" },
-    { id: "ms4", conversation_id: "cv1", initials: "AS", sender: "Aurora Studio", meta: "Sent via Outlook · Today at 10:02 AM", body: "v3 uploaded — brass simplified, two cane fabric options from FabTextiles (slide 12). Holding on procurement pending your sign-off." },
+    { id: "ms1", conversation_id: "cv1", initials: "MS", sender: "Manish", meta: "Sent via Outlook · May 14 at 5:02 PM", body: "Hi Priya — sharing the latest concept board from Aurora. Let us know what jumps out; we can iterate before the Wednesday call.", direction: "outbound", sent_at: "2026-05-14T11:32:00Z" },
+    { id: "ms2", conversation_id: "cv1", initials: "PR", sender: "Priya Raghavan", meta: "Received via Outlook · Yesterday at 4:21 PM", body: "Looks gorgeous! Two small tweaks — the brass detail above the bar feels heavy, and I'd like to see the cane chair fabric in a warmer tone. Otherwise approved — let's move to procurement after this round.", direction: "inbound", sent_at: "2026-05-22T10:51:00Z" },
+    { id: "ms3", conversation_id: "cv1", initials: "MS", sender: "Manish (internal note)", meta: "Internal note · Today at 9:18 AM", body: "@Anita — let's get Aurora to revise just the brass + fabric. Also flag for cross-sell after this project: Priya mentioned a Pune outlet.", tone: "note", direction: "outbound", sent_at: "2026-05-23T03:48:00Z" },
+    { id: "ms4", conversation_id: "cv1", initials: "AS", sender: "Aurora Studio", meta: "Sent via Outlook · Today at 10:02 AM", body: "v3 uploaded — brass simplified, two cane fabric options from FabTextiles (slide 12). Holding on procurement pending your sign-off.", direction: "inbound", sent_at: "2026-05-23T04:32:00Z" },
+    // cv2 — Aurora Studio
+    { id: "ms5", conversation_id: "cv2", initials: "AS", sender: "Aurora Studio", meta: "Today at 10:02 AM", body: "Sharing v3 with the revisions we discussed yesterday. Brass detail simplified and cane fabric set to warmer FT-219.", direction: "inbound", sent_at: "2026-05-23T04:32:00Z" },
+    // cv3 — Voltek WhatsApp
+    { id: "ms6", conversation_id: "cv3", initials: "VE", sender: "Voltek Electricals", meta: "Today at 9:14 AM", body: "Hi Manish, blocked on the MCB rating for the kitchen circuit — 32A or 40A?", direction: "inbound", sent_at: "2026-05-23T03:44:00Z" },
+    { id: "ms7", conversation_id: "cv3", initials: "MS", sender: "Manish", meta: "Today at 9:18 AM", body: "40A — the induction hob needs the headroom.", direction: "outbound", sent_at: "2026-05-23T03:48:00Z" },
+    // cv9 — Priya SMS arrival
+    { id: "ms8", conversation_id: "cv9", initials: "PR", sender: "Priya", meta: "Today at 8:42 AM", body: "On my way — 10 min.", direction: "inbound", sent_at: "2026-05-23T03:12:00Z" },
+    { id: "ms9", conversation_id: "cv9", initials: "MS", sender: "Manish", meta: "Today at 8:43 AM", body: "Great — I'll be at the entrance.", direction: "outbound", sent_at: "2026-05-23T03:13:00Z" },
+    // cv10 — Arjun SMS
+    { id: "ms10", conversation_id: "cv10", initials: "AK", sender: "Arjun Kapoor", meta: "Yesterday", body: "Hi! Got your card from Suri — can we chat about a fitout?", direction: "inbound", sent_at: "2026-05-22T07:10:00Z" },
+    { id: "ms11", conversation_id: "cv10", initials: "MS", sender: "Manish", meta: "Yesterday", body: "Hi Arjun! Sure — 4pm tomorrow work?", direction: "outbound", sent_at: "2026-05-22T07:15:00Z" },
+    { id: "ms12", conversation_id: "cv10", initials: "AK", sender: "Arjun Kapoor", meta: "Yesterday", body: "Perfect, talk then.", direction: "inbound", sent_at: "2026-05-22T07:18:00Z" },
   ],
 
   // ── calendar-events ── 11-calendar.tsx `calendarRows` matrix FLATTENED.

@@ -674,3 +674,183 @@ aider --model claude-sonnet-4-5 `
 - [ ] RBAC: viewer role cannot see Settings; vendor role cannot see Contacts; admin sees everything
 - [ ] Sort: clicking a column header twice reverses order (asc → desc)
 - [ ] Console: zero unhandled promise rejections
+
+---
+
+# Phase 2 — GoHighLevel Feature Parity (BRIEF-26 → BRIEF-30)
+
+**Date:** 2026-05-23
+**Goal:** Bring DM CRM to GoHighLevel-style functional parity in email, campaigns, contact management, pipelines and multi-channel conversations.
+
+## BRIEF-26 — Conversations: 2-Way Email Threading
+
+**Context:** `12-conversations.tsx` selects a conversation from the inbox via `selectedConvId`, but the right-hand thread panel (contact card with "Priya Raghavan", invoices, deliverables) is HARDCODED. The thread header subject is also hardcoded. Reply textarea works (creates a message) but the inbox list lacks real thread metadata (subject, lastMessageAt, unreadCount).
+
+**Task — Backend (`packages/backend/src/crm/types.ts` + `seed.ts`):**
+1. Extend `ConversationSchema` with: `unread_count: z.number().int().default(0)`, `starred: z.boolean().default(false)`, `tags: z.array(z.string()).default([])`.
+2. Re-seed conversations: 3 email threads + 2 WhatsApp/SMS threads with realistic subjects (Lumen concept board, Marlowe stone selection, Atrium handover, Priya enquiry, HSR penthouse).
+3. Re-seed messages so each conversation has 2–4 messages (alternating inbound/outbound) with proper `sent_at` ISO timestamps.
+
+**Task — Frontend (`12-conversations.tsx`):**
+1. Replace the hardcoded thread header subject "RE: Lumen concept board v2" with the selected conversation's `subject` field (look up `conversations` by `selectedConvId`).
+2. Replace the hardcoded right-panel name "Priya Raghavan / Founder · Lumen Café" with the contact looked up by the selected conversation's `contact_id`.
+3. Make the inbox row's "subject" and "preview" reflect real message data: subject from `conversation.subject`, preview from latest message body (first 60 chars).
+4. Add a Compose modal:
+   - Triggered by the existing "Compose" button (currently opens `useUIStore.openCreate("conversations")` which is fine — but verify the REGISTRY entry for `conversations` has fields: contact_id (text), subject (text), channel (select: email/whatsapp/sms/note), body (text).
+   - On submit → creates conversation AND creates first message in one chain.
+5. Reply via send already works — verify it updates the conversation's `last_message_at` server-side OR set it client-side via `updateConversation.mutate({ id, patch: { last_message_at: new Date().toISOString(), unread_count: 0 } })`.
+6. Selecting a conversation marks it read: on `setSelectedConvId(id)` → `updateConversation.mutate({ id, patch: { unread_count: 0 } })`.
+7. Zero layout changes. Zero colour changes.
+
+**Acceptance:**
+- Clicking different inbox items changes the thread header subject + contact panel
+- Sending a reply appends a message to the thread without page refresh
+- Compose creates a new conversation that appears in the inbox immediately
+
+---
+
+## BRIEF-27 — Email Campaigns (GHL Sequences)
+
+**Context:** No campaigns infrastructure exists. Add full email campaign management.
+
+**Task — Backend (`packages/backend/src/crm/types.ts` + `seed.ts` + register in `RESOURCES`):**
+
+```typescript
+export const CampaignSchema = z.object({
+  id: Id.optional(),
+  name: z.string(),
+  subject: z.string().default(""),
+  body: z.string().default(""),
+  from_address: z.string().default("hello@designersmeet.com"),
+  status: z.enum(["draft", "scheduled", "active", "paused", "completed"]).default("draft"),
+  target_tag: z.string().optional().default(""),
+  scheduled_at: z.string().nullable().default(null),
+  sent_count: z.number().int().default(0),
+  open_rate: z.number().default(0),
+  click_rate: z.number().default(0),
+  created_at: z.string().optional(),
+});
+
+export const CampaignRecipientSchema = z.object({
+  id: Id.optional(),
+  campaign_id: z.string(),
+  contact_id: z.string(),
+  email: z.string(),
+  status: z.enum(["queued", "sent", "opened", "clicked", "bounced", "failed"]).default("queued"),
+  sent_at: z.string().nullable().default(null),
+  opened_at: z.string().nullable().default(null),
+  clicked_at: z.string().nullable().default(null),
+});
+```
+
+Seed: 2 campaigns (1 `sent` with metrics, 1 `draft`), 5 recipients each across the 3 existing contacts.
+
+**Task — Frontend (new page `packages/frontend/src/pages/17-campaigns.tsx`):**
+1. Add route `/campaigns` to `App.tsx`.
+2. Add "Campaigns" item to all sidebars (low priority — under Workflows is acceptable).
+3. Page layout: header strip + campaign list (cards or table). Each row: name, status badge, sent count, open rate, click rate, created date, "View" button.
+4. "+ New Campaign" button → modal with fields: name (required), subject (required), body (textarea), from_address (default to admin email), target_tag (text), scheduled_at (datetime-local, optional). Submit → `useCreate('campaigns').mutate`.
+5. Clicking "View" navigates to detail (use route `/campaigns/:id`) — render recipient list using `useList('campaign-recipients', { campaign_id: id })`. Each recipient row: email, status badge (with colours: sent=secondary, opened=success, clicked=primary, bounced=danger), sent_at, opened_at.
+6. Campaign detail page has "Send now" button (only if status === draft) → `useUpdate('campaigns').mutate({ id, patch: { status: "active", sent_count: recipients.length } })`. Also bulk-update each recipient to `status: "sent"` and `sent_at: now`.
+7. Reuse existing card / button / badge components — no new styling.
+
+**Acceptance:**
+- Campaigns list shows the 2 seeded campaigns
+- Creating a campaign appears in the list
+- Detail page shows recipients with status colours
+- "Send now" transitions a draft campaign to active
+
+---
+
+## BRIEF-28 — Contact List: Tags, Segments, Bulk Actions
+
+**Context:** `04-contacts.tsx` shows a list/table of contacts via `useList('contacts')`. There are no tag pills, no bulk select, no bulk action bar, no segments.
+
+**Task — Backend:**
+1. Extend `ContactSchema` with `tags: z.array(z.string()).default([])`.
+2. Re-seed: ct1 → `["Client", "VIP"]`; ct2 → `["Vendor"]`; ct3 → `["Lead", "Prospect", "Cold"]`.
+3. Add new resource:
+```typescript
+export const SegmentSchema = z.object({
+  id: Id.optional(),
+  name: z.string(),
+  filter_json: z.record(z.any()).default({}),
+  contact_count: z.number().int().default(0),
+  created_at: z.string().optional(),
+});
+```
+Seed 2 segments: "VIP Clients" filter `{ tags: ["VIP"] }`, "Cold Leads" filter `{ tags: ["Cold"] }`.
+
+**Task — Frontend (`04-contacts.tsx`):**
+1. Add `tags` column (or pill row inside name column) — render `contact.tags` as small pills using existing `Badge`/`FilterBadge` pattern.
+2. Add bulk select: a checkbox in the leftmost `<th>` and each row. Selected row IDs go in `const [selectedIds, setSelectedIds] = useState<string[]>([])`.
+3. When `selectedIds.length > 0` → render an action bar above the table (ADD, do not replace anything). Bar shows: "{n} selected" + buttons: Add tag, Remove tag, Add to campaign, Export CSV, Clear.
+4. "Add tag" / "Remove tag" → prompt() for tag name, then map selectedIds and `useUpdate('contacts').mutate({ id, patch: { tags: [...existing] } })` for each.
+5. "Add to campaign" → toast "Open Campaigns → New Campaign → set target_tag". (No multi-select UX needed in Phase 2.)
+6. "Export CSV" → client-side CSV blob download of selected rows.
+7. Left sidebar segments: under the existing "Contacts" nav OR inline above the contact list, render `useList('segments').data?.data` as clickable buttons. Clicking a segment applies the filter (parse `filter_json.tags`, filter contacts client-side).
+8. Zero layout removal. Zero colour changes.
+
+**Acceptance:**
+- Tags appear as pills on each contact row
+- Bulk select shows count + action bar
+- Export CSV downloads a real CSV file
+- Segment buttons filter the visible list
+
+---
+
+## BRIEF-29 — Pipeline Views: Board + List + Forecast
+
+**Context:** `10-pipelines.tsx` currently shows ONE view (Kanban board). Add 3 view modes with switcher.
+
+**Task — Frontend (`10-pipelines.tsx`):**
+1. Add `const [viewMode, setViewMode] = useState<"board" | "list" | "forecast">("board")`.
+2. Add a 3-icon view switcher (icons already imported: `LayoutGrid`, `List`, `BarChart3`) ABOVE the existing board content. Each icon button → `setViewMode("board"|"list"|"forecast")`. Active icon: `bg-primary-tint text-primary`.
+3. Wrap existing kanban board JSX in `{viewMode === "board" && (...)}`.
+4. Add `{viewMode === "list" && <PipelineListView />}` — render a `<table>` of all pipeline-deals (or hardcoded opportunities flattened from `pipelineColumns`) with columns: Name, Detail, Stage, Value, Owner, Age. Add `SortChevron` on each column.
+5. Add `{viewMode === "forecast" && <PipelineForecastView />}` — render a `recharts` `<BarChart>` with each stage as a bar (x-axis: stage name; y-axis: total ₹). Below the chart, a "Monthly close prediction" card with hardcoded numbers: This month ₹ 12.4L, Next month ₹ 18.2L, Q forecast ₹ 84.6L.
+6. Zero changes to existing board JSX. Zero colour changes.
+
+**Acceptance:**
+- 3 view icons clickable, toggle visible view
+- List view shows all opportunities in table form
+- Forecast view shows bar chart per stage
+
+---
+
+## BRIEF-30 — SMS / WhatsApp Conversations (GHL-style)
+
+**Context:** Conversations support a `channel` field but only email/whatsapp/note are used. There is no channel filter, and SMS/WhatsApp messages render as plain email-style threads instead of phone-bubble chat.
+
+**Task — Backend:**
+1. `ConversationSchema.channel` already supports `["email","whatsapp","sms","webchat","note"]` — no change needed.
+2. Re-seed: add 2 SMS conversations + 1 WhatsApp with 3 messages each.
+
+**Task — Frontend (`12-conversations.tsx`):**
+1. Add channel filter: render 4 `FilterBadge` chips ABOVE the inbox list: All | Email | SMS | WhatsApp. State: `const [channelFilter, setChannelFilter] = useState<"all"|"email"|"sms"|"whatsapp">("all")`.
+2. Apply to `filteredInboxItems`: also filter by `item.channel === channelFilter` (or "all").
+3. When the selected conversation has `channel === "sms"` or `channel === "whatsapp"`:
+   - Thread message area renders messages as phone-bubble chat:
+     - Inbound = left-aligned grey bubble
+     - Outbound = right-aligned primary-tint bubble
+     - Use existing colour tokens only.
+   - Use rounded `rounded-2xl` bubbles, max-width ~70%, with timestamp under each bubble.
+   - Hide the email-style "Reply via" tabs and sender meta.
+4. Compose for SMS/WhatsApp: add a small char counter under the textarea showing `{body.length}/160` when channel is sms (red text if > 160).
+5. Zero changes to email rendering. Zero colour literal changes (only existing tokens).
+
+**Acceptance:**
+- Channel filter chips toggle visible inbox items
+- Selecting an SMS thread renders bubble chat
+- SMS compose shows char counter
+
+---
+
+## Phase 2 Execution Order
+
+1. BRIEF-26 backend (types + seed) + frontend wiring (thread header dynamic, contact card dynamic, compose modal)
+2. BRIEF-27 backend (campaigns + recipients) + new campaigns page + route
+3. BRIEF-28 backend (tags on contact + segments) + frontend (tag pills, bulk select bar, segment filter)
+4. BRIEF-29 frontend only (view switcher + list + forecast)
+5. BRIEF-30 backend (seed SMS) + frontend (channel filter + bubble chat)
+6. Build, commit, push after each brief
