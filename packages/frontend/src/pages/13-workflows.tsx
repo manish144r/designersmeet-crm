@@ -367,17 +367,18 @@ export default function Workflows() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const [selectedWfId, setSelectedWfId] = useState("wf1");
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [wfQ, setWfQ] = useState("");
   const workflowsKey = "workflows";
   const { data } = useList<WorkflowItem>(workflowsKey);
   const allWorkflows = data?.data ?? [];
   const workflows = wfQ
-    ? allWorkflows.filter((w) => w.name.toLowerCase().includes(wfQ.toLowerCase()))
+    ? allWorkflows.filter((w: WorkflowItem) => w.name.toLowerCase().includes(wfQ.toLowerCase()))
     : allWorkflows;
   const _r = useList<WorkflowRun>("workflow-runs").data?.data ?? [];
-  const lastRuns = _r.filter((x: any) => x.workflow_id === selectedWfId);
+  const lastRuns = _r.filter((x: WorkflowRun) => x.workflow_id === selectedWfId);
   const updateWorkflow = useUpdate<WorkflowItem>(workflowsKey);
-  const selectedRow = allWorkflows.find((w) => w.id === selectedWfId);
+  const selectedRow = allWorkflows.find((w: WorkflowItem) => w.id === selectedWfId);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
@@ -493,7 +494,7 @@ export default function Workflows() {
               </div>
 
               <div className="flex-1 space-y-1 overflow-y-auto p-2">
-                {workflows.map((workflow) => (
+                {workflows.map((workflow: WorkflowItem) => (
                   <WorkflowCard key={workflow.name} workflow={workflow} onClick={() => setSelectedWfId(workflow.id)} />
                 ))}
               </div>
@@ -695,7 +696,7 @@ export default function Workflows() {
                     Last 5 runs
                   </div>
                   <div className="space-y-1.5 text-[12px]">
-                    {lastRuns.map(({ time, label, tone }) => (
+                    {lastRuns.map(({ time, label, tone }: WorkflowRun) => (
                       <div key={`${time}-${label}`} className="flex items-center justify-between">
                         <span className="text-secondary">{time}</span>
                         <Badge tone={tone}>{label}</Badge>

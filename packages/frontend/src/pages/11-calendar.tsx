@@ -422,6 +422,8 @@ function TimeButton({ time }: { time: string }) {
 
 export default function Calendar() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [viewMode, setViewMode] = useState<"day"|"week"|"month"|"agenda">("week");
+  const [weekOffset, setWeekOffset] = useState(0);
   const navigate = useNavigate();
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
   const _evAll = useList("calendar-events").data?.data ?? [];
@@ -539,15 +541,16 @@ export default function Calendar() {
                   </Button>
 
                   <div className="flex items-center gap-1">
-                    <IconButton title="Previous week">
+                    <IconButton title="Previous week" onClick={() => setWeekOffset(o => o - 1)}>
                       <ChevronLeft className={iconClass} aria-hidden="true" />
                     </IconButton>
-                    <IconButton title="Next week">
+                    <IconButton title="Next week" onClick={() => setWeekOffset(o => o + 1)}>
                       <ChevronRight className={iconClass} aria-hidden="true" />
                     </IconButton>
                     <Button
                       type="button"
                       variant="ghost"
+                      onClick={() => setWeekOffset(0)}
                       className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
                     >
                       Today
@@ -563,25 +566,29 @@ export default function Calendar() {
                   <div className="flex items-center rounded-md border border-border-strong bg-background">
                     <button
                       type="button"
-                      className="rounded-l-md px-2.5 py-1.5 text-[12px] text-muted hover:bg-hover hover:text-foreground"
+                      onClick={() => setViewMode("day")}
+                      className={"rounded-l-md px-2.5 py-1.5 text-[12px] hover:bg-hover hover:text-foreground " + (viewMode==="day" ? "bg-primary-tint text-primary font-medium" : "text-muted")}
                     >
                       Day
                     </button>
                     <button
                       type="button"
-                      className="bg-primary-tint px-2.5 py-1.5 text-[12px] font-medium text-primary"
+                      onClick={() => setViewMode("week")}
+                      className={"px-2.5 py-1.5 text-[12px] " + (viewMode==="week" ? "bg-primary-tint text-primary font-medium" : "text-muted hover:bg-hover hover:text-foreground")}
                     >
                       Week
                     </button>
                     <button
                       type="button"
-                      className="px-2.5 py-1.5 text-[12px] text-muted hover:bg-hover hover:text-foreground"
+                      onClick={() => setViewMode("month")}
+                      className={"px-2.5 py-1.5 text-[12px] hover:bg-hover hover:text-foreground " + (viewMode==="month" ? "bg-primary-tint text-primary font-medium" : "text-muted")}
                     >
                       Month
                     </button>
                     <button
                       type="button"
-                      className="rounded-r-md px-2.5 py-1.5 text-[12px] text-muted hover:bg-hover hover:text-foreground"
+                      onClick={() => setViewMode("agenda")}
+                      className={"rounded-r-md px-2.5 py-1.5 text-[12px] hover:bg-hover hover:text-foreground " + (viewMode==="agenda" ? "bg-primary-tint text-primary font-medium" : "text-muted")}
                     >
                       Agenda
                     </button>
@@ -590,6 +597,7 @@ export default function Calendar() {
                   <Button
                     type="button"
                     variant="secondary"
+                    onClick={() => { navigator.clipboard.writeText(window.location.origin + "/calendar/book"); alert("Booking link copied to clipboard!"); }}
                     className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                   >
                     <LinkIcon className={iconClass} aria-hidden="true" />
@@ -770,5 +778,8 @@ export default function Calendar() {
         </main>
       </div>
     </div>
+  );
+}
+
   );
 }

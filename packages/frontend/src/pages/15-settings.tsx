@@ -18,7 +18,7 @@
  */
 
 import { useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useReducer, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useReducer, useState, type ChangeEvent, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -603,7 +603,7 @@ function GeneralPanel() {
             <span className="text-[12px] font-medium text-secondary">Workspace name</span>
             <Input
               value={workspaceName}
-              onChange={(e) => {
+              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
                 setWorkspaceName(e.target.value);
                 setSaved(false);
               }}
@@ -614,7 +614,7 @@ function GeneralPanel() {
             <span className="text-[12px] font-medium text-secondary">Subdomain</span>
             <Input
               value={subdomain}
-              onChange={(e) => {
+              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
                 setSubdomain(e.target.value);
                 setSaved(false);
               }}
@@ -659,7 +659,7 @@ function BrandingPanel() {
             <span className="text-[12px] font-medium text-secondary">Primary colour (hex)</span>
             <Input
               value={primary}
-              onChange={(e) => setPrimary(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setPrimary(e.target.value)}
               placeholder="var(--color-foreground)"
               className="mt-1 h-[34px] text-[13px]"
             />
@@ -716,7 +716,7 @@ function UsersRolesPanel() {
               </div>
               <select
                 value={u.role}
-                onChange={(e) => updateUser({ id: u.id, patch: { role: e.target.value } })}
+                onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => updateUser({ id: u.id, patch: { role: e.target.value } })}
                 className="text-[11px] font-medium text-secondary bg-transparent border-none focus:outline-none"
               >
                 <option value="Owner">Owner</option>
@@ -842,7 +842,7 @@ function WorkspacesPanel() {
               <span className="text-[12px] font-medium text-secondary">Name</span>
               <Input
                 value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setDraftName(e.target.value)}
                 placeholder="DesignersMeet Mumbai"
                 className="mt-1 h-[34px] text-[13px]"
               />
@@ -851,7 +851,7 @@ function WorkspacesPanel() {
               <span className="text-[12px] font-medium text-secondary">Slug</span>
               <Input
                 value={draftSlug}
-                onChange={(e) => setDraftSlug(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setDraftSlug(e.target.value)}
                 placeholder="dm-mumbai"
                 className="mt-1 h-[34px] text-[13px]"
               />
@@ -1142,10 +1142,10 @@ function LocaleTimePanel() {
             <span className="text-[12px] font-medium text-secondary">Timezone</span>
             <select
               value={prefs.timezone}
-              onChange={(e) => save("timezone", e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => save("timezone", e.target.value)}
               className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
             >
-              {TIMEZONES.map((tz) => (
+              {TIMEZONES.map((tz: string) => (
                 <option key={tz} value={tz}>{tz}</option>
               ))}
             </select>
@@ -1154,10 +1154,10 @@ function LocaleTimePanel() {
             <span className="text-[12px] font-medium text-secondary">Language</span>
             <select
               value={prefs.language}
-              onChange={(e) => save("language", e.target.value as typeof prefs.language)}
+              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => save("language", e.target.value as typeof prefs.language)}
               className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
             >
-              {LANGUAGES.map((l) => (
+              {LANGUAGES.map((l: { code: string; label: string }) => (
                 <option key={l.code} value={l.code}>{l.label}</option>
               ))}
             </select>
@@ -1166,10 +1166,10 @@ function LocaleTimePanel() {
             <span className="text-[12px] font-medium text-secondary">Date format</span>
             <select
               value={prefs.dateFormat}
-              onChange={(e) => save("dateFormat", e.target.value as typeof prefs.dateFormat)}
+              onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => save("dateFormat", e.target.value as typeof prefs.dateFormat)}
               className="mt-1 h-[34px] w-full rounded-md border border-border-strong bg-background px-2 text-[13px] text-foreground focus:border-foreground focus:outline-none"
             >
-              {DATE_FORMATS.map((f) => (
+              {DATE_FORMATS.map((f: { code: string; label: string }) => (
                 <option key={f.code} value={f.code}>{f.label}</option>
               ))}
             </select>
@@ -1276,7 +1276,7 @@ function TeamsPanel() {
               <span className="text-[12px] font-medium text-secondary">Team name</span>
               <Input
                 value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setDraftName(e.target.value)}
                 placeholder="Procurement"
                 className="mt-1 h-[34px] text-[13px]"
               />
@@ -1686,6 +1686,7 @@ function VendorPortalAdminPanel() {
 export default function Settings() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [activeItem, setActiveItem] = useState<string>(DEFAULT_SETTINGS_ITEM);
 
   const sectionsWithActive: SettingsSection[] = settingsSections.map((s) => ({
@@ -1782,13 +1783,24 @@ export default function Settings() {
               <span className="absolute right-1 top-1 size-1.5 rounded-full bg-foreground" />
             </IconButton>
             <div className="mx-1 h-6 w-px bg-border" />
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-hover focus-visible:outline-foreground"
-            >
-              <Avatar size="sm">MS</Avatar>
-              <ChevronDown className="size-4 text-muted" aria-hidden="true" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowUserMenu(v => !v)}
+                className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-hover focus-visible:outline-foreground"
+              >
+                <Avatar size="sm">MS</Avatar>
+                <ChevronDown className="size-4 text-muted" aria-hidden="true" />
+              </button>
+              {showUserMenu && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-border bg-background py-1 shadow-lg">
+                  <button type="button" onClick={() => { navigate("/settings"); setShowUserMenu(false); }} className="w-full px-3 py-1.5 text-left text-[13px] hover:bg-hover">Profile</button>
+                  <button type="button" onClick={() => { navigate("/settings"); setShowUserMenu(false); }} className="w-full px-3 py-1.5 text-left text-[13px] hover:bg-hover">Settings</button>
+                  <div className="my-1 border-t border-border" />
+                  <button type="button" onClick={() => { window.location.href = "/"; }} className="w-full px-3 py-1.5 text-left text-[13px] text-red-500 hover:bg-hover">Sign out</button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

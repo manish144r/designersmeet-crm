@@ -329,11 +329,12 @@ export default function Conversations() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const [selectedConvId, setSelectedConvId] = useState("cv1");
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [replyBody, setReplyBody] = useState("");
   const { data } = useList<InboxItem>("conversations");
   const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "assigned">("all");
   const inboxItems = data?.data ?? [];
-  const filteredInboxItems = inboxItems.filter(item => {
+  const filteredInboxItems = inboxItems.filter((item: InboxItem) => {
     if (activeFilter === "unread") return item.unread;
     if (activeFilter === "assigned") return item.assigned_user_id === "u1";
     return true;
@@ -467,7 +468,7 @@ export default function Conversations() {
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                {filteredInboxItems.map((item) => (
+                {filteredInboxItems.map((item: InboxItem) => (
                   <InboxRow key={`${item.name}-${item.subject}`} item={item} onClick={() => setSelectedConvId(item.id)} />
                 ))}
               </div>
@@ -512,7 +513,7 @@ export default function Conversations() {
               </div>
 
               <div className="flex-1 space-y-4 overflow-auto bg-subtle/30 px-6 py-5">
-                {threadMessages.map((message) => (
+                {threadMessages.map((message: ThreadMessage) => (
                   <ThreadMessageItem key={`${message.sender}-${message.meta}`} message={message} />
                 ))}
               </div>

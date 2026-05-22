@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/06-vendors.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import { useState, type ChangeEventHandler, type MouseEventHandler, type ReactNode } from "react";
+import { useRef, useState, type ChangeEventHandler, type MouseEventHandler, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -260,6 +260,10 @@ export default function Vendors() {
   const [q, setQ] = useState("");
   const [sort, setSortField] = useState("name");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
+  const [skillFilter, setSkillFilter] = useState("Any");
+  const [regionFilter, setRegionFilter] = useState("Any");
+  const [tierFilter, setTierFilter] = useState("Any");
+  const [statusFilter, setStatusFilter] = useState("Any");
   const navigate = useNavigate();
   const { data } = useList("vendors", { name: q, sort, order });
   const vendors = (data?.data ?? []) as Vendor[];
@@ -438,34 +442,38 @@ export default function Vendors() {
               <Button
                 type="button"
                 variant="secondary"
+                onClick={() => { const v = prompt("Filter by skill (e.g. Design, Dev, Video):", skillFilter); if (v !== null) setSkillFilter(v || "Any"); }}
                 className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
               >
                 <Filter className={iconClass} aria-hidden="true" />
-                Skill: Any
+                Skill: {skillFilter}
                 <ChevronDown className="size-4 text-muted" aria-hidden="true" />
               </Button>
               <Button
                 type="button"
                 variant="secondary"
+                onClick={() => { const v = prompt("Filter by region:", regionFilter); if (v !== null) setRegionFilter(v || "Any"); }}
                 className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
               >
-                Region: Karnataka
+                Region: {regionFilter}
                 <ChevronDown className="size-4 text-muted" aria-hidden="true" />
               </Button>
               <Button
                 type="button"
                 variant="secondary"
+                onClick={() => { const v = prompt("Filter by tier (1, 2, or Any):", tierFilter); if (v !== null) setTierFilter(v || "Any"); }}
                 className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
               >
-                Tier: Any
+                Tier: {tierFilter}
                 <ChevronDown className="size-4 text-muted" aria-hidden="true" />
               </Button>
               <Button
                 type="button"
                 variant="secondary"
+                onClick={() => { const v = prompt("Filter by status (Active, Invited, Inactive, Any):", statusFilter); if (v !== null) setStatusFilter(v || "Any"); }}
                 className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
               >
-                Status: Any
+                Status: {statusFilter}
                 <ChevronDown className="size-4 text-muted" aria-hidden="true" />
               </Button>
               <div className="flex-1" />
