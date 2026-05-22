@@ -262,13 +262,14 @@ function FilterBadge({
   );
 }
 
-function ViewButton({ active, icon: Icon, children }: { active?: boolean; icon: LucideIcon; children: ReactNode }) {
+function ViewButton({ active, icon: Icon, children, onClick }: { active?: boolean; icon: LucideIcon; children: ReactNode; onClick?: () => void }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={cn(
         "flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] focus-visible:outline-foreground",
-        active ? "rounded-l-md bg-primary-tint font-medium text-primary" : "text-muted hover:bg-hover",
+        active ? "bg-primary-tint font-medium text-primary" : "text-muted hover:bg-hover",
       )}
     >
       <Icon className={iconClass} aria-hidden="true" />
@@ -328,6 +329,7 @@ export default function Pipelines() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const [activePipelineFilter, setActivePipelineFilter] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"board" | "list" | "forecast">("board");
   const _st = useList<PipelineStageRow & { id?: string }>("pipeline-stages").data?.data ?? [];
   const _pp = useList<PipelineRow>("pipelines").data?.data ?? [];
   const _deals =
@@ -476,9 +478,9 @@ export default function Pipelines() {
 
               <div className="flex items-center gap-2">
                 <div className="flex items-center rounded-md border border-border-strong bg-background">
-                  <ViewButton active icon={Kanban}>Board</ViewButton>
-                  <ViewButton icon={List}>List</ViewButton>
-                  <ViewButton icon={BarChart3}>Forecast</ViewButton>
+                  <ViewButton active={viewMode === "board"} icon={Kanban} onClick={() => setViewMode("board")}>Board</ViewButton>
+                  <ViewButton active={viewMode === "list"} icon={List} onClick={() => setViewMode("list")}>List</ViewButton>
+                  <ViewButton active={viewMode === "forecast"} icon={BarChart3} onClick={() => setViewMode("forecast")}>Forecast</ViewButton>
                 </div>
                 <Button type="button" variant="secondary" onClick={() => alert("Filter panel — coming soon")} className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground">
                   <Filter className={iconClass} aria-hidden="true" />
@@ -508,13 +510,108 @@ export default function Pipelines() {
               <FilterBadge>+ Add filter</FilterBadge>
             </div>
 
-            <div className="flex-1 overflow-x-auto">
-              <div className="flex min-w-min gap-4 p-6">
-                {pipelineColumns.map((column, index) => (
-                  <KanbanColumn key={column.title} column={_pipelineColumns[index] ?? column} />
-                ))}
+            {viewMode === "board" ? (
+              <div className="flex-1 overflow-x-auto">
+                <div className="flex min-w-min gap-4 p-6">
+                  {pipelineColumns.map((column, index) => (
+                    <KanbanColumn key={column.title} column={_pipelineColumns[index] ?? column} />
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : viewMode === "list" ? (
+              <div className="flex-1 overflow-auto p-6">
+                <Card className="overflow-hidden">
+                  <table className="w-full text-[13px]">
+                    <thead className="bg-subtle/40 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+                      <tr className="border-b border-border-subtle">
+                        <th className="px-4 py-2 text-left">Opportunity</th>
+                        <th className="px-4 py-2 text-left">Stage</th>
+                        <th className="px-4 py-2 text-left">Detail</th>
+                        <th className="px-4 py-2 text-right">Value</th>
+                        <th className="px-4 py-2 text-left">Age</th>
+                        <th className="px-4 py-2 text-left">Owner</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {_pipelineColumns.flatMap((column) =>
+                        column.cards.map((card) => (
+                          <tr key={`${column.title}-${card.title}`} className="border-b border-border-subtle hover:bg-hover">
+                            <td className="px-4 py-2.5 font-medium text-foreground">{card.title}</td>
+                            <td className="px-4 py-2.5">
+                              <span className="inline-flex items-center gap-2"><span className={cn("size-2 rounded-full", column.dotClass)} />{column.title}</span>
+                            </td>
+                            <td className="px-4 py-2.5 text-secondary">{card.detail}</td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-foreground">{card.value}</td>
+                            <td className="px-4 py-2.5 text-muted">{card.age}</td>
+                            <td className="px-4 py-2.5"><Avatar size="sm">{card.owner}</Avatar></td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-auto p-6">
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="col-span-2 p-5">
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Pipeline forecast</div>
+                    <div className="mb-4 text-[18px] font-semibold text-foreground">Total value by stage</div>
+                    {(() => {
+                      const totals = _pipelineColumns.map((c) => {
+                        const sum = c.cards.reduce((acc, card) => {
+                          const n = Number(String(card.value).replace(/[^0-9]/g, "")) || 0;
+                          return acc + n;
+                        }, 0);
+                        return { title: c.title, total: sum, dotClass: c.dotClass, count: c.cards.length };
+                      });
+                      const max = Math.max(1, ...totals.map((t) => t.total));
+                      return (
+                        <div className="space-y-3">
+                          {totals.map((t) => (
+                            <div key={t.title}>
+                              <div className="mb-1 flex items-center justify-between text-[12px]">
+                                <div className="flex items-center gap-2 text-secondary">
+                                  <span className={cn("size-2 rounded-full", t.dotClass)} />
+                                  <span className="font-medium text-foreground">{t.title}</span>
+                                  <span className="text-muted">{t.count} opps</span>
+                                </div>
+                                <div className="font-semibold text-foreground">₹ {(t.total / 100000).toFixed(1)} L</div>
+                              </div>
+                              <div className="h-3 w-full overflow-hidden rounded-full bg-border-subtle">
+                                <div className="h-full rounded-full bg-foreground" style={{ width: `${(t.total / max) * 100}%` }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </Card>
+                  <Card className="p-5">
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Close prediction</div>
+                    <div className="mb-4 text-[18px] font-semibold text-foreground">Next 90 days</div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between border-b border-border-subtle pb-2">
+                        <div className="text-[12px] text-secondary">This month</div>
+                        <div className="text-[14px] font-semibold text-foreground">₹ 12.4 L</div>
+                      </div>
+                      <div className="flex items-center justify-between border-b border-border-subtle pb-2">
+                        <div className="text-[12px] text-secondary">Next month</div>
+                        <div className="text-[14px] font-semibold text-foreground">₹ 18.2 L</div>
+                      </div>
+                      <div className="flex items-center justify-between border-b border-border-subtle pb-2">
+                        <div className="text-[12px] text-secondary">Q forecast</div>
+                        <div className="text-[14px] font-semibold text-foreground">₹ 84.6 L</div>
+                      </div>
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="text-[12px] font-medium text-foreground">Weighted forecast</div>
+                        <div className="text-[14px] font-semibold text-primary">₹ 51.7 L</div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>
