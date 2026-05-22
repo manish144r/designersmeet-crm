@@ -4,6 +4,7 @@ import type { MouseEventHandler, ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Archive,
+  ArrowLeft,
   BarChart3,
   Bell,
   Building,
@@ -393,9 +394,20 @@ function ContactProfileHeader() {
   const params = useParams();
   const cid = params.id ?? "ct1";
   const c = useItem("contacts", cid).data as any;
+  const navigate = useNavigate();
 
   return (
     <div className="border-b border-border-subtle px-8 pb-4 pt-6">
+      <div className="mb-3">
+        <button
+          type="button"
+          onClick={() => navigate("/contacts")}
+          className="flex items-center gap-1.5 text-[12px] text-secondary hover:text-foreground focus-visible:outline-foreground"
+        >
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Back to Contacts
+        </button>
+      </div>
       <div className="flex items-start gap-4">
         <Avatar size="xl">PR</Avatar>
         <div className="flex-1">
@@ -430,6 +442,7 @@ function ContactProfileHeader() {
           <Button
             type="button"
             variant="secondary"
+            onClick={() => window.open(`tel:${c?.phone ?? ""}`, "_self")}
             className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
           >
             <Phone className={iconClass} aria-hidden="true" />
@@ -438,6 +451,7 @@ function ContactProfileHeader() {
           <Button
             type="button"
             variant="secondary"
+            onClick={() => window.open(`mailto:${c?.email ?? ""}`, "_self")}
             className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
           >
             <Mail className={iconClass} aria-hidden="true" />
@@ -445,6 +459,7 @@ function ContactProfileHeader() {
           </Button>
           <Button
             type="button"
+            onClick={() => useUIStore.getState().openCreate("activities")}
             className="h-auto gap-1.5 border-primary bg-primary px-3.5 py-[7px] text-[13px] text-background hover:border-primary hover:bg-primary"
           >
             <Plus className={iconClass} aria-hidden="true" />
@@ -457,15 +472,6 @@ function ContactProfileHeader() {
       </div>
 
       <Tabs defaultValue="profile" className="mt-5">
-        <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="conversations">Conversations</TabsTrigger>
-          <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="files">Files</TabsTrigger>
-          <TabsTrigger value="custom-fields">Custom fields</TabsTrigger>
-        </TabsList>
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="timeline">
@@ -562,6 +568,7 @@ function TimelineCard() {
         <Button
           type="button"
           variant="ghost"
+          onClick={() => {/* navigate to timeline tab */}}
           className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
         >
           Full timeline
@@ -708,73 +715,4 @@ export default function ContactDetail() {
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <Sidebar />
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Topbar />
-
-        <main className="flex-1 overflow-auto bg-background">
-          <div className="flex h-full">
-            <div className="flex-1 overflow-auto">
-              <ContactProfileHeader />
-
-              <Tabs defaultValue="profile">
-                <TabsList>
-                  <TabsTrigger value="profile">Profile</TabsTrigger>
-                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                  <TabsTrigger value="conversations">Conversations</TabsTrigger>
-                  <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
-                  <TabsTrigger value="projects">Projects</TabsTrigger>
-                  <TabsTrigger value="files">Files</TabsTrigger>
-                  <TabsTrigger value="custom-fields">Custom fields</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="profile">
-                  <PropertiesCard />
-                  <TimelineCard />
-                </TabsContent>
-                <TabsContent value="timeline">
-                  <TimelineCard />
-                </TabsContent>
-                <TabsContent value="conversations">
-                  <div className="p-4">
-                    <p className="text-muted">No conversations available.</p>
-                  </div>
-                </TabsContent>
-                <TabsContent value="opportunities">
-                  <div className="p-4">
-                    <p className="text-muted">No opportunities available.</p>
-                  </div>
-                </TabsContent>
-                <TabsContent value="projects">
-                  <div className="p-4">
-                    <p className="text-muted">No projects available.</p>
-                  </div>
-                </TabsContent>
-                <TabsContent value="files">
-                  <div className="p-4">
-                    <p className="text-muted">No files available.</p>
-                  </div>
-                </TabsContent>
-                <TabsContent value="custom-fields">
-                  <div className="p-4">
-                    <p className="text-muted">No custom fields available.</p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-
-            <div className="col-span-2 space-y-4">
-              <PropertiesCard />
-              <TimelineCard />
-            </div>
-
-            <div className="col-span-1 space-y-4">
-              <ActiveProjectCard />
-              <UpcomingCard />
-              <AttachmentsCard />
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+      <div cla

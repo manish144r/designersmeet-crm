@@ -153,7 +153,17 @@ const pipelineColumns: PipelineColumn[] = [
 
 const iconClass = "size-4 shrink-0";
 
-function IconButton({ title, children, className }: { title?: string; children: ReactNode; className?: string }) {
+function IconButton({
+  title,
+  children,
+  className,
+  onClick,
+}: {
+  title?: string;
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+}) {
   return (
     <Button
       type="button"
@@ -161,6 +171,7 @@ function IconButton({ title, children, className }: { title?: string; children: 
       size="icon"
       title={title}
       aria-label={title}
+      onClick={onClick}
       className={cn(
         "size-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -282,7 +293,11 @@ function OpportunityCard({ card }: { card: OpportunityCard }) {
     <Card className="cursor-grab rounded-md border-border bg-background p-3 transition-colors hover:border-border-strong hover:shadow-card">
       <div className="mb-1.5 flex items-start justify-between">
         <div className="text-[13px] font-semibold leading-snug text-foreground">{card.title}</div>
-        <IconButton title="Opportunity menu" className="size-5">
+        <IconButton
+          title="Opportunity menu"
+          className="size-5"
+          onClick={() => useUIStore.getState().openEdit("pipeline-deals", card.title)}
+        >
           <MoreHorizontal className={iconClass} aria-hidden="true" />
         </IconButton>
       </div>
@@ -307,7 +322,11 @@ function KanbanColumn({ column }: { column: PipelineColumn }) {
           <span>{column.title}</span>
           <span className="font-normal text-muted">{column.count}</span>
         </div>
-        <IconButton title={`Add ${column.title} opportunity`} className="size-6">
+        <IconButton
+          title={`Add ${column.title} opportunity`}
+          className="size-6"
+          onClick={() => useUIStore.getState().openCreate("pipeline-deals")}
+        >
           <Plus className={iconClass} aria-hidden="true" />
         </IconButton>
       </div>
@@ -482,40 +501,4 @@ export default function Pipelines() {
                   <Filter className={iconClass} aria-hidden="true" />
                   Filter
                 </Button>
-                <Button type="button" onClick={() => useUIStore.getState().openCreate("pipelines")} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
-                  <Plus className={iconClass} aria-hidden="true" />
-                  New opportunity
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 border-b border-border bg-subtle/40 px-8 pb-3">
-              {(["Owner: Anyone", "Source: Any", "Close date: This quarter", "Value: Any"] as const).map(
-                (label) => (
-                  <FilterBadge
-                    key={label}
-                    active={activePipelineFilter === label}
-                    onClick={() =>
-                      setActivePipelineFilter((cur) => (cur === label ? null : label))
-                    }
-                  >
-                    {label}
-                  </FilterBadge>
-                ),
-              )}
-              <FilterBadge>+ Add filter</FilterBadge>
-            </div>
-
-            <div className="flex-1 overflow-x-auto">
-              <div className="flex min-w-min gap-4 p-6">
-                {pipelineColumns.map((column, index) => (
-                  <KanbanColumn key={column.title} column={_pipelineColumns[index] ?? column} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+                <Button type="button" onClick=

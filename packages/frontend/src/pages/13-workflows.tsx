@@ -520,6 +520,9 @@ export default function Workflows() {
                     type="button"
                     variant="ghost"
                     className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
+                    onClick={() => {
+                      console.warn("TODO: backend endpoint needed — GET /api/workflows/:id/runs");
+                    }}
                   >
                     <History className={iconClass} aria-hidden="true" />
                     Run history
@@ -615,6 +618,10 @@ export default function Workflows() {
                       type="button"
                       variant="secondary"
                       className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
+                      onClick={() => {
+                        console.warn("TODO: backend endpoint needed — POST /api/workflows/:id/steps");
+                        useUIStore.getState().openCreate("workflow-steps");
+                      }}
                     >
                       <Plus className={iconClass} aria-hidden="true" />
                       Add step
@@ -683,29 +690,4 @@ export default function Workflows() {
                   </label>
                   <select className="h-[34px] w-full rounded-md border border-border-strong bg-background px-3 text-[13px] text-foreground outline-none focus:border-foreground focus:ring-[3px] focus:ring-border-subtle">
                     <option>Skip & continue · log error</option>
-                    <option>Pause workflow run</option>
-                    <option>Retry once after 30 min</option>
-                  </select>
-                </div>
-
-                <div className="border-t border-border-subtle pt-3">
-                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                    Last 5 runs
-                  </div>
-                  <div className="space-y-1.5 text-[12px]">
-                    {lastRuns.map(({ time, label, tone }) => (
-                      <div key={`${time}-${label}`} className="flex items-center justify-between">
-                        <span className="text-secondary">{time}</span>
-                        <Badge tone={tone}>{label}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+                    <

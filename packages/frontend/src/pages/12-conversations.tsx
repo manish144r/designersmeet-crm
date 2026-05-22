@@ -461,8 +461,8 @@ export default function Conversations() {
                   <FilterBadge active={activeFilter === "all"} count="137" onClick={() => setActiveFilter("all")}>
                     All
                   </FilterBadge>
-                  <FilterBadge count="12">Unread</FilterBadge>
-                  <FilterBadge count="8">Assigned to me</FilterBadge>
+                  <FilterBadge count="12" active={activeFilter === "unread"} onClick={() => setActiveFilter("unread")}>Unread</FilterBadge>
+                  <FilterBadge count="8" active={activeFilter === "assigned"} onClick={() => setActiveFilter("assigned")}>Assigned to me</FilterBadge>
                 </div>
               </div>
 
@@ -499,6 +499,9 @@ export default function Conversations() {
                   type="button"
                   variant="secondary"
                   className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
+                  onClick={() => {
+                    console.warn("TODO: backend endpoint needed — PATCH /api/conversations/:id/label");
+                  }}
                 >
                   <Tag className={iconClass} aria-hidden="true" />
                   Label
@@ -576,6 +579,9 @@ export default function Conversations() {
                         type="button"
                         variant="secondary"
                         className="h-auto px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
+                        onClick={() => {
+                          console.warn("TODO: backend endpoint needed — POST /api/conversations/drafts");
+                        }}
                       >
                         Save draft
                       </Button>
@@ -658,28 +664,4 @@ export default function Conversations() {
                     <FileText className="size-4 shrink-0 text-muted" aria-hidden="true" />
                     Concept board v3
                   </div>
-                  <div className="flex items-center gap-2 text-[12px] text-secondary">
-                    <FileText className="size-4 shrink-0 text-muted" aria-hidden="true" />
-                    Material palette v2
-                  </div>
-                  <div className="flex items-center gap-2 text-[12px] text-secondary">
-                    <FileText className="size-4 shrink-0 text-muted" aria-hidden="true" />
-                    Brand mark refresh
-                  </div>
-                </div>
-
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-                  Upcoming
-                </div>
-                <div className="text-[12px] text-secondary">
-                  <div className="font-medium text-secondary">Today 11:00 AM</div>
-                  <div className="text-muted">Site walk-through · HSR Penthouse</div>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+                  <div className="flex items-center gap-2 text-[

@@ -1,8 +1,9 @@
 /* Generated from brief/mockups/09-project-detail.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { MouseEventHandler, ReactNode } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useRef, type MouseEventHandler, type ReactNode } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
+  ArrowLeft,
   AtSign,
   BarChart3,
   Bell,
@@ -670,6 +671,7 @@ function VendorRow({ vendor }: { vendor: (typeof vendors)[number] }) {
 
 export default function ProjectDetail() {
   const params = useParams();
+  const navigate = useNavigate();
   const pid = params.id ?? "pj4";
   const p = useItem("projects", pid).data as any;
   const allStages = useList<any>("project-stages").data?.data ?? [];
@@ -677,6 +679,8 @@ export default function ProjectDetail() {
     .filter((s: any) => s.project_id === pid)
     .sort((a: any, b: any) => a.order - b.order);
   const updateStage = useUpdate<any>("project-stages");
+  const [commentBody, setCommentBody] = useState("");
+  const createComment = useUpdate<any>("projects"); // placeholder until comments endpoint exists
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
@@ -688,6 +692,16 @@ export default function ProjectDetail() {
         <main className="flex-1 overflow-auto bg-background">
           <div className="flex h-full flex-col">
             <div className="border-b border-border-subtle px-8 pb-4 pt-6">
+              <div className="mb-3">
+                <button
+                  type="button"
+                  onClick={() => navigate("/projects")}
+                  className="flex items-center gap-1.5 text-[12px] text-secondary hover:text-foreground focus-visible:outline-foreground"
+                >
+                  <ArrowLeft className="size-4" aria-hidden="true" />
+                  Back to Projects
+                </button>
+              </div>
               <div className="flex items-start gap-4">
                 <div className="flex size-12 items-center justify-center rounded-lg border border-border bg-background text-foreground">
                   <Layers className="size-5" aria-hidden="true" />
@@ -713,6 +727,7 @@ export default function ProjectDetail() {
                   <Button
                     type="button"
                     variant="secondary"
+                    onClick={() => { console.warn("TODO: backend endpoint needed — SharePoint project folder URL"); }}
                     className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                   >
                     <FolderOpen className={iconClass} data-icon="inline-start" aria-hidden="true" />
@@ -721,6 +736,7 @@ export default function ProjectDetail() {
                   <Button
                     type="button"
                     variant="secondary"
+                    onClick={() => { console.warn("TODO: backend endpoint needed — Teams channel deep link"); }}
                     className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
                   >
                     <UsersRound className={iconClass} data-icon="inline-start" aria-hidden="true" />
@@ -770,6 +786,7 @@ export default function ProjectDetail() {
                       <Button
                         type="button"
                         variant="secondary"
+                        onClick={() => useUIStore.getState().openCreate("deliverables")}
                         className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
                       >
                         <Plus className={iconClass} data-icon="inline-start" aria-hidden="true" />
@@ -791,6 +808,7 @@ export default function ProjectDetail() {
                       <Button
                         type="button"
                         variant="ghost"
+                        onClick={() => navigate(`/projects/${pid}?tab=tasks`)}
                         className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
                       >
                         Full task list →
@@ -827,6 +845,7 @@ export default function ProjectDetail() {
                       <Button
                         type="button"
                         variant="ghost"
+                        onClick={() => useUIStore.getState().openCreate("vendors")}
                         className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
                       >
                         <UserPlus className={iconClass} data-icon="inline-start" aria-hidden="true" />
@@ -866,52 +885,16 @@ export default function ProjectDetail() {
                           className="w-full resize-none border-0 bg-background text-[13px] text-foreground placeholder:text-muted focus:outline-none"
                           rows={2}
                           placeholder="Comment or @mention…"
+                          value={commentBody}
+                          onChange={(e) => setCommentBody(e.target.value)}
+                          onKeyDown={(e) => {
+                            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && commentBody.trim()) {
+                              console.warn("TODO: backend endpoint needed — POST /api/projects/:id/comments");
+                              setCommentBody("");
+                            }
+                          }}
                         />
                         <div className="mt-1 flex items-center justify-between">
                           <div className="flex gap-1">
-                            <IconButton title="Attach file">
-                              <Paperclip className={iconClass} aria-hidden="true" />
-                            </IconButton>
-                            <IconButton title="Mention">
-                              <AtSign className={iconClass} aria-hidden="true" />
-                            </IconButton>
-                          </div>
-                          <Button
-                            type="button"
-                            className="h-auto bg-primary px-3 py-1 text-[11px] text-background hover:bg-primary-hover"
-                          >
-                            Comment
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <div className="text-[13px] font-semibold text-foreground">Project details</div>
-                    </CardHeader>
-                    <CardContent className="p-0 text-[12.5px]">
-                      {projectDetails.map(([label, value], index) => (
-                        <div
-                          key={label}
-                          className={cn(
-                            "flex justify-between px-4 py-2.5",
-                            index < projectDetails.length - 1 && "border-b border-border-subtle",
-                          )}
-                        >
-                          <span className="text-muted">{label}</span>
-                          <span className="text-foreground">{value}</span>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+                            <IconButton title="Attach file" onClick={() => console.warn("TODO: backend endpoint needed — file attachment")}>
+                              <Paperclip className={iconClass} aria

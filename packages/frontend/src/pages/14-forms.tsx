@@ -1,6 +1,6 @@
 /* Generated from brief/mockups/14-forms.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AlignLeft,
   BarChart3,
@@ -325,6 +325,7 @@ function FormFieldCard({ field }: { field: FormField }) {
 }
 
 export default function Forms() {
+  const [formMode, setFormMode] = useState<"build" | "preview" | "embed" | "logic">("build");
   const _f = useItem("forms", "fm1").data as any;
   const updateForm = useUpdate("forms");
   const responsesCount = useList("form-responses", { formId: "fm1" }).data?.data?.length ?? 0;
@@ -452,10 +453,10 @@ export default function Forms() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center rounded-md border border-border-strong bg-background">
-                    <ModeButton active icon={PencilRuler}>Build</ModeButton>
-                    <ModeButton icon={Eye} onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}>Preview</ModeButton>
-                    <ModeButton icon={Code}>Embed</ModeButton>
-                    <ModeButton icon={Zap} last>Logic</ModeButton>
+                    <ModeButton active={formMode === "build"} icon={PencilRuler} onClick={() => setFormMode("build")}>Build</ModeButton>
+                    <ModeButton active={formMode === "preview"} icon={Eye} onClick={() => { setFormMode("preview"); window.open(previewUrl, "_blank", "noopener,noreferrer"); }}>Preview</ModeButton>
+                    <ModeButton active={formMode === "embed"} icon={Code} onClick={() => { setFormMode("embed"); console.warn("TODO: backend endpoint needed — GET /api/forms/:id/embed-code"); }}>Embed</ModeButton>
+                    <ModeButton active={formMode === "logic"} icon={Zap} last onClick={() => { setFormMode("logic"); console.warn("TODO: backend endpoint needed — GET /api/forms/:id/logic"); }}>Logic</ModeButton>
                   </div>
                   <Button type="button" variant="secondary" className="h-[34px] gap-1.5 px-3.5 py-[7px] text-[13px]" onClick={() => updateForm.mutate({ id: "fm1", patch: {} })}>Save draft</Button>
                   <Button type="button" className="h-[34px] gap-1.5 px-3.5 py-[7px] text-[13px]" onClick={() => updateForm.mutate({ id: "fm1", patch: {} })}>
@@ -491,7 +492,15 @@ export default function Forms() {
                   <div className="flex-1 text-[12px] text-secondary">
                     On submit, this form triggers the workflow <span className="font-semibold text-foreground">Vendor onboarding sequence</span> (7 steps).
                   </div>
-                  <a className="text-[12px] font-medium text-foreground hover:underline">Edit workflow {"\u2192"}</a>
+                  <button
+                    type="button"
+                    className="text-[12px] font-medium text-foreground hover:underline"
+                    onClick={() => {
+                      console.warn("TODO: backend endpoint needed \u2014 navigate to workflow editor for this form's trigger");
+                    }}
+                  >
+                    Edit workflow {"\u2192"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -522,7 +531,14 @@ export default function Forms() {
                         </IconButton>
                       </div>
                     ))}
-                    <Button type="button" variant="ghost" className="h-auto justify-start gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-auto justify-start gap-1.5 px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground"
+                      onClick={() => {
+                        console.warn("TODO: backend endpoint needed — PATCH /api/forms/:id/fields/:fieldId/options");
+                      }}
+                    >
                       <Plus className={iconClass} aria-hidden="true" />
                       Add option
                     </Button>
@@ -530,32 +546,4 @@ export default function Forms() {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted">Required</label>
-                  <label className="flex items-center gap-2 text-[12.5px] text-secondary">
-                    <input type="checkbox" defaultChecked className="rounded border-border-strong accent-foreground" />
-                    Required to submit
-                  </label>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted">Selection limit</label>
-                  <div className="flex items-center gap-2">
-                    <Input defaultValue="1" className={cn("w-16", inputFocusClass)} />
-                    <span className="text-[12px] text-muted">to</span>
-                    <Input defaultValue="6" className={cn("w-16", inputFocusClass)} />
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted">Maps to contact field</label>
-                  <select className="h-[34px] w-full rounded-md border border-border-strong bg-background px-3 text-[13px] text-foreground outline-none transition-colors focus:border-border-strong focus:ring-0">
-                    <option>vendor.skills (array)</option>
-                    <option>custom_fields.skills</option>
-                    <option>Don't map</option>
-                  </select>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+                  <label className="flex items-center gap-2 text-[1

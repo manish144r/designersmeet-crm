@@ -218,10 +218,12 @@ function IconButton({
   title,
   children,
   className,
+  onClick,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
+  onClick?: () => void;
 }) {
   return (
     <Button
@@ -230,6 +232,7 @@ function IconButton({
       size="icon"
       title={title}
       aria-label={title}
+      onClick={onClick}
       className={cn(
         "size-[30px] rounded-md p-0 text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground",
         className,
@@ -589,6 +592,12 @@ export default function Calendar() {
                     type="button"
                     variant="secondary"
                     className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
+                    onClick={() => {
+                      const link = "https://book.designersmeet.com/manish";
+                      navigator.clipboard.writeText(link).catch(() => {
+                        console.warn("TODO: backend endpoint needed — booking link URL from settings");
+                      });
+                    }}
                   >
                     <LinkIcon className={iconClass} aria-hidden="true" />
                     Booking link
@@ -695,6 +704,10 @@ export default function Calendar() {
                   <Button
                     type="button"
                     className="mt-4 h-auto w-full justify-center px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
+                    onClick={() => {
+                      console.warn("TODO: backend endpoint needed — POST /api/calendar-events (booking confirmation)");
+                      useUIStore.getState().openCreate("calendar-events");
+                    }}
                   >
                     Confirm booking
                   </Button>
@@ -745,28 +758,8 @@ export default function Calendar() {
                       </div>
                       <div className="text-[11px] text-muted">Round-robin · 12 bookings</div>
                     </div>
-                    <IconButton title="Copy discovery booking link">
-                      <Copy className={iconClass} aria-hidden="true" />
-                    </IconButton>
-                  </Card>
-
-                  <Card className="flex items-center justify-between rounded-md border-border bg-background p-2.5">
-                    <div>
-                      <div className="text-[12.5px] font-semibold text-foreground">
-                        Site walk — 90 min
-                      </div>
-                      <div className="text-[11px] text-muted">Manish only · 6 bookings</div>
-                    </div>
-                    <IconButton title="Copy site walk booking link">
-                      <Copy className={iconClass} aria-hidden="true" />
-                    </IconButton>
-                  </Card>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+                    <IconButton
+                      title="Copy discovery booking link"
+                      onClick={() => navigator.clipboard.writeText("https://book.designersmeet.com/manish/discovery").catch(() => {})}
+                    >
+                      <Copy className={iconClass} aria-hid

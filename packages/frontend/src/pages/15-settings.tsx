@@ -515,6 +515,9 @@ function IntegrationCard({ integration }: { integration: Integration }) {
                   type="button"
                   variant="secondary"
                   className="h-auto px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
+                  onClick={() => {
+                    console.warn(`TODO: backend endpoint needed — GET /api/integrations/${integration.name.toLowerCase().replace(/\s+/g, "-")}/config`);
+                  }}
                 >
                   Configure
                 </Button>
@@ -522,6 +525,9 @@ function IntegrationCard({ integration }: { integration: Integration }) {
                   type="button"
                   variant="ghost"
                   className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
+                  onClick={() => {
+                    console.warn(`TODO: backend endpoint needed — GET /api/integrations/${integration.name.toLowerCase().replace(/\s+/g, "-")}/logs`);
+                  }}
                 >
                   Logs
                 </Button>
@@ -695,7 +701,7 @@ function UsersRolesPanel() {
           type="button"
           variant="secondary"
           className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
-          onClick={() => undefined}
+          onClick={() => useUIStore.getState().openCreate("users")}
         >
           <Plus className={iconClass} aria-hidden="true" />
           Invite member
@@ -1875,6 +1881,9 @@ export default function Settings() {
                       type="button"
                       variant="secondary"
                       className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
+                      onClick={() => {
+                        console.warn("TODO: backend endpoint needed — navigate to SSO configuration in Entra");
+                      }}
                     >
                       <SettingsIcon className={iconClass} aria-hidden="true" />
                       Configure
@@ -1968,30 +1977,4 @@ export default function Settings() {
                         </div>
                       </div>
                       <Badge variant="success" dot>
-                        Active
-                      </Badge>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-auto px-2.5 py-1.5 text-[13px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
-                      >
-                        Manage
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="mb-6 grid grid-cols-2 gap-4">
-                  {integrations.map((integration) => (
-                    <IntegrationCard key={integration.name} integration={integration} />
-                  ))}
-                </div>
-              </div>
-              )}
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+           
