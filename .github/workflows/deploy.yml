@@ -1,0 +1,50 @@
+name: Backup & Deploy to Vercel
+
+on:
+  push:
+    branches: [master]
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  backup-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --include=dev
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Create backup archive
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          COMMIT=$(git rev-parse --short HEAD)
+          tar -czf backup-${TIMESTAMP}-${COMMIT}.tar.gz \
+            --exclude=node_modules \
+            --exclude=packages/*/node_modules \
+            --exclude=packages/frontend/dist \
+            --exclude=.git \
+            .
+          echo "BACKUP_FILE=backup-${TIMESTAMP}-${COMMIT}.tar.gz" >> $GITHUB_ENV
+
+      - name: Upload backup as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crm-backup-${{ github.sha }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
+
+      - name: Deploy to Vercel (Production)
+        run: npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
