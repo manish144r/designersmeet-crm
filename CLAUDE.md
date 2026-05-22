@@ -127,7 +127,7 @@ DesignersMeet is an AI-augmented freelance arbitrage business in the Night Facto
 
 Target revenue: $10K/month at scale.
 
-## Design Architecture Agent
+## Design Architecture Agent (legacy invocation)
 
 **Model:** `claude-opus-4-7`
 
@@ -147,3 +147,23 @@ The Design Architect runs at two mandatory points around every Aider UI brief.
 - NO build merges without a conformance PASS.
 
 Full spec: `brief/design-architecture-agent-spec.md`. Worked example: `brief/design-docs/BRIEF-EXAMPLE-design.md`.
+
+## Agent Training Framework
+All agents are trained via the `agents/` directory in this repo. The Design Architecture Agent above is the runtime invocation; the files below are the per-agent training docs that govern its behaviour (and every other agent in the pipeline).
+
+Before starting any build: read the relevant agent training file.
+After any failure: update `agents/lessons-learned.md`.
+Run `./agents/retro-runner.sh` weekly.
+
+- `agents/00-pipeline-master-checklist.md` — phase-by-phase pass/fail gates
+- `agents/01-design-architect-agent.md` — Opus 4.7, first gate, design doc owner
+- `agents/02-builder-agent.md` — Aider + Sonnet, implements against the doc
+- `agents/03-reviewer-agent.md` — Codex, BLOCKs anything that drifts
+- `agents/04-tester-agent.md` — Playwright + Vitest + axe-core
+- `agents/05-security-agent.md` — OWASP Top 10, SAST/DAST, secrets
+- `agents/06-devops-agent.md` — CI/CD, IaC, monitoring, runbooks
+- `agents/07-self-learning-system.md` — how lessons feed back into training
+- `agents/08-mobile-ios-windows-linux.md` — platform-specific add-ons
+- `agents/09-website-specific.md` — SEO, perf, a11y, analytics, e-commerce
+- `agents/lessons-learned.md` — append-only failure log
+- `agents/retro-runner.sh` — weekly retro generator
