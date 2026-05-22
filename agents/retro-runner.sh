@@ -1,233 +1,124 @@
 #!/usr/bin/env bash
-# retro-runner.sh — Weekly retro for the NightFactory Aider pipeline.
-# Reads agents/lessons-learned.md, counts failures by agent and phase,
-# surfaces top patterns, writes agents/retro-summary-YYYY-MM-DD.md,
-# prints which agent training files need updating.
+# agents/retro-runner.sh
+# Weekly retro: read lessons-learned.md, group by agent and phase, surface top patterns,
+# write a dated summary, and print which training files probably need updating.
 #
-# Usage:   bash agents/retro-runner.sh
-# Cron:    Mondays 09:00 local (Linux/macOS) or via Windows Task Scheduler
-#          calling `bash` directly with this script's absolute path.
+# Usage:
+#   bash agents/retro-runner.sh                # run today's retro
+#   bash agents/retro-runner.sh 2026-05-22     # run a back-dated retro
 #
 # Exit codes:
-#   0  retro produced
-#   1  lessons-learned.md not found
-#   2  lessons-learned.md has no data rows
-#   3  malformed row(s) detected (still produces the summary; flagged at top)
+#   0 — summary written
+#   1 — lessons-learned.md missing
+#   2 — no entries found
 
 set -euo pipefail
 
-# ── Locate inputs / outputs ───────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LESSONS="${SCRIPT_DIR}/lessons-learned.md"
-TODAY="$(date +%Y-%m-%d)"
-SUMMARY="${SCRIPT_DIR}/retro-summary-${TODAY}.md"
+TODAY="${1:-$(date +%Y-%m-%d)}"
+OUT="${SCRIPT_DIR}/retro-summary-${TODAY}.md"
 
-if [[ ! -f "${LESSONS}" ]]; then
-  echo "[retro-runner] FATAL: ${LESSONS} not found" >&2
+if [ ! -f "$LESSONS" ]; then
+  echo "ERROR: $LESSONS not found." >&2
   exit 1
 fi
 
-# ── Parse table rows (skip header + separator) ────────────────────────────────
-# Table rows start with `| YYYY-MM-DD |` — that anchor avoids picking up
-# narrative lines that contain pipes.
-mapfile -t ROWS < <(grep -E '^\| [0-9]{4}-[0-9]{2}-[0-9]{2} \|' "${LESSONS}" || true)
-
-if [[ "${#ROWS[@]}" -eq 0 ]]; then
-  echo "[retro-runner] WARN: no data rows in ${LESSONS}" >&2
+# Each lesson entry starts with "## YYYY-MM-DD —"
+ENTRIES=$(grep -c '^## [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}' "$LESSONS" || true)
+if [ "$ENTRIES" -eq 0 ]; then
+  echo "No lesson entries found in $LESSONS." >&2
   exit 2
 fi
 
-TOTAL="${#ROWS[@]}"
-MALFORMED=0
+# Count failures by Agent.
+AGENT_COUNTS=$(grep -E '^\| Agent \|' "$LESSONS" \
+  | sed -E 's/.*Agent \| //; s/ \|.*//' \
+  | tr ',' '\n' | sed 's/^ *//; s/ *$//' \
+  | grep -E '^[0-9]+' \
+  | sort | uniq -c | sort -rn || true)
 
-declare -A AGENT_COUNT=()
-declare -A PHASE_COUNT=()
-declare -A PAIR_COUNT=()        # "<agent>|<phase>" → count
-declare -A UNVERIFIED=()        # "<agent>|<phase>" → count where verified != Y
-declare -a FILES_TO_UPDATE=()
+# Count failures by Phase.
+PHASE_COUNTS=$(grep -E '^\| Phase \|' "$LESSONS" \
+  | sed -E 's/.*Phase \| //; s/ \|.*//' \
+  | sort | uniq -c | sort -rn || true)
 
-normalise() {
-  # trim leading/trailing whitespace
-  local s="$1"
-  s="${s#"${s%%[![:space:]]*}"}"
-  s="${s%"${s##*[![:space:]]}"}"
-  printf '%s' "${s}"
-}
+# Count failures by Severity.
+SEV_COUNTS=$(grep -E '^\| Severity \|' "$LESSONS" \
+  | sed -E 's/.*Severity \| //; s/ \|.*//' \
+  | sort | uniq -c | sort -rn || true)
 
-agent_to_file() {
-  # Map the human-readable agent name to its training file.
-  case "$1" in
-    Architect|architect|Design\ Architect)         echo "01-design-architect-agent.md" ;;
-    Builder|builder)                               echo "02-builder-agent.md" ;;
-    Reviewer|reviewer|Code\ Reviewer)              echo "03-reviewer-agent.md" ;;
-    Tester|tester)                                 echo "04-tester-agent.md" ;;
-    Security|security)                             echo "05-security-agent.md" ;;
-    DevOps|devops|CI/CD)                           echo "06-devops-agent.md" ;;
-    Platform|platform|Mobile|iOS|Windows|Linux)    echo "08-platform-agents.md" ;;
-    Website|website|Web|PWA)                       echo "09-website-agent.md" ;;
-    *)                                             echo "" ;;
-  esac
-}
+# "Top recurring patterns" — group lesson titles by first 3 significant words.
+TITLES=$(grep -E '^## [0-9]{4}-[0-9]{2}-[0-9]{2} — ' "$LESSONS" \
+  | sed -E 's/^## [0-9]{4}-[0-9]{2}-[0-9]{2} — //' || true)
 
-# ── Walk rows ────────────────────────────────────────────────────────────────
-for row in "${ROWS[@]}"; do
-  # Split on `|` and drop the leading/trailing empty fields.
-  IFS='|' read -r -a cols <<< "${row}"
-  # cols[0] is empty because the row starts with `|`
-  if [[ "${#cols[@]}" -lt 8 ]]; then
-    MALFORMED=$((MALFORMED + 1))
-    continue
-  fi
+# Identify which agent files need updating based on top agents.
+TRAINING_FILES_NEEDING_UPDATE=$(echo "$AGENT_COUNTS" \
+  | awk '$1 >= 2 {print $2}' \
+  | while read -r agent; do
+      ls "${SCRIPT_DIR}"/${agent}-*.md 2>/dev/null || true
+    done || true)
 
-  agent="$(normalise "${cols[2]}")"
-  phase="$(normalise "${cols[3]}")"
-  verified="$(normalise "${cols[7]}")"
-
-  if [[ -z "${agent}" || -z "${phase}" ]]; then
-    MALFORMED=$((MALFORMED + 1))
-    continue
-  fi
-
-  AGENT_COUNT["${agent}"]=$(( ${AGENT_COUNT["${agent}"]:-0} + 1 ))
-  PHASE_COUNT["${phase}"]=$(( ${PHASE_COUNT["${phase}"]:-0} + 1 ))
-  PAIR_COUNT["${agent}|${phase}"]=$(( ${PAIR_COUNT["${agent}|${phase}"]:-0} + 1 ))
-
-  if [[ "${verified}" != "Y" && "${verified}" != "y" ]]; then
-    UNVERIFIED["${agent}|${phase}"]=$(( ${UNVERIFIED["${agent}|${phase}"]:-0} + 1 ))
-  fi
-done
-
-# ── Build the top patterns lists ──────────────────────────────────────────────
-sorted_pairs() {
-  local -n src=$1
-  for key in "${!src[@]}"; do
-    printf '%s\t%s\n' "${src[${key}]}" "${key}"
-  done | sort -rn -k1,1
-}
-
-top_n() {
-  local n=$1
-  shift
-  head -n "${n}" "$@"
-}
-
-# ── Write the summary ─────────────────────────────────────────────────────────
 {
   echo "# Retro Summary — ${TODAY}"
   echo
-  echo "> Generated by \`agents/retro-runner.sh\`. Source: \`agents/lessons-learned.md\`."
-  echo
-  echo "## Totals"
-  echo "- Lessons logged: **${TOTAL}**"
-  echo "- Malformed rows skipped: **${MALFORMED}**"
+  echo "_Source: \`agents/lessons-learned.md\` (${ENTRIES} entries total)._"
   echo
   echo "## Failures by Agent"
   echo
-  echo "| Agent | Count |"
-  echo "|-------|-------|"
-  if [[ "${#AGENT_COUNT[@]}" -gt 0 ]]; then
-    for k in "${!AGENT_COUNT[@]}"; do printf '%s\t%s\n' "${AGENT_COUNT[$k]}" "${k}"; done \
-      | sort -rn -k1,1 \
-      | awk -F'\t' '{printf "| %s | %s |\n", $2, $1}'
+  if [ -n "$AGENT_COUNTS" ]; then
+    echo '```'
+    echo "$AGENT_COUNTS"
+    echo '```'
   else
-    echo "| (none) | 0 |"
+    echo "_No agent-tagged failures._"
   fi
   echo
   echo "## Failures by Phase"
   echo
-  echo "| Phase | Count |"
-  echo "|-------|-------|"
-  if [[ "${#PHASE_COUNT[@]}" -gt 0 ]]; then
-    for k in "${!PHASE_COUNT[@]}"; do printf '%s\t%s\n' "${PHASE_COUNT[$k]}" "${k}"; done \
-      | sort -rn -k1,1 \
-      | awk -F'\t' '{printf "| %s | %s |\n", $2, $1}'
+  if [ -n "$PHASE_COUNTS" ]; then
+    echo '```'
+    echo "$PHASE_COUNTS"
+    echo '```'
   else
-    echo "| (none) | 0 |"
+    echo "_No phase-tagged failures._"
   fi
   echo
-  echo "## Top 3 Recurring Patterns (Agent × Phase)"
+  echo "## Failures by Severity"
   echo
-  echo "| # | Agent | Phase | Count |"
-  echo "|---|-------|-------|-------|"
-  rank=1
-  if [[ "${#PAIR_COUNT[@]}" -gt 0 ]]; then
-    for k in "${!PAIR_COUNT[@]}"; do printf '%s\t%s\n' "${PAIR_COUNT[$k]}" "${k}"; done \
-      | sort -rn -k1,1 \
-      | head -n 3 \
-      | while IFS=$'\t' read -r cnt key; do
-          agent="${key%%|*}"
-          phase="${key##*|}"
-          printf '| %d | %s | %s | %s |\n' "${rank}" "${agent}" "${phase}" "${cnt}"
-          rank=$((rank + 1))
-        done
+  if [ -n "$SEV_COUNTS" ]; then
+    echo '```'
+    echo "$SEV_COUNTS"
+    echo '```'
   else
-    echo "| - | (none) | - | 0 |"
+    echo "_No severity-tagged failures._"
   fi
   echo
-  echo "## Unverified Lessons (rule logged, not yet confirmed)"
+  echo "## Lesson titles (newest first)"
   echo
-  echo "| Agent | Phase | Count |"
-  echo "|-------|-------|-------|"
-  if [[ "${#UNVERIFIED[@]}" -gt 0 ]]; then
-    for k in "${!UNVERIFIED[@]}"; do printf '%s\t%s\n' "${UNVERIFIED[$k]}" "${k}"; done \
-      | sort -rn -k1,1 \
-      | awk -F'\t' '{
-          split($2, a, "|");
-          printf "| %s | %s | %s |\n", a[1], a[2], $1
-        }'
+  echo "$TITLES" | sed 's/^/- /'
+  echo
+  echo "## Training updates likely needed"
+  echo
+  if [ -n "$TRAINING_FILES_NEEDING_UPDATE" ]; then
+    echo "Agents with 2+ logged failures should be audited this week:"
+    echo
+    echo "$TRAINING_FILES_NEEDING_UPDATE" | sed 's|.*/agents/|- agents/|'
   else
-    echo "| (none) | - | 0 |"
+    echo "_No agent has 2+ failures in the log — no audit required this week._"
   fi
   echo
-  echo "## Training Files To Update"
-  echo
-  declare -A SEEN=()
-  any_target=0
-  for agent in "${!AGENT_COUNT[@]}"; do
-    file="$(agent_to_file "${agent}")"
-    if [[ -n "${file}" && -z "${SEEN[${file}]:-}" ]]; then
-      SEEN["${file}"]=1
-      printf -- '- [ ] `agents/%s` — review lessons from agent **%s** (%s incident(s))\n' \
-        "${file}" "${agent}" "${AGENT_COUNT[${agent}]}"
-      any_target=1
-    fi
-  done
-  if [[ "${any_target}" -eq 0 ]]; then
-    echo "- (none — no lessons map to training files)"
-  fi
-  echo
-  echo "## Escalation Candidates"
-  echo
-  echo "Patterns at count ≥ 3 should be auto-enforced (lint / pre-commit / CI guard) per \`07-self-learning-system.md\` §6."
-  echo
-  for k in "${!PAIR_COUNT[@]}"; do
-    if [[ "${PAIR_COUNT[$k]}" -ge 3 ]]; then
-      agent="${k%%|*}"
-      phase="${k##*|}"
-      echo "- **${agent} / ${phase}** (count=${PAIR_COUNT[$k]}) → promote rule to machine-enforced check."
-    fi
-  done
-  echo
-  echo "## Next Actions"
-  echo "- Owners assigned per \`Training Files To Update\` above."
-  echo "- Each owner opens a PR within 7 days updating the rule + adding (or escalating) the auto-enforce hook."
-  echo "- Verified column flips to Y on the next retro if the rule held."
-} > "${SUMMARY}"
+  echo "---"
+  echo "_Action: for every Agent in the list above, walk its training file and confirm a"
+  echo "check exists that would have caught the failure. If not, add it, push, log the_"
+  echo "_change as a new lesson entry. See agents/07-self-learning-system.md._"
+} > "$OUT"
 
-# ── Console summary ───────────────────────────────────────────────────────────
-echo "[retro-runner] Wrote ${SUMMARY}"
-echo "[retro-runner] Lessons total: ${TOTAL} | malformed: ${MALFORMED}"
-echo "[retro-runner] Training files to update:"
-declare -A SEEN_OUT=()
-for agent in "${!AGENT_COUNT[@]}"; do
-  file="$(agent_to_file "${agent}")"
-  if [[ -n "${file}" && -z "${SEEN_OUT[${file}]:-}" ]]; then
-    SEEN_OUT["${file}"]=1
-    echo "  - agents/${file}  (agent=${agent}, incidents=${AGENT_COUNT[${agent}]})"
-  fi
-done
-
-if [[ "${MALFORMED}" -gt 0 ]]; then
-  exit 3
+echo "Wrote $OUT"
+echo
+echo "Training update needed in:"
+if [ -n "$TRAINING_FILES_NEEDING_UPDATE" ]; then
+  echo "$TRAINING_FILES_NEEDING_UPDATE" | sed 's|.*/agents/|  agents/|'
+else
+  echo "  (none — no agent has 2+ failures)"
 fi
-exit 0

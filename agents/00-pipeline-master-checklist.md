@@ -1,221 +1,393 @@
 # 00 — Pipeline Master Checklist
-> NightFactory Aider pipeline. Binary pass/fail every phase. No grey area.
-> Owner: Manish Sharma. Last sync from NightFactory: `architecture-review-package.md`, `code-review-round1.md`, `review-synthesis.md`, `prod_readiness_checklist.md`, `AGENTS.md`, `DEPLOY_TURBO_MAX.md`.
+
+> The single source of truth for "did we build this app robustly on the first go?"
+> Every check is binary (PASS / FAIL). No subjective judgement.
+> If a gate fails, the pipeline stops. No exceptions, no "ship anyway".
+>
+> Owners listed per check map to the agent files in this directory:
+> Design Architect (01), Builder (02), Reviewer (03), Tester (04), Security (05), DevOps (06).
+>
+> Mined from NightFactory: `architecture-review-package.md`, `codex-deliverables/prod_readiness_checklist.md`,
+> `crm-app/CODE_REVIEW.md`, `crm-app/PIPELINE_RUN_LOG.md`, `crm-app/AIDER-HANDOFF-2026-05-19-V2.md`,
+> `crm-app/reviews/pass1-*.md`. Real failures from those reviews drive the binary checks below.
 
 ---
 
-## Phase 0 — PRE-BUILD (kick-off gate)
+## How to use this file
 
-Goal: nothing leaves planning until the brief is complete, locked, and routable.
-
-| # | Check | Pass = | Fail action |
-|---|-------|--------|-------------|
-| 0.1 | Knowledge graph queried for prior work on this domain | `knowledge_query` hit list attached to brief | Re-run query; cite results in `brief/sources.md` |
-| 0.2 | Business owner (Night Factory portfolio line) named | One of: ProcessBI / Designersmeet / RawFit / DentalOps / AtomicSMSF | Reject brief |
-| 0.3 | Target users + roles enumerated | Internal / external / admin matrix in brief | Reject |
-| 0.4 | Success metric is numeric | e.g. `LCP < 2.5s`, `pass-rate ≥ 95%`, `$10K MRR` | Rewrite KPI |
-| 0.5 | Out-of-scope list exists | Explicit `WILL NOT` bullets | Add list |
-| 0.6 | Threat model done (STRIDE) | `brief/threat-model.md` exists | Block |
-| 0.7 | Cost ceiling agreed | `cost_budgets_usd` in routing config | Refuse start |
-| 0.8 | Model routing decided | Architect=Opus 4.7, Builder=Aider+Sonnet, Reviewer=Codex, Tester=Playwright | Re-route |
-| 0.9 | Worktree created (isolated) | Path: `.claude/worktrees/<adjective-name>` | Use `using-git-worktrees` skill |
-| 0.10 | Pipeline log opened | `PIPELINE_RUN_LOG.md` created with date and version | Create |
-
-Exit gate: every row green or PRE-BUILD halts pipeline.
+1. Copy this file into the build folder for each new feature/app.
+2. Tick the box ONLY when the artefact exists and was reviewed. No "trust me".
+3. Phase gates are blocking. Do not move to the next phase until every check in the current phase is PASS.
+4. If a check is "N/A", state the reason in writing in the same line.
+5. Update `agents/lessons-learned.md` for any new failure mode discovered.
 
 ---
 
-## Phase 1 — REQUIREMENTS (lock the design)
+## PRE-BUILD PHASE (Design Architect — agent 01)
 
-Goal: produce a design doc the builder can implement without improvising.
+Gate owner: **Design Architect**. No code may be written until every check below is PASS.
 
-| # | Check | Pass = | Notes |
-|---|-------|--------|-------|
-| 1.1 | Functional requirements numbered (FR-1..FR-n) | Each FR has acceptance criteria | One AC = one test later |
-| 1.2 | Non-functional requirements numbered (NFR) | Perf, a11y, security, i18n | Bind to budgets |
-| 1.3 | ERD drawn | `brief/erd.md` or PNG | 3NF unless flagged |
-| 1.4 | API contract written | OpenAPI 3.1 in `brief/openapi.yaml` | Error envelopes defined |
-| 1.5 | RBAC permission matrix | Role × resource × verb table | Deny-by-default |
-| 1.6 | Element × action table per page | Every button/input has wiring + state | Lesson from 2026-05-22 |
-| 1.7 | Filter elements have dropdown options | No `prompt()` placeholders | Lesson from 2026-05-22 |
-| 1.8 | TypeScript strict mode declared | `tsconfig` strict + noImplicitAny | Lesson from 2026-05-22 |
-| 1.9 | Design tokens locked | `brief/tokens.json` + Style Dictionary build | DM design-lock standard |
-| 1.10 | Visual baselines captured | Storybook + Playwright snapshots | Self-baseline only |
-| 1.11 | Threat model maps to NFRs | STRIDE × component grid | Architect signs |
-| 1.12 | Architect sign-off | Commit SHA recorded | Frozen brief |
+### Requirements
+- [ ] Functional requirements written as user stories with Given/When/Then acceptance criteria
+- [ ] Non-functional requirements documented and measurable:
+  - [ ] Performance: page load p95, API p95, throughput target
+  - [ ] Security: auth flow, session timeout, secrets storage location named
+  - [ ] Accessibility: WCAG 2.1 AA conformance target
+  - [ ] Scalability: expected user count at 1×, 10×, 100×
+- [ ] Business rules enumerated (every "must" / "must not" the product owner stated)
 
-Exit gate: brief committed under `brief/` and protected (CODEOWNERS or pre-commit guard).
+### Architecture Decision Records (ADRs)
+- [ ] Every framework / library / cloud service choice has a 1-page ADR
+- [ ] Each ADR lists: decision, context, alternatives considered, rationale, consequences
+- [ ] ADRs stored in `docs/adr/NNNN-<slug>.md` with sequential numbering
+- [ ] No technology choice is "implicit" — if it is in `package.json`, it has an ADR or is in the framework defaults
 
----
+### Threat Modelling (STRIDE)
+- [ ] Data flow diagram drawn for every trust boundary
+- [ ] For each data flow, all 6 STRIDE categories assessed:
+  - [ ] Spoofing
+  - [ ] Tampering
+  - [ ] Repudiation
+  - [ ] Information disclosure
+  - [ ] Denial of service
+  - [ ] Elevation of privilege
+- [ ] Each identified risk has a mitigation OR explicit acceptance with sign-off
 
-## Phase 2 — DURING-BUILD (Aider+Sonnet writes code)
+### Design Doc (the 5-section template — see agent 01)
+- [ ] Section 1: Data model (every entity, every field, every relationship)
+- [ ] Section 2: API contracts (OpenAPI 3.1 spec, all endpoints, all schemas)
+- [ ] Section 3: RBAC matrix (every role × every resource × every action, deny-by-default)
+- [ ] Section 4: UX interaction spec (every screen, every state, every transition)
+- [ ] Section 5: Operational spec (deploy topology, monitoring, alerting, runbooks)
+- [ ] Design doc approved by Design Architect (PR merged) before any build PR is opened
 
-Goal: code matches the locked brief — nothing more, nothing less.
+### OpenAPI Spec
+- [ ] `docs/openapi.yaml` exists for every backend
+- [ ] Every route in the design doc has a matching OpenAPI operation
+- [ ] Every operation has: parameters, requestBody schema, all response codes with schemas
+- [ ] Common error envelope schema reused on every error response
+- [ ] `npm run openapi:lint` (spectral) passes with 0 errors
 
-| # | Check | Pass = | Owner |
-|---|-------|--------|-------|
-| 2.1 | TDD: failing test exists before code | Red test in branch HEAD | Builder |
-| 2.2 | One PR == one FR | Diff scoped to a single feature | Builder |
-| 2.3 | Atomic conventional commits | `feat|fix|chore|test|docs(scope):` | Builder |
-| 2.4 | No decorative buttons | Every button wired to action OR removed | Builder + Reviewer |
-| 2.5 | No `prompt()` / `alert()` | Use proper form components | Builder |
-| 2.6 | No raw colors | `npm run lint` passes `dm/no-raw-color` | Builder |
-| 2.7 | TypeScript strict — no `any` | `npm run typecheck` green | Builder |
-| 2.8 | Parameterised queries only | Grep finds zero string-concat SQL | Builder |
-| 2.9 | Inputs validated via Zod | Boundary schemas in `packages/shared` | Builder |
-| 2.10 | No PII / secrets in logs | Logger redacts; scanner clean | Builder |
-| 2.11 | aria-label on every actionable element | axe-core score 100 | Builder |
-| 2.12 | Lazy load images + heavy routes | `loading="lazy"` + `React.lazy` | Builder |
-| 2.13 | Memoise hot paths (>16ms) | React Profiler trace attached | Builder |
-| 2.14 | No `console.log` left | Pre-commit hook blocks | Builder |
-| 2.15 | Element × action table cross-checked | Every row implemented | Builder |
-| 2.16 | Aider model fallback runner used | `aider_run.py` with OpenRouter→SambaNova→Mistral | Builder |
+### Database Schema
+- [ ] Tables documented in `docs/data-model.md` with field name, type, constraints, validation rules
+- [ ] 3NF unless explicitly denormalised — denormalisation has a written rationale
+- [ ] Every FK has a corresponding index
+- [ ] Every table has: `id`, `created_at`, `updated_at`, `created_by`, `updated_by`
+- [ ] Every multi-tenant table has `tenant_id` indexed and on every query path
+- [ ] Soft delete (`deleted_at`) defined OR explicit decision to hard-delete documented
+- [ ] Row-Level Security (RLS) policy written for every tenant-scoped table
+- [ ] Query plan reviewed for top 10 expected queries — no full table scans on hot paths
 
-Exit gate: PR opens with a self-fill checklist where every box is ticked.
+### RBAC Matrix
+- [ ] Roles enumerated (internal + external, each surface separate)
+- [ ] Resources enumerated (every entity + every action verb)
+- [ ] Matrix cell explicitly marked Allow or Deny — no blanks
+- [ ] Deny-by-default rule confirmed in code (`requireRole` middleware on every route)
+- [ ] Cross-tenant access explicitly forbidden in every read query
 
----
+### UX
+- [ ] Wireframes approved
+- [ ] Visual mockups approved
+- [ ] Design tokens generated (Style Dictionary or equivalent) — no raw hex in code
+- [ ] Brand lock check script exists (`scripts/brand-lock-check.mjs` pattern from crm-app)
+- [ ] Component inventory matches mockups (no orphan components, no missing components)
 
-## Phase 3 — AFTER-BUILD (Codex reviewer + Playwright tester)
+### Accessibility Plan
+- [ ] WCAG 2.1 AA target stated for the app
+- [ ] Component-level a11y plan (every interactive element has known keyboard contract + aria pattern)
+- [ ] Screen reader test plan (NVDA on Windows, VoiceOver on macOS/iOS)
+- [ ] Colour contrast verified ≥ 4.5:1 for text, ≥ 3:1 for UI components
 
-Goal: independent verification by a different model family.
+### Performance Budget
+- [ ] Page load LCP < 2.5s on 3G (or explicit slower target with rationale)
+- [ ] API p95 response time < 500ms for read, < 1s for write
+- [ ] Bundle size budget per route (e.g., main < 200KB gz, per-route chunks < 50KB gz)
+- [ ] Lighthouse CI score gates: perf ≥ 80, a11y ≥ 90, best-practices ≥ 90, SEO ≥ 90
 
-| # | Check | Pass = | Owner |
-|---|-------|--------|-------|
-| 3.1 | Codex reviews against the brief, not just style | Cites FR/NFR numbers in comments | Reviewer |
-| 3.2 | OWASP Top 10 sweep complete | Reviewer ticks all 10 | Reviewer |
-| 3.3 | Performance anti-patterns flagged | N+1, unbounded maps, leaking listeners | Reviewer |
-| 3.4 | Accessibility anti-patterns flagged | Missing labels, focus traps, keyboard-only | Reviewer |
-| 3.5 | Tests: 1 per AC | Test ID == AC ID | Tester |
-| 3.6 | Page Object Model used | No raw selectors in spec files | Tester |
-| 3.7 | axe-core a11y per page | 0 serious / 0 critical | Tester |
-| 3.8 | Visual regression vs self-baseline | ≤2% drift / ≤0.5% on logo+CTA | Tester |
-| 3.9 | API schema validation | Response matches OpenAPI 3.1 | Tester |
-| 3.10 | Negative tests run | Invalid input, wrong role, network fail | Tester |
-| 3.11 | Persona suite (5×20×25×4 = 10,000 cases) | Critical subset 100%, full ≥95% | Tester |
-| 3.12 | Block on: decorative element / hardcoded secret / missing error state / critical TODO | Pipeline halts | Reviewer |
+### Security Requirements
+- [ ] Auth provider chosen (Entra ID / Auth0 / Cognito) with ADR
+- [ ] Token type, lifetime, refresh strategy documented
+- [ ] Session storage location (HttpOnly cookie / sessionStorage / memory) decided
+- [ ] Secrets management: Key Vault / Secrets Manager — no `.env` in production decision recorded
+- [ ] CORS allowlist drawn (no `*` in production)
+- [ ] Security headers list documented: HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy
 
-Exit gate: Codex `APPROVE` comment + Playwright report green.
-
----
-
-## Phase 4 — PRE-DEPLOY (release engineering)
-
-Goal: prove the artifact is shippable, not just buildable.
-
-| # | Check | Pass = | Notes |
-|---|-------|--------|-------|
-| 4.1 | `npm run build` deterministic | Two runs produce identical hashes | |
-| 4.2 | Container image scanned | Trivy / Grype: 0 high, 0 critical | |
-| 4.3 | Dependency audit clean | `npm audit --omit=dev`: 0 high/critical | |
-| 4.4 | Secrets pulled from Key Vault | No `.env` in image; loader script verified | |
-| 4.5 | IaC plan reviewed | `bicep what-if` / `terraform plan` attached | |
-| 4.6 | Staging deploy succeeded | Smoke test green on staging URL | |
-| 4.7 | Staging == prod (minus data) | Drift report empty | |
-| 4.8 | Rollback rehearsed | One-command rollback documented | |
-| 4.9 | Migration is reversible | `migrate:down` works on a copy | |
-| 4.10 | Feature flag default off | `growthbook`/`launchdarkly` toggle inactive | |
-| 4.11 | Pass-score ≥ 95% (Aider gate) | Model-pair tier hit; gap report attached if not | DRAFT only if gap |
-| 4.12 | Release notes drafted | What changed / who feels it / how to roll back | |
-
-Exit gate: change advisory record signed (one human OR architect-agent + reviewer-agent dual sign).
+**Gate: Design Architect signs PR. No build until merged.**
 
 ---
 
-## Phase 5 — POST-DEPLOY (first 24 hours)
+## REQUIREMENTS PHASE (Design Architect — agent 01)
 
-| # | Check | Pass = | Notes |
-|---|-------|--------|-------|
-| 5.1 | Health probe returns 200 for 15 min | Liveness + readiness | |
-| 5.2 | Error rate vs baseline | ≤ +0.5% | |
-| 5.3 | Latency p95 vs baseline | ≤ +10% | |
-| 5.4 | Cost burn vs forecast | ≤ +15% | |
-| 5.5 | No new Sev1/Sev2 alerts | Pager silence | |
-| 5.6 | Canary at 5% → 25% → 100% staircase | Each step held ≥ 15 min | |
-| 5.7 | Tracing IDs in logs | `trace_id` end-to-end | |
-| 5.8 | Smoke test for the named feature | Real user flow recorded | |
+### User stories
+- [ ] Every story has an ID (e.g., `US-014`)
+- [ ] Every story has Given/When/Then acceptance criteria
+- [ ] Every story has an estimated effort (T-shirt or story points)
+- [ ] Every story has a priority (P0 must / P1 should / P2 nice)
 
-Exit gate: 24h soak passes → flag flipped to 100%; otherwise rollback.
+### Non-functional requirements
+- [ ] Each NFR has a measurable target and a measurement method
+- [ ] NFRs are testable in CI (e.g., k6 script asserts API p95 < 500ms)
 
----
+### API contracts
+- [ ] OpenAPI 3.1 spec is the contract — backend tests assert response matches schema
+- [ ] Frontend client generated from OpenAPI (`openapi-typescript` or similar) — no hand-written types
 
-## Phase 6 — OPS + FEEDBACK (steady state)
+### Error catalogue
+- [ ] Every error has a stable code (e.g., `ORDER_NOT_FOUND`)
+- [ ] Every code has a user-facing message
+- [ ] Every code has a developer-facing message (logged, not surfaced to user)
+- [ ] HTTP status code mapped per error code
+- [ ] Error envelope: `{ code, message, correlationId, details? }`
 
-| # | Check | Cadence | Notes |
-|---|-------|---------|-------|
-| 6.1 | Lessons-learned entries reviewed | Weekly retro | `agents/lessons-learned.md` |
-| 6.2 | Top-3 failure patterns identified | Weekly | Drives training updates |
-| 6.3 | Agent training files updated | Within 7 days of a Sev1 | See `07-self-learning-system.md` |
-| 6.4 | Dependency audit | Weekly | Auto-PR via Renovate / Dependabot |
-| 6.5 | Secret rotation drill | Quarterly | All `*_KEY` env vars |
-| 6.6 | Chaos drill | Quarterly | Worker death, queue saturation, DLQ storm, Supabase outage |
-| 6.7 | Cost ledger reviewed | Weekly | `agent_cost_ledger` per agent vs budget |
-| 6.8 | Persona UX suite scheduled run | Daily critical, weekly full | `scripts/dm-ux-run.ps1` template |
-| 6.9 | KPI dashboard read | Weekly | Compare to Phase-0 success metric |
+### Data dictionary
+- [ ] Every field: name, type, nullable?, default, validation regex/range, PII flag
+- [ ] PII fields marked — drives encryption-at-rest and log scrubbing
 
----
+### Dependency audit
+- [ ] Every third-party lib has: name, version, licence, last-released date, vulnerability count
+- [ ] No high/critical CVEs without documented exception
+- [ ] No GPL/AGPL deps (or explicit legal review)
+- [ ] Bundle impact recorded for FE deps (`bundlephobia` or `vite-bundle-visualizer`)
 
-## Phase 7 — FUTURE-ENHANCEMENTS (forward queue)
+### Compliance
+- [ ] GDPR / Privacy Act applicability assessed
+- [ ] If PII: DPIA (Data Protection Impact Assessment) completed
+- [ ] If payments: PCI DSS scope documented
+- [ ] Accessibility law applicability (DDA-AU, ADA-US, EAA-EU) confirmed
 
-Treat as a Kanban with strict WIP=3.
-
-| # | Practice | Pass = |
-|---|----------|--------|
-| 7.1 | New ideas captured as one-line tickets, not threads | Ticket = title + outcome + owner |
-| 7.2 | Every enhancement starts at Phase 0 | No skipping back into the build |
-| 7.3 | Quarterly architecture review | `architecture-review-package.md` rerun against current system |
-| 7.4 | Sunset list maintained | Anything unused 90 days → flagged for delete |
-| 7.5 | Knowledge graph entries added per enhancement | `knowledge/<topic>/*.md` |
+**Gate: Design Architect approves. Requirements PR merged.**
 
 ---
 
-## CI/CD Pipeline Spec
+## DURING-BUILD PHASE (Builder — agent 02)
 
-```
-PR opened
-  → lint + typecheck + unit (parallel, ≤5 min)
-  → Codex review (advisory; blocking comments must resolve)
-  → build artifact + SBOM
-  → security scan (Trivy, npm audit, gitleaks)
-  → staging deploy on merge to main
-  → smoke tests on staging
-  → manual approval gate (or architect-agent dual sign)
-  → canary 5% → 25% → 100% (each step soak ≥ 15 min)
-  → post-deploy probes
-  → flag flip
-  → close release notes
-```
+### TDD discipline
+- [ ] Test file created before implementation file (or in same commit)
+- [ ] Red → Green → Refactor visible in commit history
+- [ ] Coverage gate: 80% lines minimum on changed files, 0% regression on existing files
 
-Required merge checks (branch protection):
-- `ci/lint`, `ci/typecheck`, `ci/test`, `ci/build`, `ci/security`, `ci/visual-regression`, `ci/a11y`, `ci/codex-review`.
+### Feature flags
+- [ ] Every new user-visible feature behind a flag (`FEATURE_*`)
+- [ ] Flag defaults OFF in production
+- [ ] Flag has a kill switch tested
 
-Branch strategy: trunk-based. `main` always deployable. Short-lived feature branches off `main` via worktrees.
+### PR quality gates (all blocking)
+- [ ] `npm run typecheck` — 0 errors, no `any`, no `as` without comment
+- [ ] `npm run lint` — 0 errors, 0 warnings (warnings = errors policy)
+- [ ] `npm test` — all green, coverage gate met
+- [ ] `npm run build` — succeeds
+- [ ] `npm audit --audit-level=high` — 0 high or critical
+- [ ] SAST scan (Semgrep / CodeQL) — 0 high or critical
+- [ ] Design Architect conformance check (diff matches design doc) — PASS
 
----
+### Forbidden in committed code
+- [ ] No `console.log` (logger only)
+- [ ] No `TODO` / `FIXME` without an issue link
+- [ ] No hardcoded secrets (any string matching `key|secret|token|password` patterns is reviewed)
+- [ ] No `alert()`, `confirm()`, `prompt()` dialogs (use modal components — *lesson from crm-app reviews*)
+- [ ] No decorative buttons (script `scripts/decorative-census.mjs` returns 0 DECORATIVE)
+- [ ] No `as any`, no `@ts-ignore`, no `@ts-expect-error` without inline justification
 
-## DevSecOps Controls
-
-- **Secrets**: Azure Key Vault (or Supabase Vault) + OneDrive `NightFactory-Secrets` vault. Source loads via `load_secrets.ps1` — never inline.
-- **SCA**: `npm audit` + `pip-audit` weekly. 0 high/critical to merge.
-- **SAST**: `eslint-plugin-security`, `bandit`, `gitleaks` pre-commit + CI.
-- **DAST**: ZAP baseline on staging URL nightly.
-- **Container**: distroless or `node:lts-slim`. Non-root user. Trivy scan.
-- **Runtime**: WAF on prod (Cloudflare/Front Door). Rate limit at edge.
-- **Audit**: every privileged action emits an `audit_log` event with `actor`, `action`, `resource`, `trace_id`.
-- **Headers**: HSTS, CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin.
-- **CORS**: explicit allowlist; never `*` in prod.
+**Gate: All checks green in CI. Reviewer (agent 03) approves PR. Merge.**
 
 ---
 
-## Environment Strategy
+## AFTER-BUILD PHASE (Tester — agent 04, Security — agent 05)
 
-| Env | Purpose | Data | Provider | Promotion |
-|-----|---------|------|----------|-----------|
-| **dev** | Builder loops, hot reload | Synthetic seeds (`npm run seed`) | `DATA_PROVIDER=memory`, `AUTH_MODE=dev` | Push → CI |
-| **staging** | Pre-prod parity | Anonymised prod snapshot, weekly refresh | Same backend as prod, separate DB | Auto on merge to `main` |
-| **prod** | Live users | Real | `DATA_PROVIDER=dataverse` or `sqlserver`, `AUTH_MODE=entra`, Key Vault | Manual approval after staging green + canary |
+### E2E test suite
+- [ ] One Playwright test per acceptance criterion
+- [ ] Tests use Page Object Model
+- [ ] Tests run against staging seeded with deterministic data
+- [ ] All tests green on three browsers (Chromium, Firefox, WebKit)
 
-Hard rules:
-- Same container image promoted across envs — config changes only.
-- No prod data in dev. Ever.
-- Staging schema migrations run before prod, same script.
-- Prod requires dual-key for any destructive action.
+### Visual regression
+- [ ] Baseline screenshots committed
+- [ ] Per-page diff threshold ≤ 2%
+- [ ] Per-element diff threshold ≤ 0.5% on primary CTAs / logo / sidebar (pattern from crm-app)
+
+### Accessibility audit
+- [ ] `axe-core` runs in CI on every page — 0 violations of severity serious or higher
+- [ ] Manual keyboard navigation tested on every interactive flow
+- [ ] Screen reader smoke test on the 3 most critical flows
+
+### API contract validation
+- [ ] Every route tested against OpenAPI schema (`dredd` or `schemathesis`)
+- [ ] Both happy path and error envelope validated
+
+### Performance
+- [ ] Lighthouse CI gates pass (perf ≥ 80, a11y ≥ 90)
+- [ ] Core Web Vitals: LCP < 2.5s, INP < 200ms, CLS < 0.1
+
+### DAST
+- [ ] OWASP ZAP baseline scan against staging — 0 high/critical findings
+- [ ] Authenticated ZAP scan run for protected routes
+
+### Load test
+- [ ] k6 baseline captured: throughput, p50/p95/p99, error rate
+- [ ] 2× peak load test passes with error rate < 0.1% and p95 within budget
+
+### Security review (every PR + final sign-off)
+- [ ] OWASP Top 10 walked line-by-line against the diff
+- [ ] No critical/high findings open
+
+### Design Architect conformance review
+- [ ] Diff matches design doc (data model, API contract, RBAC, UX)
+- [ ] Any deviation has been approved via design-doc update PR first
+- [ ] Verdict: PASS required to proceed
+
+**Gate: All checks green. Design Architect signs off final.**
+
+---
+
+## PRE-DEPLOYMENT PHASE (DevOps — agent 06)
+
+### Environment parity
+- [ ] Staging = production minus data (same infra, same config keys, different secrets)
+- [ ] No "works on staging because…" exceptions — fix the parity or fix the design
+
+### Smoke test
+- [ ] Smoke suite runs in < 5 min
+- [ ] Covers every critical user path (sign-in, list view, create, update, delete, sign-out)
+- [ ] Smoke runs automatically after staging deploy — red = stop
+
+### UAT
+- [ ] Stakeholder sign-off recorded (email / ticket / PR comment)
+- [ ] UAT covered every P0 user story
+
+### Rollback plan
+- [ ] Documented in the deploy ticket
+- [ ] Rollback script exists and was tested on staging
+- [ ] Database migration is reversible OR has a forward-fix plan with RTO < 1h
+
+### Migration
+- [ ] Migration tested against a staging copy of production data (not empty DB)
+- [ ] Migration is online-safe (no `ALTER TABLE` that locks > 1s on a hot table)
+- [ ] Backfill runs in batches with progress logging
+
+### Secrets
+- [ ] All secrets resolved via Key Vault references (no `.env` baked into the image)
+- [ ] Secret rotation playbook documented
+- [ ] Vault loader pattern matches NightFactory: `OneDrive\Codex\NightFactory-Secrets\load_secrets.ps1`
+
+### DNS / CDN / SSL
+- [ ] DNS TTL lowered 24h before cutover
+- [ ] SSL cert valid > 30 days
+- [ ] HSTS preloaded (only after long-term cert plan)
+
+### Monitoring & alerting
+- [ ] Logs centralised (Application Insights / CloudWatch / Loki)
+- [ ] Metrics: request rate, error rate, p95 latency per route — dashboards exist
+- [ ] Alerts: error rate > X%, p95 > budget, 5xx burst — paged to on-call
+- [ ] Synthetic monitor hits health endpoint every 1 min
+
+### On-call runbook
+- [ ] Pattern from NightFactory `prod_readiness_checklist.md`: queue saturation, DLQ storm, worker death, DB outage
+- [ ] Each scenario: detection signal → diagnostic commands → mitigation → escalation
+- [ ] Tabletop drill executed before go-live
+
+**Gate: DevOps signs off. Go/no-go meeting if anything is yellow.**
+
+---
+
+## POST-DEPLOYMENT PHASE (DevOps — agent 06)
+
+### Canary
+- [ ] 10% traffic shift first
+- [ ] Monitor for 30 min: error rate, p95, business KPIs
+- [ ] If green, ramp to 50% then 100%
+- [ ] If red, automatic rollback to previous version
+
+### Health checks
+- [ ] `/health` liveness probe returns 200 (process alive)
+- [ ] `/ready` readiness probe returns 200 only when DB + queue reachable
+- [ ] Kubernetes / App Service probes wired to these endpoints
+
+### Baselines (first 24h)
+- [ ] Error rate baseline captured
+- [ ] p50 / p95 / p99 latency baseline captured per route
+- [ ] Business KPIs baseline captured (orders/hour, sign-ins/hour, etc.)
+- [ ] Alerts tuned against the baseline (not theoretical numbers)
+
+### Alert pipeline test
+- [ ] Synthetically trigger one error → verify alert reaches on-call channel within 5 min
+- [ ] Verify silence flow works (mute during planned maintenance)
+
+**Gate: Stable for 24h. Sign-off recorded in `agents/lessons-learned.md`.**
+
+---
+
+## OPERATIONS + FEEDBACK PHASE
+
+### Error monitoring
+- [ ] Sentry (or equivalent) capturing every unhandled exception
+- [ ] Source maps uploaded so stack traces are usable
+- [ ] PII scrubbed from breadcrumbs and event payloads
+
+### APM
+- [ ] p50/p95/p99 tracked per route
+- [ ] Slowest endpoints reviewed weekly
+- [ ] DB query plans audited for N+1 monthly
+
+### Feedback loop
+- [ ] In-app feedback widget OR mailto link in footer
+- [ ] Feedback triaged into the backlog within 1 week
+- [ ] Public changelog kept in `CHANGELOG.md` (Keep-a-Changelog format)
+
+### Bug SLA
+- [ ] Critical (data loss / security / total outage): mitigation in 4h, fix in 24h
+- [ ] High (broken core flow): fix in 24h
+- [ ] Medium (broken non-core flow): fix in 1 week
+- [ ] Low (cosmetic / niche): backlog
+
+### Retros
+- [ ] Weekly retro: what failed, why, training update applied — log in `agents/lessons-learned.md`
+- [ ] Monthly: audit all agent training files for staleness
+
+### Hotfix
+- [ ] Branch from the deployed tag (not main)
+- [ ] Fix + minimal test that proves the fix
+- [ ] Deploy through the same canary process
+- [ ] Cherry-pick back to main
+
+---
+
+## FUTURE-ENHANCEMENTS PHASE
+
+### Feature flags
+- [ ] Every enhancement behind a flag
+- [ ] Graduated rollout: 1% → 10% → 50% → 100%
+- [ ] Flag has a documented sunset date — flags older than 6 months are reviewed for removal
+
+### A/B testing
+- [ ] Hypothesis written: "If we do X, then metric Y will move by Z%"
+- [ ] Sample size and run-time computed from baseline variance
+- [ ] Decision criteria written before starting (not "we'll see")
+
+### Deprecation
+- [ ] Old API versioned (`/v1` → `/v2`)
+- [ ] Sunset date communicated 90 days in advance
+- [ ] Usage telemetry confirms 0 active clients before removal
+
+### Scalability review
+- [ ] At 10× current load: name the first thing that breaks
+- [ ] At 100× current load: name the first thing that breaks
+- [ ] If the answer is "DB" — review sharding/read-replica plan
+- [ ] If the answer is "queue" — confirm Azure Service Bus / SQS sizing
+- [ ] If the answer is "auth" — confirm Entra throttling envelope
+
+---
+
+## FAILURE MODES TO PREVENT (from real NightFactory + crm-app reviews)
+
+These are the actual failures the multi-LLM review pipeline caught. Every check above is designed to prevent at least one of them.
+
+1. **Auth bypass via `AUTH_MODE=dev` in production** — pre-deploy gate must block `NODE_ENV=production && AUTH_MODE=dev`
+2. **No RBAC on routes** — RBAC matrix gate in pre-build catches this
+3. **Unsafe `req.body as { ... }` type assertion** — TDD + Zod-first rule catches this
+4. **No React Error Boundary** — design doc's UX section requires it
+5. **In-memory queue in production** — pre-deploy gate blocks `NODE_ENV=production && QUEUE_PROVIDER=memory`
+6. **Decorative buttons (no `onClick`)** — `scripts/decorative-census.mjs` must return 0 DECORATIVE
+7. **`prompt()` / `alert()` dialogs** — forbidden-in-commit rule + linter
+8. **Missing pagination on list endpoints** — OpenAPI spec gate requires pagination on every list op
+9. **HMAC bypass when secret unset** — security agent OWASP check catches this
+10. **Information disclosure in error messages** — error envelope schema enforces correlation ID only

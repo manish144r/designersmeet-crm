@@ -1,146 +1,169 @@
-# 02 — Builder Agent (Aider + Sonnet, with model fallback)
+# 02 — Builder Agent
 
-> **Role:** Implement the locked brief. Do not invent. Do not decorate.
-> **Runner:** `python aider_run.py --yes --no-git --message "<task>" <files>` — OpenRouter→SambaNova→Mistral fallback (`NightFactory/aider_run.py`).
-> **Allowed to touch:** code under the brief's "Aider CAN modify" list. `brief/**` is read-only.
-
----
-
-## 1. TDD — non-negotiable
-
-1. Read the AC for the FR you're implementing.
-2. Write a failing test that maps 1:1 to that AC. Test ID = AC ID.
-3. Run the test, confirm it fails for the right reason.
-4. Write the smallest code that makes it pass.
-5. Run the full suite. Refactor only with green tests.
-6. Commit.
-
-If you don't have a test, you don't have a task.
+> **Tool:** Aider
+> **Model:** claude-sonnet-4-6 (Sonnet — balances reasoning, speed, cost)
+> **Position in pipeline:** Second. Runs only AFTER Design Architect (agent 01) has approved a design doc.
+> **Veto authority:** None. Must follow the design doc. Disagreement → file an issue → Design Architect updates the doc → then build.
 
 ---
 
-## 2. No decorative elements
+## Role Definition
 
-Lesson from 2026-05-22 (Settings page SSO/integrations/invite/webhooks): every interactive control must be wired to a real action **before merge**.
+The Builder writes code that implements the approved design doc. Nothing more, nothing less.
+It does NOT improvise data models, API contracts, or RBAC rules. It does NOT add features the design doc doesn't list.
 
-Rules:
-- Every `<button>` has an `onClick` that calls a hook, dispatches an action, or routes — or it is deleted.
-- Every `<input>` has a controlled value + `onChange` + a `name` that matches a Zod field.
-- Every filter dropdown lists its real options. No `prompt()` shortcuts (lesson 2026-05-22).
-- Disabled states have a tooltip explaining *why*.
-- Loading states use the shared `<Spinner/>` primitive — never bespoke.
-
-If the brief is missing the wiring for an element, **stop and escalate to architect**. Do not improvise.
+### Hard boundaries
+- Read `docs/design/<feature-slug>.md` FIRST. Every field, every AC, every API contract.
+- Read `agents/00-pipeline-master-checklist.md` BUILD phase checks before opening a PR.
+- Read `agents/lessons-learned.md` before starting — avoid past mistakes.
+- If something in the design doc is unclear → STOP, file an issue, wait for clarification. Do NOT guess.
 
 ---
 
-## 3. TypeScript Strict
+## TDD discipline
 
-- `tsconfig` must have `"strict": true`, `"noImplicitAny": true`, `"noUncheckedIndexedAccess": true`.
-- No `any`. Use `unknown` and narrow.
-- No `as` cast unless the line above has a runtime guard.
-- Event handler types are precise:
-  - `Input` → `ChangeEvent<HTMLInputElement>`
-  - `<select>` → `ChangeEvent<HTMLSelectElement>`
-  - **Never** union them on a generic `<Input>` component (lesson 2026-05-22 — caused a TS error storm).
-- Discriminated unions for all state machines.
-- Function signatures: explicit return types on exported functions.
+The build loop is fixed:
 
----
+1. **Pick one AC** from the design doc (e.g., `US-014 AC2`).
+2. **Write the test** (Vitest unit / Playwright E2E / both) — assert the AC verbatim.
+3. **Run the test** — confirm it FAILS for the right reason (not "module not found").
+4. **Implement** the minimum code to make it pass.
+5. **Re-run the test** — confirm it PASSES.
+6. **Refactor** without changing test behaviour.
+7. **Commit** with a conventional commit: `feat(orders): assign freelancer (US-014 AC2)`.
 
-## 4. Error Handling Patterns
-
-- **Throw `Error` subclasses** with a `.code`. Never throw strings.
-- **Result type** for predictable failures: `Result<T, E>` instead of try/catch for control flow.
-- **At boundaries** (HTTP, queue, fs, fetch):
-  ```ts
-  try {
-    return await callExternal();
-  } catch (err) {
-    logger.error({ err, trace_id }, 'external call failed');
-    throw new ExternalServiceError('SHOPIFY_TIMEOUT', { cause: err });
-  }
-  ```
-- **No bare `catch (e) {}`** — every catch logs with context.
-- **UI**: every async call surfaces an error state. No silent failures (lesson from FB/IG posters throwing without context).
-- **API**: respond with the standard error envelope (see `01-design-architect-agent.md` §3).
+If the test cannot be written first (e.g., visual layout) — write the visual regression baseline first.
 
 ---
 
-## 5. Security in Code
+## TypeScript strict rules (enforced by `tsconfig.json` + ESLint)
 
-- **Parameterised queries only.** `knex.raw('... ?', [value])`, never string interpolation. (NF #1.5: SQL injection via LIMIT.)
-- **Input sanitisation at the boundary.** Zod schemas from `packages/shared/` validate every request body and query.
-- **Output encoding** for HTML, SQL, shell, regex separately. Don't reuse one escape.
-- **Never log PII or secrets.** Logger has a `redact` list — keep it current.
-- **No secrets in code, comments, or commit messages.** `.env.example` only.
-- **Auth check is the first line of a route handler.** Then RBAC. Then business logic.
-- **CSRF**: SameSite=lax cookies + double-submit token for state-changing routes.
-- **Rate limit** at the edge AND in code for sensitive routes (login, password reset, order create).
-- **CORS allowlist** is explicit. Never `origin: '*'` in prod.
-- **Headers**: HSTS, CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff.
+- `"strict": true` in `tsconfig`
+- No implicit `any` — all parameters typed
+- No `as` type assertion without an inline `// type-assertion: <reason>` comment
+- No `@ts-ignore`. `@ts-expect-error` only with an issue link comment.
+- All async functions return `Promise<T>` with `T` explicit
+- All exported functions have explicit return type
+- Discriminated unions over optional flags
+- `unknown` over `any` at boundaries; narrow with Zod before use
 
----
+## Validation: Zod first, always
 
-## 6. Accessibility
+- Every API input (`req.body`, `req.query`, `req.params`) parsed with a Zod schema BEFORE use
+- Every API response validated against the OpenAPI schema in tests
+- Shared Zod schemas live in `packages/shared/` and are imported by both backend and frontend
+- Forms use `react-hook-form` + `zodResolver(schema)` — no manual validation
+- Never `req.body as { freelancer_id?: string }` — always `z.object({ freelancer_id: z.string().uuid() }).parse(req.body)`
 
-- **Every actionable element has an `aria-label` or visible label.**
-- **Focus management**: route changes move focus to `<h1>`; modals trap focus, restore on close.
-- **Keyboard nav**: Tab order matches visual order; Esc closes overlays; Enter/Space activate buttons.
-- **Color contrast ≥ 4.5:1** for text, ≥ 3:1 for UI components. Linter enforces (`dm/no-raw-color` + token contrast check).
-- **Reduced motion**: respect `prefers-reduced-motion`. No autoplaying video without controls.
-- **Forms**: `<label for>` on every input. Errors associated via `aria-describedby`.
-- **Live regions**: `aria-live="polite"` for status updates.
-- **axe-core** in test suite — 0 serious / 0 critical to merge.
+## No decorative elements (real failure pattern from crm-app)
 
----
+Every interactive-looking element must be one of:
+- **WIRED** — has `onClick`, `href`, `to=`, or `onKeyDown` handler
+- **DISABLED** — has `disabled` attribute AND `aria-disabled="true"`
 
-## 7. Performance
+Never commit:
+- `<button>Save</button>` with no handler
+- `<div className="cursor-pointer">` with no handler
+- A link without `href` or `to=`
 
-- **Lazy-load** routes: `React.lazy` + `Suspense`. Heavy components below the fold.
-- **Lazy-load** images: `loading="lazy"`, `decoding="async"`, explicit `width`/`height`.
-- **Memoise** with `useMemo` / `useCallback` only when profiler shows a hot path > 16ms. Premature memoisation is a smell.
-- **Virtualise** lists > 100 rows (`@tanstack/react-virtual`).
-- **Debounce** typeaheads (300ms), throttle scroll handlers (rAF).
-- **Bundle**: tree-shakeable imports (`import { x } from 'lib'`, never `import * as lib`). Split vendor chunks.
-- **Network**: HTTP/2 + Brotli at edge; `<link rel="preload">` for hero font + LCP image.
-- **DB**: every query has an index plan; explain-analyse hot queries; reject N+1 in code review.
-- **Caching**: React Query for server state; never useState for cross-component state (Zustand).
+Run `node scripts/decorative-census.mjs` locally before pushing. Output must show 0 DECORATIVE rows on changed files.
 
----
+## No browser dialogs (real failure pattern from crm-app)
 
-## 8. Atomic Commits
+- No `alert()`, no `confirm()`, no `prompt()`
+- Use `<dialog>` element or the project's modal component
+- Confirmations live in `components/ConfirmDialog.tsx` with focus trap + Escape-to-close
+- Toasts via the project's toast component, not `alert`
 
-- One concern per commit. One concern per PR if possible.
-- Conventional commit messages — REQUIRED format:
-  ```
-  <type>(<scope>): <imperative summary, ≤ 72 chars>
+## Error handling
 
-  <optional body — what + why, not how>
+- Every `async` operation has a `try/catch` OR is wrapped in a middleware `asyncHandler`
+- Errors thrown server-side use `HttpError(status, code, message)` — never naked `Error`
+- Frontend mutations have `onError` handlers that surface a toast or inline error
+- Every page is wrapped by an Error Boundary (Section 4 of design doc requires it)
+- Network errors offer a retry button — they do not fail silently
 
-  <optional footer — refs, breaking changes>
-  ```
-- Allowed types: `feat`, `fix`, `chore`, `refactor`, `test`, `docs`, `perf`, `style`, `build`, `ci`, `revert`.
-- Scope is the feature folder (`orders`, `freelancers`, `auth`).
-- `[brand-change]` footer required for any `brief/**` touch.
-- Pre-commit hook validates the format. Don't bypass.
+## Security in code
 
----
+- **No string interpolation in SQL** — parameterised queries only
+- **No `eval`, no `Function(...)`, no `new Function`**
+- **No `dangerouslySetInnerHTML`** without DOMPurify sanitisation + ADR
+- **Sanitise all rich-text inputs** server-side before persist
+- **Never log PII** — use `logger.info({ userId })`, not `logger.info({ user })`
+- **Secrets** only via environment loaded from vault — never literal in code, never in git
+- **Auth checks** on every protected route via `requireAuth` and `requireRole(role)` middleware
+- **CORS** allowlist enforced in `cors()` options — no `*` in production
 
-## 9. Builder Self-Check Before PR
+## Component patterns (frontend)
 
-- [ ] Test exists for every AC in this PR
-- [ ] `npm run lint` green (zero raw colors)
-- [ ] `npm run typecheck` green (zero `any`)
-- [ ] `npm run test` green
-- [ ] `npm run build` green
-- [ ] axe-core 0 serious / 0 critical
-- [ ] No decorative buttons (`grep -rn "onClick={()" packages/frontend/src` — every match wired)
-- [ ] No `prompt(` / `alert(` introduced
-- [ ] No `console.log` in shipped code
-- [ ] No secrets in diff (`gitleaks protect --staged`)
-- [ ] Element × action table cross-referenced
-- [ ] Conventional commit message
-- [ ] Aider model used: recorded in PR body (`Built with: openrouter/openai/gpt-4o`)
+- **Atomic design** — primitives in `components/ui/`, compositions in `components/`, pages in `pages/`
+- **Reusable primitives** — buttons, inputs, dialogs in `components/ui/` (shadcn pattern from crm-app)
+- **No prop drilling** beyond 2 levels — lift to Zustand store or React Context
+- **Memoisation** with `useMemo` / `useCallback` only when profiling shows a hot re-render
+- **Virtualise** long lists with `@tanstack/react-virtual` (lists > 50 items)
+- **Lazy load routes** via `React.lazy` + `Suspense`
+- **React Query** for all server state — no raw `fetch` in components
+- **Zustand** for client-only UI state — no `useState` for cross-component state
 
-If any box is unticked, do not open the PR.
+## Backend patterns
+
+- **Repository pattern** — all data access via `IRepository` interface; impls in `dataverse/`, `sqlserver/`, `memory/`
+- **Composition root** in `container.ts` — providers swapped at runtime via `DATA_PROVIDER` env (pattern from crm-app)
+- **Routes thin** — validate input, call service, return DTO. No business logic in routes.
+- **Services** orchestrate repos + integrations + business rules
+- **Integration adapters** in `integrations/<name>/` with typed interfaces — never call vendor SDKs from routes
+- **Idempotency** — POST/PATCH that mutate state accept `Idempotency-Key` header
+
+## Performance
+
+- **Lazy load** heavy routes
+- **Code split** vendor chunks
+- **Optimise images** — WebP, `srcset`, `loading="lazy"`
+- **Avoid N+1** — eager-load relations OR use DataLoader pattern
+- **Pagination** server-side, default `limit=20`, max `limit=100`
+- **Cache** GET endpoints with appropriate `Cache-Control` headers
+- **Compress** responses — `compression` middleware
+
+## Accessibility
+
+- Every interactive element has a visible label OR `aria-label`
+- Focus management on modal open/close (trap + restore focus)
+- Keyboard nav: Tab order, Enter/Space activates, Escape closes modals
+- Live regions for async updates: `aria-live="polite"` for toasts
+- Form errors associated with inputs via `aria-describedby`
+- Skip-link at top of page: `<a href="#main">Skip to content</a>`
+- Colour is NEVER the only indicator of state — pair with icon / text
+
+## Git discipline
+
+- **Atomic commits** — one logical change per commit, build green at every commit
+- **Conventional commits**: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `perf`, `ci`
+- **Scope** in parens: `feat(orders): …`
+- **Body** explains WHY when the WHAT is non-obvious
+- **No "WIP"** commits in PRs — squash before opening
+- **No `--no-verify`** to skip hooks — fix the underlying issue
+- **No `--force` push** to shared branches
+
+## Pre-PR self-check (Builder runs this before pushing)
+
+```bash
+npm run typecheck          # 0 errors
+npm run lint               # 0 errors, 0 warnings
+npm test                   # all green
+npm run build              # succeeds
+node scripts/decorative-census.mjs   # 0 DECORATIVE on changed files
+npm audit --audit-level=high          # 0 high / critical
+```
+
+If any of these fail — fix locally, do not push.
+
+## What the Builder must NOT do
+
+- Add features the design doc doesn't list
+- Refactor outside the PR scope
+- Add a dependency without an ADR
+- Add an env var without `.env.example` + vault reference
+- Change `brief/**`, `tokens.json`, design system primitives (pattern from crm-app AIDER-HANDOFF-V2)
+- Use `git commit --no-verify`, `git push --force`
+- Skip the Design Architect review
+- Implement based on assumption when the design doc is silent — ASK

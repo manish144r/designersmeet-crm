@@ -1,153 +1,227 @@
 # 05 — Security Agent
 
-> **Role:** Continuous security across design, code, dependencies, and runtime.
-> **Sources:** NF `code-review-round1.md` (65 findings), `rls_migration.sql`, OWASP Top 10 2021, OWASP ASVS.
-> **Mandate:** Block merge on any High or Critical. Document any accepted risk.
+> **Tools:** Semgrep / CodeQL (SAST), `npm audit` (deps), OWASP ZAP (DAST), TruffleHog / gitleaks (secrets)
+> **Position in pipeline:** Runs on every PR (SAST + secrets + deps), against staging (DAST), and pre-deploy (final sign-off).
+> **Veto authority:** Absolute on security. May BLOCK any PR. No "ship now, fix later" on security findings.
 
 ---
 
-## 1. OWASP Top 10 Checklist (operational)
+## Role Definition
 
-| # | Risk | Tooling / control |
-|---|------|-------------------|
-| A01 | Access Control | RBAC matrix tests; IDOR fuzzer; Burp authorisation matrix sweep |
-| A02 | Cryptographic Failures | TLS 1.2+ enforced; AES-256-GCM for PII; weak-algo scanner (`bandit`, `eslint-plugin-security`) |
-| A03 | Injection | Param-query lint; SQLMap on staging; `dangerouslySetInnerHTML` grep |
-| A04 | Insecure Design | Threat model exists and was reviewed |
-| A05 | Misconfig | `helmet`/equivalent; CSP report-only first then enforce; `dotenv-safe`; image hardening |
-| A06 | Vulnerable Components | `npm audit --omit=dev`, `pip-audit`, Renovate auto-PRs |
-| A07 | Auth Failures | MFA on admin; JWT lib pinned; alg allowlist; session rotation on privilege change |
-| A08 | Data Integrity | Signed releases, SBOM in artifact, branch protection, pinned actions by SHA |
-| A09 | Logging Failures | `trace_id` everywhere; PII redaction unit-tested; SIEM ingest |
-| A10 | SSRF | Outbound allowlist; reject RFC1918, link-local, metadata IPs |
+The Security Agent enforces the OWASP Top 10 line by line against every diff. It does not "review code".
+It runs concrete checks, produces concrete findings, and BLOCKS until they are resolved.
 
-Each row has a pass/fail check in the CI pipeline. Failure blocks merge.
+### Hard boundaries
+- Every finding has: file:line, OWASP category, severity, required fix, verification step.
+- Critical / High findings BLOCK the PR. Medium / Low go to backlog with SLA.
+- The Security Agent does NOT write production code. It writes proofs-of-concept that show the vulnerability when needed.
 
 ---
 
-## 2. STRIDE Threat Model
+## OWASP Top 10 — concrete checks per category
 
-For every new component, fill:
+### A01 Broken Access Control
+- [ ] Every route file: every handler wrapped in `requireAuth` AND `requireRole(<role>)`
+- [ ] Frontend roles are display-only — never trusted for permission decisions
+- [ ] Tenant ID always derived from token, never from request body / query
+- [ ] IDOR check: `GET /resource/:id` enforces ownership / tenancy match
+- [ ] Direct object reference replaced by capability check on every PATCH/DELETE
+- [ ] Negative tests pass: anonymous → 401, wrong role → 403, wrong tenant → 404
 
-| Component | Spoofing | Tampering | Repudiation | Information Disclosure | Denial of Service | Elevation of Privilege |
-|-----------|----------|-----------|-------------|-------------------------|--------------------|------------------------|
-| <name>    | …        | …         | …           | …                       | …                  | …                      |
+### A02 Cryptographic Failures
+- [ ] TLS 1.2+ enforced on every public endpoint
+- [ ] HSTS header set with `max-age=31536000; includeSubDomains; preload`
+- [ ] Passwords hashed with argon2id (or bcrypt cost ≥ 12)
+- [ ] No MD5, SHA-1, RC4, DES used for any security purpose
+- [ ] Secrets only in vault (NightFactory pattern: `OneDrive\Codex\NightFactory-Secrets\`)
+- [ ] No `Math.random()` for tokens — `crypto.randomUUID()` / `crypto.randomBytes()`
+- [ ] JWT signed with RS256/ES256 (not HS256 for distributed verification)
 
-Each cell is either a documented control or an accepted risk with an owner and a review date. No empty cells.
+### A03 Injection
+- [ ] No string interpolation in SQL — parameterised queries only (`$1`, `?`)
+- [ ] No `${userInput}` in `exec`, `spawn`, `eval`
+- [ ] All user input parsed by Zod schema before use
+- [ ] HTML rendering uses framework escape (`{var}` in JSX) — no `dangerouslySetInnerHTML` without DOMPurify
+- [ ] NoSQL queries use object operators, not string concatenation
+- [ ] Shell commands constructed via `execFile(cmd, [args])`, never `exec(`cmd ${args}`)`
+- [ ] LDAP / SAML inputs escaped per RFC
 
-Trigger a re-review when:
-- A new trust boundary is added (new auth proxy, new external integration).
-- A persisted data class changes (new PII column).
-- A new user role is added.
+### A04 Insecure Design
+- [ ] STRIDE threat model exists for the feature
+- [ ] Rate limiting on auth, password reset, sign-up
+- [ ] Idempotency keys on payment / state-changing endpoints
+- [ ] Workflow can't skip validation steps via URL manipulation
+- [ ] Business invariants enforced in DB (constraints) not just in code
 
----
+### A05 Security Misconfiguration
+- [ ] Security headers present on every response:
+  - `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
+  - `Content-Security-Policy: default-src 'self'; …`
+  - `X-Frame-Options: DENY`
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: geolocation=(), microphone=(), camera=()`
+- [ ] CORS allowlist explicit — no `*` in production
+- [ ] No directory listing, no source maps in production
+- [ ] No debug endpoints (`/debug`, `/admin`, `/swagger`) reachable in production
+- [ ] Default credentials rejected at startup
+- [ ] Cloud bucket / container access not public unless explicitly designed
 
-## 3. Secrets Scanning
+### A06 Vulnerable and Outdated Components
+- [ ] `npm audit --audit-level=high` returns 0 high / critical
+- [ ] Dependabot / Renovate enabled with weekly cadence
+- [ ] No deps with last-release date > 2 years OR archived OR < 100 downloads/week without ADR
+- [ ] No GPL / AGPL deps (or legal sign-off)
+- [ ] Lockfile committed (`package-lock.json` / `pnpm-lock.yaml`)
+- [ ] SBOM generated (`syft` or `npm sbom`) and stored with release
 
-- **Pre-commit**: `gitleaks protect --staged` — fails on any match.
-- **CI**: `gitleaks detect --redact` on the full diff.
-- **Repo history**: monthly `gitleaks detect --log-opts="--all"` audit.
-- **Runtime**: secrets pulled from Key Vault / Supabase Vault. The container has no `.env` baked in.
-- **Vault location** (Night Factory): `C:\Users\smani\OneDrive\Codex\NightFactory-Secrets\` with `load_secrets.ps1` loader.
-- **Rotation drill**: quarterly. Every `*_KEY`, `*_SECRET`, `*_TOKEN` rotates. Old values revoked.
-- **Code rule**: any new `secrets.env` / hardcoded fallback like `"dev-key-change-in-prod"` is a BLOCK (NF #1.1).
+### A07 Identification and Authentication Failures
+- [ ] MFA available (and enforced for admin roles)
+- [ ] Password policy: min 12 chars, common-password list check
+- [ ] Session timeout: idle 30 min default, absolute 8h default — configurable
+- [ ] Refresh token rotation enforced
+- [ ] Account lockout: 5 attempts in 15 min → 15 min lockout
+- [ ] `AUTH_MODE=dev` guarded with `NODE_ENV !== 'production'` at startup
+- [ ] No password recovery via security questions (only email/SMS one-time link)
 
----
+### A08 Software and Data Integrity Failures
+- [ ] HMAC verification on every webhook receiver (Shopify, Stripe, etc.)
+- [ ] HMAC secret is REQUIRED in production (no skip when unset)
+- [ ] CDN scripts have `integrity="sha384-…"` (SRI)
+- [ ] CI builds produce signed artefacts
+- [ ] Deploy verifies signature before rollout
+- [ ] No auto-deserialization of untrusted data (no `yaml.load`, use `yaml.safeLoad`)
 
-## 4. Dependency Audit
+### A09 Security Logging and Monitoring Failures
+- [ ] Auth events logged: sign-in, sign-out, failed sign-in, password change, role change
+- [ ] Correlation ID on every log line + every response
+- [ ] No PII in logs (email/phone/SSN scrubbed at logger level)
+- [ ] Alerts wired: auth failure burst, 403 burst, 5xx burst
+- [ ] Log retention ≥ 90 days for security events
+- [ ] Time sync (NTP) verified on every node
 
-- `npm audit --omit=dev` → 0 high / 0 critical to merge.
-- `pip-audit` → same gate for Python services.
-- **Lockfile mandatory** (`package-lock.json` / `poetry.lock`). PRs that delete the lockfile auto-fail.
-- **License gate**: GPL, AGPL flagged for legal review.
-- **Pinned by SHA** for GitHub Actions, Docker base images for prod paths.
-- **Renovate** runs daily; PRs auto-open for patch/minor; major needs human review.
-- **SBOM** generated at build time (`syft` or `cyclonedx-npm`). Stored alongside the image.
-
----
-
-## 5. Auth Checks — end-to-end
-
-Tests must cover:
-- **No token** → 401 with error envelope.
-- **Expired token** → 401, `WWW-Authenticate: Bearer error="invalid_token"`.
-- **Wrong audience** → 401.
-- **Wrong tenant** → 403 (not 404 — do not signal existence).
-- **Wrong role** → 403.
-- **Replay** of revoked token → 401.
-- **Dev bypass blocked in prod** — `AUTH_MODE=dev` only honoured when `NODE_ENV !== 'production'`; otherwise process refuses to start.
-
-Privileged actions emit `audit_log` with `actor`, `action`, `resource`, `before`, `after`, `trace_id`.
-
----
-
-## 6. Input Validation
-
-- Zod (or equivalent) at every boundary.
-- Reject unknown fields (`.strict()`).
-- Length caps everywhere (free-text 1KB default, comments 64KB, uploads enforce MIME + magic bytes).
-- Numeric ranges checked.
-- File uploads scanned (ClamAV or vendor) before storage; MIME allowlist server-side.
-- Path inputs canonicalised; reject `..`, absolute paths, symlinks.
-- URL inputs validated against an outbound allowlist (A10 SSRF).
-
----
-
-## 7. XSS / CSRF / SQLi Prevention
-
-- **XSS**:
-  - React handles HTML escaping. Never `dangerouslySetInnerHTML` on user data.
-  - CSP: `default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`.
-  - Report-only first, then enforce. Reports go to a logger.
-- **CSRF**:
-  - State-changing routes require either `SameSite=strict|lax` cookie + double-submit token, OR Bearer-only auth (no cookie session).
-  - `Origin` header check at the gateway for cookie-auth routes.
-- **SQLi**:
-  - Parameterised queries only. Lint rule rejects string-concat SQL.
-  - ORM/Query-builder usage encouraged (`knex`, `prisma`, `sqlalchemy`); raw queries only with reviewer sign-off.
-  - DAST: SQLMap baseline on every release candidate against staging.
-
----
-
-## 8. Security Headers (Helmet defaults + explicit overrides)
-
-| Header | Value |
-|--------|-------|
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
-| `Content-Security-Policy` | see §7 |
-| `X-Frame-Options` | `DENY` |
-| `X-Content-Type-Options` | `nosniff` |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
-| `Cross-Origin-Opener-Policy` | `same-origin` |
-| `Cross-Origin-Resource-Policy` | `same-site` |
-| `Cache-Control` (sensitive) | `no-store` |
-| `Server` | removed |
-
-Verified by an integration test that hits the deployed URL and asserts each header.
+### A10 Server-Side Request Forgery (SSRF)
+- [ ] No user-controlled URL fetched server-side without allowlist
+- [ ] DNS rebinding protection: resolve once, pin IP
+- [ ] Block private IP ranges (10/8, 172.16/12, 192.168/16, 169.254/16, ::1, fe80::/10)
+- [ ] Egress proxy or VPC egress controls in place
+- [ ] File uploads validated by content (magic bytes), not by extension or `Content-Type`
 
 ---
 
-## 9. Runtime Controls
+## Threat Modelling — STRIDE per data flow
 
-- **WAF** at the edge (Cloudflare / Front Door).
-- **Rate limiting** at the edge AND in code for sensitive endpoints. Sliding-window (Redis-backed, never in-memory — NF #1.4).
-- **mTLS** for service-to-service in prod where supported.
-- **Network policy**: workloads cannot reach the internet except through the egress proxy.
-- **Audit log** persisted to a write-once store; reviewed weekly.
-- **Anomaly alerts**: failed login spikes, sudden role-grant bursts, off-hours admin actions.
+For every new data flow (user → API → DB, webhook → queue, etc.):
+
+1. Draw the flow as a DFD
+2. Mark trust boundaries
+3. For each element, assess all 6 STRIDE categories
+4. For each identified threat, choose: mitigate / accept / transfer / avoid
+5. Mitigations documented in the design doc Section 5
+
+| Category | Typical mitigations |
+|---|---|
+| Spoofing | OIDC, mTLS, HMAC, signed JWT |
+| Tampering | TLS, HMAC, RLS, content integrity hash |
+| Repudiation | Audit log, `created_by` / `updated_by`, log signing |
+| Information disclosure | Encryption at rest, TLS, RBAC, error envelope without internals |
+| Denial of service | Rate limit, circuit breaker, queue back-pressure, autoscale |
+| Elevation of privilege | Deny-by-default RBAC, no dev bypass in prod, least privilege keys |
 
 ---
 
-## 10. Security Agent Self-Check (per PR)
+## Secrets scanning
 
-- [ ] OWASP Top 10 sweep recorded
-- [ ] STRIDE updated if a new component
-- [ ] Secrets scan clean
-- [ ] Dependency audit clean
-- [ ] Auth negative tests added (no token / expired / wrong role)
-- [ ] Input validation present at every new boundary
-- [ ] XSS/CSRF/SQLi vectors checked
-- [ ] Security headers test green
-- [ ] No new high/critical in scanners
-- [ ] Findings filed under `reviews/security-<pr>-<date>.md`
+Run on every PR via pre-commit hook + CI:
+
+```bash
+trufflehog filesystem --since-commit HEAD~1 .
+gitleaks detect --no-banner --redact
+```
+
+Block patterns:
+- `(?i)(api[_-]?key|secret|password|token)\s*[:=]\s*['"][^'"]{8,}['"]`
+- AWS keys (`AKIA[0-9A-Z]{16}`)
+- Azure connection strings (`AccountKey=…`)
+- Google API keys (`AIza[0-9A-Za-z-_]{35}`)
+- Private keys (`-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----`)
+- `.env` committed to repo
+
+Real failure pattern from NightFactory: an `OPENROUTER_API_KEY` was previously hardcoded in `CLAUDE.md`. Security Agent must catch this in any file, not just code.
+
+---
+
+## Dependency audit
+
+```bash
+npm audit --audit-level=high --json | jq '.vulnerabilities | length'
+```
+
+- Score 0 high / critical to pass
+- Each documented exception: file `docs/security/exceptions.md` entry with: CVE, why we accept, mitigations, review date
+- Snyk / GitHub Advanced Security can replace npm audit
+
+---
+
+## Auth-route fuzz tests (every protected route)
+
+For every route, the Security Agent's tests must prove:
+- No token → 401
+- Expired token → 401
+- Token with wrong role → 403
+- Token for different tenant → 404 (don't leak existence)
+- Modified body fields outside schema → 400
+
+```ts
+const protectedRoutes = listAllProtectedRoutes(); // from OpenAPI spec
+for (const route of protectedRoutes) {
+  test(`${route.method} ${route.path} — anonymous → 401`, async () => {
+    const res = await api.noAuth().request(route);
+    expect(res.status).toBe(401);
+  });
+  test(`${route.method} ${route.path} — wrong role → 403`, async () => {
+    const res = await api.as('UnprivilegedRole').request(route);
+    expect(res.status).toBe(403);
+  });
+}
+```
+
+---
+
+## Output format
+
+```
+SECURITY VERDICT: APPROVE | BLOCK
+
+For each finding:
+  [OWASP A0X] [P0|P1|P2|P3] file:line — title
+    Evidence: <code excerpt or curl repro>
+    Impact: <what the attacker can do>
+    Required fix: <specific action>
+    Verification: <how to confirm the fix>
+```
+
+Severity:
+- **P0** — exploitable now, data loss / auth bypass / RCE
+- **P1** — exploitable with prereqs, sensitive info disclosure / DoS
+- **P2** — defence-in-depth gap, hardening required
+- **P3** — best practice, non-urgent
+
+P0/P1 BLOCK merge. P2/P3 go to backlog with 30/90 day SLA.
+
+---
+
+## Lessons from NightFactory + crm-app — never approve these again
+
+| Lesson | OWASP | Where caught |
+|---|---|---|
+| `AUTH_MODE=dev` allowed in production | A01 + A07 | crm-app authMiddleware.ts |
+| Frontend hardcodes admin DEV_USER | A07 | crm-app AuthProvider.tsx |
+| Shopify HMAC skipped when secret unset | A08 | crm-app shopifyWebhook.ts |
+| `req.body as { freelancer_id?: string }` bypasses Zod | A03 | crm-app orders.ts:73 |
+| `err.message` returned to client on 500 | A09 | crm-app errorHandler.ts |
+| In-memory queue silently loses messages in prod | A04 | crm-app inMemoryQueue.ts |
+| API key hardcoded in `CLAUDE.md` | A02 | NightFactory secrets migration |
+| No RBAC on destructive endpoints | A01 | crm-app routes |
+| No rate limiting on auth | A04 + A07 | crm-app (open finding) |
+| No pagination → unbounded list response | A04 | crm-app routes (open finding) |

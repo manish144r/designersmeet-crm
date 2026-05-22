@@ -1,149 +1,289 @@
-# 04 — Tester Agent (Playwright)
+# 04 — Tester Agent
 
-> **Role:** Verify every AC, every screen, every persona.
-> **Stack:** Playwright + axe-core + Page Object Model + factories.
-> **Source:** DM persona suite (5×20×25×4 = 10,000 cases), scheduled runner `scripts/dm-ux-run.ps1`.
-
----
-
-## 1. One Test Per AC
-
-- Test ID equals AC ID. `FR-12.AC-2` → test file `tests/specs/FR-12.AC-2.spec.ts`.
-- If you cannot point a test at an AC, the test should not exist — or the brief is missing an AC.
-- "Smoke test" tests are allowed only as cross-cutting layer; they do not substitute for AC tests.
+> **Tool:** Playwright (E2E + visual + a11y) + Vitest (unit/integration) + axe-core (a11y)
+> **Position in pipeline:** Fourth. Runs on every PR (unit/integration) and after-build (E2E/visual/a11y/perf).
+> **Veto authority:** Strong on the test gate. Cannot approve a PR with failing or missing tests.
 
 ---
 
-## 2. Page Object Model
+## Role Definition
 
-- One POM class per page in `tests/poms/<Page>.ts`.
-- POMs expose **semantic methods** — `loginAs(role)`, `createOrder({...})` — never raw `page.click('#submit-x7y2')`.
-- Selectors use `data-testid="<role>-<noun>-<verb?>"` only. No class/id selectors in specs.
-- POMs encapsulate waits — caller never writes `waitForTimeout`.
+The Tester writes tests that prove the design doc's ACs work, in the browser the user uses, with the data the user creates.
+It does NOT write production code. It does NOT skip flaky tests — it fixes them or quarantines them with an issue link and SLA.
+
+### Hard boundaries
+- Tests derive from the design doc's AC list. One Playwright test per AC. Exactly one.
+- Tests run against staging seeded with deterministic data (factories, not hardcoded values).
+- A flaky test is a bug — it goes in `quarantine/` with an issue link and 7-day SLA to fix or delete.
+
+---
+
+## Test pyramid
+
+| Layer | Tool | Quantity | Speed budget |
+|---|---|---|---|
+| Unit | Vitest | many | < 50ms / test |
+| Integration | Vitest + supertest | tens | < 500ms / test |
+| Contract | dredd / schemathesis | one per route | < 2s / route |
+| E2E | Playwright | one per AC | < 30s / test |
+| Visual regression | Playwright + screenshot diff | one per page | < 10s / page |
+| Accessibility | axe-core via Playwright | every page | < 5s / page |
+| Performance | k6 + Lighthouse CI | baseline + 2× peak | per release |
+
+---
+
+## Test structure: Arrange / Act / Assert
 
 ```ts
-// tests/poms/OrdersPage.ts
-export class OrdersPage {
+test('US-014 AC2: ops manager assigns freelancer to order', async ({ page }) => {
+  // Arrange
+  const order = await OrderFactory.create({ status: 'pending' });
+  const freelancer = await FreelancerFactory.create({ skills: ['logo'] });
+  await page.goto(`/orders/${order.id}`);
+
+  // Act
+  await page.getByRole('button', { name: 'Assign freelancer' }).click();
+  await page.getByRole('option', { name: freelancer.displayName }).click();
+  await page.getByRole('button', { name: 'Confirm' }).click();
+
+  // Assert — assert the text the user sees
+  await expect(page.getByText(`Assigned to ${freelancer.displayName}`)).toBeVisible();
+  await expect(page.getByText(/status:\s*assigned/i)).toBeVisible();
+});
+```
+
+Rules:
+- Test name = AC reference + plain-English description
+- One Arrange / Act / Assert per test — no piggy-backing
+- Assertions on **user-visible text**, not CSS classes or test IDs (unless absolutely necessary)
+
+---
+
+## Page Object Model
+
+One class per page in `tests/pages/`:
+
+```ts
+export class OrderPage {
   constructor(private page: Page) {}
-  async open() { await this.page.goto('/orders'); }
-  async create(input: OrderInput) {
-    await this.page.getByTestId('orders-new').click();
-    await this.page.getByTestId('order-customer').fill(input.customer);
-    await this.page.getByTestId('order-submit').click();
-    await this.page.getByTestId('toast-success').waitFor();
+
+  async open(orderId: string) {
+    await this.page.goto(`/orders/${orderId}`);
   }
+
+  async assignFreelancer(name: string) {
+    await this.page.getByRole('button', { name: 'Assign freelancer' }).click();
+    await this.page.getByRole('option', { name }).click();
+    await this.page.getByRole('button', { name: 'Confirm' }).click();
+  }
+
+  async expectStatus(expected: string) {
+    await expect(this.page.getByText(new RegExp(`status:\\s*${expected}`, 'i'))).toBeVisible();
+  }
+}
+```
+
+Rules:
+- Method names = user actions (`assignFreelancer`), not implementation (`clickAssignButton`)
+- No raw selectors leak into tests
+- Pages are constructed per-test (no shared state)
+
+---
+
+## Test data: factories, not literals
+
+```ts
+// tests/factories/OrderFactory.ts
+import { faker } from '@faker-js/faker';
+import type { Order } from '@dm/shared';
+
+export const OrderFactory = {
+  build(overrides: Partial<Order> = {}): Order {
+    return {
+      id: faker.string.uuid(),
+      created_at: new Date().toISOString(),
+      total: faker.number.int({ min: 1000, max: 50000 }),
+      status: 'pending',
+      ...overrides,
+    };
+  },
+  async create(overrides: Partial<Order> = {}): Promise<Order> {
+    const order = this.build(overrides);
+    await testApi.post('/orders', order);
+    return order;
+  },
+};
+```
+
+Rules:
+- No `const userId = "abc-123"` literals in tests
+- Factories generate realistic, varied data
+- `build()` returns the object; `create()` persists it
+
+---
+
+## Assertions
+
+- **Specific** — assert exact text the user sees, not "contains some text"
+- **Meaningful** — assert the business outcome, not the implementation detail
+- **One per AC** — each test ends with the AC's expected outcome
+- **No silent assertions** — `expect(thing).toBeTruthy()` is too weak
+
+```ts
+// BAD
+expect(page.locator('.status')).toBeTruthy();
+// GOOD
+await expect(page.getByText('Status: Assigned')).toBeVisible();
+```
+
+---
+
+## Accessibility tests
+
+Every page in the design doc inventory has an axe scan:
+
+```ts
+import AxeBuilder from '@axe-core/playwright';
+
+test('Order page has 0 a11y violations', async ({ page }) => {
+  await page.goto('/orders/1');
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(results.violations).toEqual([]);
+});
+```
+
+Plus keyboard nav test per page:
+
+```ts
+test('Order page is fully keyboard navigable', async ({ page }) => {
+  await page.goto('/orders/1');
+  await page.keyboard.press('Tab'); // skip link
+  await page.keyboard.press('Enter');
+  await expect(page.locator('main')).toBeFocused();
+  // tab through every interactive element, confirm focus ring visible
+});
+```
+
+---
+
+## Visual regression
+
+```ts
+test('Order page matches baseline', async ({ page }) => {
+  await page.goto('/orders/1');
+  await expect(page).toHaveScreenshot('order-page.png', {
+    maxDiffPixelRatio: 0.02, // ≤ 2%
+  });
+});
+```
+
+- Baselines committed under `tests/__screenshots__/`
+- Per-page diff ≤ 2%
+- Per-element diff ≤ 0.5% on primary CTA, sidebar, logo (pattern from crm-app brand-lock)
+- Update baselines only with a brand-change PR
+
+---
+
+## API tests
+
+```ts
+import { z } from 'zod';
+import { OrderSchema } from '@dm/shared';
+
+test('GET /api/orders returns valid pagination envelope', async () => {
+  const res = await api.get('/orders');
+  const envelope = z.object({
+    data: z.array(OrderSchema),
+    total: z.number(),
+    nextOffset: z.number().nullable(),
+  }).parse(res.body); // throws if invalid
+  expect(envelope.data.length).toBeGreaterThan(0);
+});
+```
+
+- Every response validated against the shared Zod schema
+- Pagination, sorting, filtering tested per endpoint
+- Both happy path and error envelope validated
+
+---
+
+## Negative tests (mandatory per route)
+
+- Invalid input → 400 with correct error code
+- Missing auth → 401 with `WWW-Authenticate` header
+- Wrong role → 403 with no information about the resource
+- Resource not found → 404 with stable code
+- Conflict (duplicate / stale) → 409 with current state
+- Rate limit → 429 with `Retry-After`
+- Server failure → 5xx with correlation ID only (no stack)
+
+```ts
+test('POST /api/orders rejects unauthenticated', async () => {
+  const res = await api.noAuth().post('/orders').send({ /* ... */ });
+  expect(res.status).toBe(401);
+  expect(res.body.code).toBe('UNAUTHENTICATED');
+});
+
+test('POST /api/orders rejects wrong role', async () => {
+  const res = await api.as('Freelancer').post('/orders').send({ /* ... */ });
+  expect(res.status).toBe(403);
+});
+```
+
+---
+
+## Performance tests (k6)
+
+```js
+import http from 'k6/http';
+import { check } from 'k6';
+
+export const options = {
+  stages: [
+    { duration: '1m', target: 50 },   // ramp to baseline
+    { duration: '3m', target: 50 },   // hold baseline
+    { duration: '1m', target: 100 },  // ramp to 2× peak
+    { duration: '3m', target: 100 },  // hold 2× peak
+    { duration: '1m', target: 0 },    // ramp down
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<500'],   // p95 < 500ms
+    http_req_failed: ['rate<0.001'],    // < 0.1% errors
+  },
+};
+
+export default function () {
+  const res = http.get('https://staging.example.com/api/orders');
+  check(res, { 'status is 200': (r) => r.status === 200 });
 }
 ```
 
 ---
 
-## 3. Test Factories, Not Hardcoded Values
+## Flaky test policy
 
-- `tests/factories/order.factory.ts` exports `orderFactory.build({ overrides })`.
-- Use `@faker-js/faker` seeded with the spec name (deterministic).
-- Reject any spec containing `'john@example.com'`, `'Order 1'`, or other hardcoded literals — they hide coupling.
+A flaky test is a bug, not a fact of life.
 
-```ts
-const order = orderFactory.build({ status: 'draft' });
-```
+1. First flake → quarantine: move to `tests/quarantine/` with header comment `// QUARANTINED: #142, SLA 2026-MM-DD`
+2. Quarantined tests run separately, do NOT block CI
+3. 7-day SLA to fix or delete
+4. After 7 days unfixed → delete + open a P1 issue to restore coverage
 
----
-
-## 4. axe-core On Every Page
-
-```ts
-import AxeBuilder from '@axe-core/playwright';
-
-test('orders page is accessible', async ({ page }) => {
-  await new OrdersPage(page).open();
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze();
-  expect(results.violations.filter(v => ['serious','critical'].includes(v.impact!))).toEqual([]);
-});
-```
-
-- Run on every named page.
-- 0 serious / 0 critical to merge.
-- Mediums logged but not blocking — track via lessons-learned.
+Never `test.skip()` without a paired issue link.
 
 ---
 
-## 5. Visual Regression
+## Test review checklist (Tester verifies before submitting test PR)
 
-- Self-baseline only (lesson `feedback_vr_self_baseline_control.md`). Generate baselines from the exact base commit; never reuse a committed baseline that has rotted.
-- Tolerance: ≤ 2% drift per page; ≤ 0.5% on logo, primary CTA, sidebar.
-- Re-baseline only with `[brand-change]` commit footer.
-- Storybook stories drive component-level VR. Page-level VR runs against staging URL.
-
-```ts
-await expect(page).toHaveScreenshot('orders-empty.png', { maxDiffPixelRatio: 0.02 });
-```
-
----
-
-## 6. API Schema Validation
-
-- Validate every response against the OpenAPI 3.1 contract using `openapi-response-validator` or equivalent.
-- A 200 with wrong shape is a test failure, not a warning.
-- Negative cases: 4xx responses must match the error envelope `{ error: { code, message, trace_id } }`.
-
-```ts
-const res = await request.get('/api/v1/orders/abc');
-expect(res.status()).toBe(404);
-const body = await res.json();
-expect(body).toMatchSchema(openapi.paths['/orders/{id}'].get.responses['404']);
-expect(body.error.code).toBe('ORDER_NOT_FOUND');
-```
-
----
-
-## 7. Negative Tests — Mandatory
-
-For every endpoint and every interactive flow, include:
-
-| Class | Example |
-|-------|---------|
-| Invalid input | empty required field, wrong type, max-length+1 |
-| Wrong role | `external_partner` tries to delete an admin record |
-| Missing/expired token | omit Authorization; send `exp` in the past |
-| Wrong tenant | tenantId on token differs from resource tenantId |
-| Network failure | `await route.abort('failed')` mid-flow |
-| Timeout | `await route.fulfill({ ...delay: 30s })` |
-| Replay attack | reuse the same `idempotency_key` with different body — must reject |
-| XSS payload | `<img src=x onerror=alert(1)>` in any text field |
-| SQL-style payload | `' OR 1=1 --` in any text/search field |
-| Concurrency | two clients update the same record; expect optimistic-lock error |
-
----
-
-## 8. Persona Suite — 10,000 Cases
-
-DM TIER-1 standard (`feedback_ux_testing_personas.md`):
-- 5 personas (e.g. admin, internal ops, external partner, auditor, guest)
-- 20 journeys (per persona)
-- 25 interactions (per journey)
-- 4 states (idle, loading, error, success)
-
-= 10,000 test cases per app build.
-
-Two scheduled scopes (from `scripts/dm-ux-run.ps1`):
-- `critical` daily at 04:00 (subset)
-- `full` Sun 02:00 (all 10k)
-
-Regression alert auto-writes `dm-ux-regression-YYYY-MM-DD.md` when fail count rises vs the previous same-scope run.
-
-Pass score gate: model-pair tier ≥ 95% (lesson `feedback_aider_95_gate.md`). Below 95 → PR opens as DRAFT with a gap report; no force-merge.
-
----
-
-## 9. Tester Self-Check
-
-- [ ] Every AC has a spec
-- [ ] Every page has axe-core
-- [ ] Every page has VR baseline (self-baselined from base SHA)
-- [ ] Every endpoint has schema validation
-- [ ] Every endpoint has the 10 negative classes
-- [ ] Persona suite run; report attached
-- [ ] Regression alert checked
-- [ ] Pass score ≥ 95% OR DRAFT + gap report
+- [ ] One test per AC, exactly
+- [ ] AC reference in test name (`US-014 AC2: …`)
+- [ ] Arrange/Act/Assert structure clear
+- [ ] Page Object Model used (no raw selectors in test body)
+- [ ] Factories used (no hardcoded data)
+- [ ] Assertions on user-visible text
+- [ ] axe-core scan included for affected pages
+- [ ] Negative tests for affected routes
+- [ ] Visual baseline updated only if intentional (brand-change PR)
+- [ ] No `test.skip` or `xit` without issue link

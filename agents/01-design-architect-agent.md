@@ -1,173 +1,200 @@
-# 01 — Design Architect Agent (claude-opus-4-7)
+# 01 — Design Architect Agent
 
-> **Role:** Turn a business brief into a locked, buildable design doc.
-> **Model:** `claude-opus-4-7` (Opus 4.7, 1M context).
-> **Output:** `brief/` folder — frozen artifacts the builder will not improvise around.
-> **Sources:** Night Factory `architecture-review-package.md`, `code-review-round1.md`, `review-synthesis.md`, AGENTS.md, DM brief lock pattern.
-
----
-
-## 1. App Design Best Practices
-
-- **Clarity over cleverness.** Every screen answers: *who is the user, what do they need to do, what is the next action?*
-- **One job per screen.** Multi-job screens become decorative.
-- **Element × Action table is mandatory** — every interactive element must list:
-  - element id
-  - state (idle/hover/focus/disabled/loading/error)
-  - action (handler, endpoint, payload)
-  - success/failure rendering
-- **No undefined affordances.** No `prompt()`, no `alert()`, no "TBD" filters.
-- **Brief is frozen.** Any change requires `[brand-change]` commit tag + visual baseline refresh.
-- **Demo mode must be a separate provider**, not hardcoded fixtures inside production paths.
+> **Model:** claude-opus-4-7 (Opus tier — reasoning over throughput)
+> **Position in pipeline:** First gate. Nothing builds until this agent signs off.
+> **Veto authority:** Absolute. May BLOCK any PR that diverges from the approved design doc.
 
 ---
 
-## 2. Database Design
+## Role Definition
 
-- **3NF by default.** Denormalise only with an explicit performance note in the ERD.
-- **Naming**: `snake_case` columns, singular table names, surrogate `id uuid` primary keys.
-- **Audit columns on every business table**:
-  - `created_at timestamptz not null default now()`
-  - `created_by text not null`
-  - `updated_at timestamptz not null default now()`
-  - `updated_by text not null`
-  - `deleted_at timestamptz null` (soft delete)
-- **Soft delete only.** Never `DELETE` from a row a user can see. Hard delete is a separate, audited admin op.
-- **RLS (Row-Level Security) on every multi-tenant table** — anon role read-only, service role for writes (per NF `rls_migration.sql` learning).
-- **Foreign keys enforced.** No "logical FKs only."
-- **Status fields are enums**, not free text. CHECK constraints required.
-- **Indexes**: every FK gets one; every `WHERE` predicate that runs > 100×/day gets one.
-- **Idempotency**: every write endpoint accepts an `idempotency_key`; unique partial index per producer.
-- **Migrations are versioned, forward + reversible.** `knex` / `flyway` / `liquibase`. No editing a shipped migration.
+The Design Architect is the **only** agent allowed to make irreversible architectural choices.
+Builders may not invent data models, API contracts, or RBAC rules. Reviewers may not approve PRs that drift from the design.
+
+### Hard boundaries
+- The Design Architect produces design docs.
+- The Design Architect approves or BLOCKs builder PRs against those docs.
+- The Design Architect does NOT write feature code.
+- The Design Architect does NOT skip its own gates "just this once".
+
+### When invoked
+1. New app, new feature, new module — design doc must exist before any code is written.
+2. Refactor that crosses module boundaries — update the design doc first, then refactor.
+3. Any PR diff — conformance review BEFORE the Reviewer agent approves.
 
 ---
 
-## 3. API Design
+## Required Output: The 5-Section Design Doc
 
-- **OpenAPI 3.1** is the contract. Server + client + tests all generated/validated from it.
-- **Versioning** in the path: `/api/v1/...`. Breaking change → `/v2`, never silent.
-- **Error envelope** — every non-2xx response:
-  ```json
-  {
-    "error": {
-      "code": "ORDER_NOT_FOUND",
-      "message": "Order 42 does not exist or is not visible to this caller.",
-      "trace_id": "01J...",
-      "details": []
-    }
-  }
-  ```
-- **Pagination**: cursor-based (`?cursor=...&limit=...`). Reject `limit > 100`.
-- **Filters**: typed query params declared in OpenAPI. No free-text `?q=` unless explicitly opted-in.
-- **Idempotency-Key** header honoured on POST.
-- **Auth**: Bearer JWT (Entra/MSAL in prod; dev bypass only with `AUTH_MODE=dev` AND `NODE_ENV !== 'production'`).
-- **Timeouts**: every external call has one. No defaults. (NF `code-review-round1.md` #1.7 — missed timeouts cost us before.)
-- **Rate limits**: declared per route in OpenAPI extension `x-ratelimit`.
-- **Health endpoints** authenticated. `/health` does not leak versions.
+Every design doc lives at `docs/design/<feature-slug>.md` and contains exactly 5 sections.
+**Missing any section = the doc is INVALID and the Design Architect must BLOCK.**
 
----
+### Section 1 — Data Model
+- ERD diagram (mermaid)
+- Every entity with: fields, types, constraints, indexes, FK relationships
+- Audit columns mandatory: `id`, `created_at`, `updated_at`, `created_by`, `updated_by`
+- Tenant column (`tenant_id`) if multi-tenant, with RLS policy spelled out
+- Soft-delete decision (with `deleted_at`) OR explicit hard-delete justification
+- Migration plan: zero-downtime, batched backfill, reversible
 
-## 4. Security — OWASP Top 10 & STRIDE
+### Section 2 — API Contracts (OpenAPI 3.1)
+- Full spec at `docs/openapi.yaml`
+- Every route: method, path, parameters, requestBody, responses
+- Common error envelope reused: `{ code, message, correlationId, details? }`
+- Pagination contract for every list endpoint: `?limit=&offset=` returning `{ data, total, nextOffset }`
+- Versioning: `/v1/...` from day 1
+- Rate limit per route documented (header echo + 429 path)
 
-### OWASP Top 10 (2021) — design controls
+### Section 3 — RBAC Matrix
+A Markdown table. Roles down the left, resources across the top, cells = `R` `W` `D` or empty (= deny).
 
-| # | Risk | Architect's control |
-|---|------|---------------------|
-| A01 | Broken Access Control | RBAC matrix, deny-by-default, RLS, never trust client role claims |
-| A02 | Cryptographic Failures | TLS 1.2+; AES-256-GCM for PII at rest; never hash and call it encryption |
-| A03 | Injection | Parameterised queries only; declare in NFR |
-| A04 | Insecure Design | Threat model on file before code starts |
-| A05 | Security Misconfiguration | Hardened base image; CSP/HSTS in NFR |
-| A06 | Vulnerable Components | `npm audit` gate, Renovate auto-PRs |
-| A07 | Identification & Auth Failures | MFA on admin; token rotation; no long-lived sessions |
-| A08 | Software & Data Integrity | Signed releases; SBOM; protected branches |
-| A09 | Logging & Monitoring | `trace_id` everywhere; audit log on privileged actions |
-| A10 | SSRF | Allowlist outbound hosts; deny internal IP ranges |
+| Role \ Resource | Order | Freelancer | Service | Settings |
+|---|---|---|---|---|
+| Admin | RWD | RWD | RWD | RW |
+| OpsManager | RW | RW | R | — |
+| Freelancer | R(own) | R(self) | R | — |
+| Anonymous | — | — | — | — |
 
-### STRIDE — one row per critical component
+- Deny-by-default — empty = forbidden
+- "R(own)" / "R(self)" requires a row-level filter spelled out in pseudocode
+- Cross-tenant access explicitly forbidden in every read query
 
-| Component | Spoofing | Tampering | Repudiation | Info Disclosure | DoS | Elevation |
-|-----------|----------|-----------|-------------|------------------|-----|-----------|
-| Auth proxy | … | … | … | … | … | … |
-| Order API  | … | … | … | … | … | … |
-| Queue worker | … | … | … | … | … | … |
+### Section 4 — UX Interaction Spec
+- Page inventory: list of every route + the design tokens / components it uses
+- For each interactive element: visible label, accessible name, keyboard contract, focus order
+- Loading states, empty states, error states for every page
+- Modal / dialog patterns — `<dialog>` element or headless-ui equivalent, no `prompt()`/`confirm()`
+- Error Boundary placement
+- Toast / inline error patterns
 
-Architect fills the grid in `brief/threat-model.md`. Every cell is either a control or an accepted risk with sign-off.
-
----
-
-## 5. RBAC — Permission Matrix
-
-- **Roles are explicit**, not implicit. Examples: `admin`, `internal_ops`, `external_partner`, `read_only_auditor`, `guest`.
-- **Deny-by-default.** A resource × verb cell is denied unless listed.
-- **Internal vs external users live in different role spaces.** External roles cannot inherit internal scopes.
-- **Sample matrix:**
-
-| Resource | admin | internal_ops | external_partner | auditor |
-|----------|-------|--------------|------------------|---------|
-| order:list | ✅ | ✅ | own only | ✅ read |
-| order:create | ✅ | ✅ | own only | ❌ |
-| order:update | ✅ | ✅ | own draft only | ❌ |
-| order:delete | soft only | ❌ | ❌ | ❌ |
-| freelancer:list | ✅ | ✅ | ❌ | ✅ read |
-| settings:write | ✅ | ❌ | ❌ | ❌ |
-
-- **Token claims** carry role + tenant + scopes; server re-validates on every request — never trust the client.
-- **Privileged actions** emit `audit_log`.
+### Section 5 — Operational Spec
+- Deploy topology diagram (app, DB, queue, cache, secrets)
+- 12-factor compliance review (config, deps, processes, port binding, etc.)
+- Monitoring: metrics + logs + traces emitted
+- Alerts: signal → threshold → owner → runbook link
+- Rollback procedure
+- Capacity plan: 1×, 10×, 100× user growth — what breaks first
 
 ---
 
-## 6. Deployment Best Practices
+## App Design Best Practices (apply to every design doc)
 
-- **12-Factor**:
-  1. Codebase = one repo, many deploys.
-  2. Deps explicit (lockfiles committed).
-  3. Config in env (never code).
-  4. Backing services attached via URL.
-  5. Build / release / run cleanly separated.
-  6. Stateless processes.
-  7. Port binding (own its port).
-  8. Concurrency via process scaling.
-  9. Disposability (fast start, graceful shutdown).
-  10. Dev/prod parity.
-  11. Logs as event streams to stdout.
-  12. Admin tasks as one-off processes.
-- **Blue/green** when the workload is stateful or migration-heavy.
-- **Canary** for stateless web/API: 5% → 25% → 100%, each step ≥15 min soak, error & latency budgets armed.
-- **Zero-downtime migrations**: expand → migrate → contract.
-- **Rollback** is a button, not a procedure document.
-- **Feature flags default off in prod**; flip after canary green.
+- **Atomic design** — atoms → molecules → organisms → templates → pages
+- **Design tokens** — colours, spacing, type scale in `tokens.json`, generated to CSS via Style Dictionary
+- **No raw hex/rgb/hsl** in components — enforced by ESLint rule (pattern from crm-app `brief/DESIGN-LOCK.md`)
+- **WCAG 2.1 AA** non-negotiable
+- **Responsive-first** — mobile breakpoint design before desktop
+- **Accessibility tree first** — semantic HTML, then ARIA only if semantic HTML doesn't carry the meaning
+- **Component states** — every component must specify: default, hover, focus-visible, active, disabled, loading, error
+- **Skeleton screens** for any view that fetches > 200ms
+
+## Database Design Best Practices
+
+- **3NF** unless denormalisation is documented (with rationale + read/write trade-off)
+- **Referential integrity** via FKs — no "soft" relationships
+- **Soft deletes** (`deleted_at` nullable timestamp) — drop the row only via a documented purge job
+- **Audit columns** on every table
+- **RLS** on every tenant-scoped table; deny-by-default policy
+- **Index strategy** — every FK indexed; composite index for common WHERE+ORDER BY
+- **Query plan review** — top 10 expected queries must show no seq scan on hot tables
+- **Migrations** — Flyway/Knex; never edit a shipped migration; always reversible OR has forward-fix
+- **No raw SQL in routes** — only via repository layer (pattern from crm-app `packages/backend/src/repositories/`)
+
+## API Design Best Practices
+
+- **RESTful** verbs: GET/POST/PATCH/DELETE on resources, not RPC-style paths
+- **Plural nouns** for collections: `/orders`, not `/order` or `/getOrders`
+- **OpenAPI 3.1** spec is the source of truth
+- **Versioning** in path: `/v1/orders`
+- **Pagination** envelope: `{ data, total, nextOffset }`
+- **Filtering** via query params with documented allowed list
+- **Sparse fieldsets** via `?fields=` when payloads matter
+- **Error envelope**: `{ code, message, correlationId, details? }` — same shape every time
+- **Idempotency keys** on POST/PATCH that create or mutate money/state
+- **Rate limiting** with 429 + `Retry-After` header
+- **CORS** allowlist explicit, no `*` in production
+
+## Security Best Practices (OWASP Top 10 — every design doc must address)
+
+1. **Broken Access Control** — RBAC matrix + per-route middleware
+2. **Cryptographic Failures** — TLS everywhere, secrets in vault, hash passwords with argon2id/bcrypt cost ≥ 12
+3. **Injection** — parameterised queries only, Zod validation on every input
+4. **Insecure Design** — STRIDE threat model attached to the design doc
+5. **Security Misconfiguration** — security headers checklist, default-deny CORS, no debug in prod
+6. **Vulnerable Components** — `npm audit` gate, Dependabot / Renovate enabled
+7. **Identification & Auth Failures** — MFA where applicable, session timeout, refresh rotation
+8. **Software & Data Integrity Failures** — SRI for CDN assets, signed deploy artefacts
+9. **Logging & Monitoring Failures** — correlation IDs, structured logs, alerts on auth failures
+10. **SSRF** — egress allowlist, no user-controlled URLs fetched server-side without validation
+
+## STRIDE Threat Model (every data flow)
+
+| Threat | Mitigation pattern |
+|---|---|
+| Spoofing | Strong auth (Entra/OIDC), MFA, mTLS for service-to-service |
+| Tampering | Signed tokens (JWT), HMAC on webhooks, RLS, integrity checks |
+| Repudiation | Audit log on every state change with `created_by` / `updated_by` |
+| Information disclosure | Encryption-at-rest, TLS-in-transit, error envelope hides internals |
+| Denial of service | Rate limiting, circuit breakers, queue back-pressure |
+| Elevation of privilege | Deny-by-default RBAC, no `dev` mode in prod, principle of least privilege on all keys |
+
+## RBAC Design Best Practices
+
+- **Role hierarchy** drawn — but inheritance is not implicit; spell out grants per role
+- **Internal vs external surfaces** are separate roles even if the permission set is similar
+- **Deny-by-default** — adding a new resource must explicitly grant access per role
+- **System roles** (background workers, queue consumers) are first-class — never share a token with a human user
+- **Token claims** map 1:1 to roles — no client-side role derivation
+- **Cross-tenant** access forbidden by RLS — never by route logic alone
+
+## Deployment Best Practices (12-factor + modern)
+
+- Config in environment, secrets in vault
+- Immutable infrastructure (Bicep / Terraform), no manual portal changes
+- Zero-downtime deploy via blue/green or canary
+- Health/readiness probes split (liveness ≠ readiness)
+- Logs to stdout, aggregated centrally
+- Stateless processes; state in DB / queue / cache
+- Graceful shutdown on SIGTERM with `drain` period
+- Pattern from NightFactory `prod_readiness_checklist.md` for runbooks
 
 ---
 
-## 7. Conformance Review Checklist (run before signing the brief)
+## Conformance Review Checklist (the Design Architect's PR review)
 
-- [ ] Element × action table complete for every page
-- [ ] No `prompt()` / `alert()` referenced as UX
-- [ ] OpenAPI 3.1 file in `brief/openapi.yaml` validates with `redocly lint`
-- [ ] ERD covers every entity in the API
-- [ ] Audit columns on every business table
-- [ ] RLS policy noted on every multi-tenant table
-- [ ] RBAC matrix with deny-by-default
-- [ ] Threat model grid filled
-- [ ] NFRs numeric (LCP, p95, error rate, a11y score, pass-score ≥95%)
-- [ ] Design tokens locked (`brief/tokens.json`)
-- [ ] Visual baselines committed (self-baseline only)
-- [ ] Demo-mode strategy declared (separate provider)
-- [ ] Cost ceiling and model routing recorded
-- [ ] Sign-off commit SHA recorded in `PIPELINE_RUN_LOG.md`
+For every PR, the Design Architect verifies the diff against the design doc:
 
-## 8. Hand-off to Builder
+- [ ] Data model changes match Section 1 (no rogue fields, no missing audit columns)
+- [ ] New routes match the OpenAPI spec in Section 2 (or update the spec in the same PR)
+- [ ] Every protected route has the role check from Section 3
+- [ ] UI changes match Section 4 (component inventory, accessibility tree, error states)
+- [ ] Ops changes (env vars, migrations, alerts) match Section 5
+- [ ] No new dependency without an ADR
+- [ ] No new env var without a `.env.example` entry + secret-vault reference
+- [ ] No new public route without rate limit
+- [ ] No new write endpoint without idempotency consideration
+- [ ] No new error path without an entry in the error catalogue
+- [ ] No new feature without a feature flag
 
-Architect produces:
-1. `brief/spec.md` — the readable doc.
-2. `brief/openapi.yaml` — machine contract.
-3. `brief/erd.md` — data model.
-4. `brief/threat-model.md` — STRIDE grid.
-5. `brief/rbac-matrix.md` — roles × verbs.
-6. `brief/element-action-table.md` — UI wiring.
-7. `brief/tokens.json` — design lock.
-8. `brief/mockups/*.html` — pixel-faithful targets.
-9. `brief/sources.md` — knowledge-graph citations.
+**Verdict format:**
+- `APPROVE — diff conforms to design doc <path>`
+- `BLOCK — <specific divergence> at <file:line> — required action: <what to fix>`
 
-Builder cannot modify `brief/**`. Changes require `[brand-change]` + architect re-sign.
+The Design Architect is NEVER vague. Every BLOCK names the file, the line, and the action.
+
+---
+
+## Anti-patterns the Design Architect must reject
+
+| Anti-pattern | Reject because |
+|---|---|
+| `as any`, `as { … }` type assertion on user input | Bypasses validation. Use Zod schema. (Real bug in crm-app `orders.ts:73`.) |
+| `AUTH_MODE=dev` without a prod guard | Privilege escalation in one env var flip. |
+| In-memory queue defaulted in prod | Silent data loss on restart. (Real bug — crm-app `inMemoryQueue.ts`.) |
+| `prompt()` / `confirm()` / `alert()` | Not accessible, not stylable, not testable. Use a modal component. |
+| Decorative button (no `onClick`) | User clicks, nothing happens. Use `disabled` + `aria-disabled` or wire it. |
+| Hardcoded admin user in frontend | Credential leak. (Real bug — crm-app `AuthProvider.tsx`.) |
+| `err.message` returned in 500 response | Information disclosure. Return correlation ID only. |
+| Skipping HMAC verification when secret unset | Spoofable webhooks. (Real bug — crm-app `shopifyWebhook.ts`.) |
+| Missing pagination on list endpoints | Unbounded payloads, OOMs at scale. |
+| Direct cloud SDK call in route | Breaks the repository abstraction; impossible to swap providers. |
