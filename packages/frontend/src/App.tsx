@@ -19,6 +19,8 @@ const Workflows = lazy(() => import("./pages/13-workflows.js"));
 const Forms = lazy(() => import("./pages/14-forms.js"));
 const Settings = lazy(() => import("./pages/15-settings.js"));
 const SpecSheet = lazy(() => import("./pages/16-spec-sheet.js"));
+const Campaigns = lazy(() => import("./pages/17-campaigns.js"));
+const CampaignDetail = lazy(() => import("./pages/18-campaign-detail.js"));
 const VendorPortal = lazy(() => import("./pages/vendor-portal.js"));
 
 const Loading = () => (
@@ -62,6 +64,8 @@ export function App() {
         <Route path="/forms" element={<Forms />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/spec" element={<SpecSheet />} />
+        <Route path="/campaigns" element={<Campaigns />} />
+        <Route path="/campaigns/:id" element={<CampaignDetail />} />
         <Route path="/vendor" element={<VendorPortal />} />
         <Route path="/vendor/*" element={<VendorPortal />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
