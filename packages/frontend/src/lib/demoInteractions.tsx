@@ -18,6 +18,23 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Standalone pushToast — callable from any page without React state sharing.
+export function pushToast(message: string, durationMs = 3000) {
+  const div = document.createElement("div");
+  div.textContent = message;
+  div.style.cssText = [
+    "position:fixed", "bottom:24px", "right:24px", "z-index:9999",
+    "background:#1a2e3b", "color:#fff", "border-radius:8px",
+    "padding:10px 16px", "font-size:14px", "box-shadow:0 4px 12px rgba(0,0,0,0.3)",
+    "pointer-events:none", "opacity:1", "transition:opacity 0.3s",
+  ].join(";");
+  document.body.appendChild(div);
+  setTimeout(() => {
+    div.style.opacity = "0";
+    setTimeout(() => div.remove(), 300);
+  }, durationMs);
+}
+
 const NAV_ROUTES: Record<string, string> = {
   dashboard: "/dashboard",
   contacts: "/contacts",
