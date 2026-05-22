@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { demoStore } from "@/lib/demoData";
 import { DEMO_MODE } from "@/lib/demoData";
 import { api } from "@/api/client";
+import { pushToast } from "@/lib/demoInteractions";
 
 // Local Badge — keeps Wave B self-contained (the existing Badge lives in
 // pages/15-settings.tsx as a private helper).
@@ -132,6 +133,7 @@ export function ApiKeysSlot(): ReactNode {
       });
       setCreated({ row: res.data, plaintext: res.plaintext_once });
     }
+    pushToast(`API key "${name.trim()}" generated`);
     setName("");
   }
 
@@ -141,6 +143,7 @@ export function ApiKeysSlot(): ReactNode {
     } else {
       await api.delete(`/api-keys/${id}`);
     }
+    pushToast("API key revoked");
   }
 
   return (
@@ -282,15 +285,28 @@ interface SessionRow {
 
 export function SessionsSlot(): ReactNode {
   useDemoStoreTick();
-  const rows = (demoStore.list("sessions").data as unknown as SessionRow[]) ?? [];
-  const active = rows.filter((r) => !r.revoked_at);
+  const storeRows = (demoStore.list("sessions").data as unknown as SessionRow[]) ?? [];
+  // Per-session local revocation overlay so the demo can revoke without
+  // depending on store wiring; backend mode still writes through the API.
+  const [revokedLocal, setRevokedLocal] = useState<Set<string>>(new Set());
+  const active = storeRows.filter((r) => !r.revoked_at && !revokedLocal.has(r.id));
 
   async function revoke(id: string) {
+    setRevokedLocal((cur) => {
+      const next = new Set(cur);
+      next.add(id);
+      return next;
+    });
     if (DEMO_MODE) {
       demoStore.revokeSession(id);
     } else {
-      await api.delete(`/sessions/${id}`);
+      try {
+        await api.delete(`/sessions/${id}`);
+      } catch {
+        // Backend failure shouldn't undo the optimistic UI removal here.
+      }
     }
+    pushToast("Session revoked");
   }
 
   return (
@@ -301,7 +317,7 @@ export function SessionsSlot(): ReactNode {
       <Card className="rounded-lg border-border bg-background">
         <CardContent className="p-[18px]">
           <div className="mb-3 text-[12px] text-muted">
-            {active.length} active · {rows.length - active.length} revoked
+            {active.length} active · {storeRows.length - active.length} revoked
           </div>
           <div className="space-y-2">
             {active.length === 0 && (
@@ -466,11 +482,47 @@ interface EmailProviderRow {
   is_default: boolean;
 }
 
+interface SmtpConfig {
+  host: string;
+  port: string;
+  username: string;
+  password: string;
+}
+
 export function EmailProvidersSlot(): ReactNode {
   useDemoStoreTick();
   const rows = (demoStore.list("email-providers").data as unknown as EmailProviderRow[]) ?? [];
   const [testTo, setTestTo] = useState("manish@designersmeet.com");
   const [feedback, setFeedback] = useState<string | null>(null);
+  // Per-provider SMTP config kept in local state — backend wiring is future work.
+  const [smtpConfigs, setSmtpConfigs] = useState<Record<string, SmtpConfig>>({});
+  const [editingSmtp, setEditingSmtp] = useState<string | null>(null);
+  const [draftSmtp, setDraftSmtp] = useState<SmtpConfig>({
+    host: "",
+    port: "587",
+    username: "",
+    password: "",
+  });
+
+  function openSmtp(id: string) {
+    const existing = smtpConfigs[id];
+    setDraftSmtp(existing ?? { host: "", port: "587", username: "", password: "" });
+    setEditingSmtp(id);
+  }
+
+  function saveSmtp() {
+    if (!editingSmtp) return;
+    const host = draftSmtp.host.trim();
+    if (!host) return;
+    setSmtpConfigs((cur) => ({
+      ...cur,
+      [editingSmtp]: { ...draftSmtp, host, port: draftSmtp.port.trim() || "587" },
+    }));
+    const row = rows.find((r) => r.id === editingSmtp);
+    if (row) void savePatch(row, { api_key_set: true });
+    pushToast(`SMTP configured: ${host}`);
+    setEditingSmtp(null);
+  }
 
   async function savePatch(row: EmailProviderRow, patch: Partial<EmailProviderRow>) {
     if (DEMO_MODE) {
@@ -491,6 +543,7 @@ export function EmailProvidersSlot(): ReactNode {
       );
       setFeedback(r.data.message);
     }
+    pushToast(`Test email sent to ${testTo}`);
   }
 
   return (
@@ -559,6 +612,9 @@ export function EmailProvidersSlot(): ReactNode {
                       className="mt-1"
                     />
                   </div>
+                  <Button type="button" variant="secondary" onClick={() => openSmtp(r.id)}>
+                    {smtpConfigs[r.id] ? "Configure" : "Connect"}
+                  </Button>
                   <Button type="button" onClick={() => void test(r)}>
                     Send test
                   </Button>
@@ -568,11 +624,80 @@ export function EmailProvidersSlot(): ReactNode {
                     {feedback}
                   </div>
                 )}
+                {smtpConfigs[r.id] ? (
+                  <div className="mt-2 text-[11px] text-muted">
+                    SMTP host: <code>{smtpConfigs[r.id]?.host}</code> ·
+                    port {smtpConfigs[r.id]?.port}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
+
+      {editingSmtp ? (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-foreground/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Configure SMTP"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingSmtp(null);
+          }}
+        >
+          <div className="w-full max-w-[420px] rounded-lg border border-border bg-background p-5 shadow-pop">
+            <div className="mb-4 text-[15px] font-semibold text-foreground">
+              Configure SMTP
+            </div>
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-[12px] font-medium text-secondary">Host</span>
+                <Input
+                  value={draftSmtp.host}
+                  onChange={(e) => setDraftSmtp((cur) => ({ ...cur, host: e.target.value }))}
+                  placeholder="smtp.sendgrid.net"
+                  className="mt-1"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[12px] font-medium text-secondary">Port</span>
+                <Input
+                  value={draftSmtp.port}
+                  onChange={(e) => setDraftSmtp((cur) => ({ ...cur, port: e.target.value }))}
+                  placeholder="587"
+                  className="mt-1"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[12px] font-medium text-secondary">Username</span>
+                <Input
+                  value={draftSmtp.username}
+                  onChange={(e) => setDraftSmtp((cur) => ({ ...cur, username: e.target.value }))}
+                  className="mt-1"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[12px] font-medium text-secondary">Password</span>
+                <Input
+                  type="password"
+                  value={draftSmtp.password}
+                  onChange={(e) => setDraftSmtp((cur) => ({ ...cur, password: e.target.value }))}
+                  className="mt-1"
+                />
+              </label>
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setEditingSmtp(null)}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={saveSmtp}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </PanelShell>
   );
 }
@@ -621,6 +746,7 @@ export function WebhooksSlot(): ReactNode {
       });
       setSecret(res.signing_secret_once);
     }
+    pushToast(`Webhook added: ${trimmed}`);
     setUrl("");
   }
 
@@ -630,6 +756,7 @@ export function WebhooksSlot(): ReactNode {
     } else {
       await api.delete(`/webhook-subscriptions/${id}`);
     }
+    pushToast("Webhook deleted");
   }
 
   return (

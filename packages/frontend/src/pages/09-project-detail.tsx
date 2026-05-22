@@ -61,7 +61,7 @@ const workspaceNavItems: NavItem[] = [
   { label: "Projects", icon: Layers, active: true },
   { label: "Calendar", icon: Calendar },
   { label: "Conversations", icon: MessagesSquare },
-  { label: "Forms", icon: ClipboardList },
+  // { label: "Forms", icon: ClipboardList }, // hidden
   { label: "Workflows", icon: Zap },
   { label: "Reports", icon: BarChart3 },
   { label: "Settings", icon: Settings },

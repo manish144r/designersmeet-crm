@@ -47,7 +47,7 @@ export const NAV_ROUTES: Record<string, string> = {
   Conversations: "/conversations",
   Forms: "/forms",
   Workflows: "/workflows",
-  Reports: "/pipelines",
+  Reports: "/reports",
   Settings: "/settings",
 };
 
@@ -67,7 +67,7 @@ export const workspaceNavItems: NavItem[] = [
   { label: "Projects", icon: Layers },
   { label: "Calendar", icon: Calendar },
   { label: "Conversations", icon: MessagesSquare },
-  { label: "Forms", icon: ClipboardList },
+  // { label: "Forms", icon: ClipboardList }, // hidden — page unreachable from sidebar
   { label: "Workflows", icon: Zap },
   { label: "Reports", icon: BarChart3 },
   { label: "Settings", icon: Settings },

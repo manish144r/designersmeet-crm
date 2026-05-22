@@ -17,8 +17,14 @@ import { useCreate, useItem, useUpdate, useRemove } from "../hooks/useResource.j
 interface Field {
   name: string;
   label: string;
-  type?: "text" | "email" | "number" | "date";
+  type?: "text" | "email" | "number" | "date" | "select";
+  options?: string[];
 }
+
+// Kanban column values for projects — keep in sync with
+// `projectColumnMeta` in 08-projects-board.tsx so the create/edit modal
+// always offers the same status values as the board columns.
+const PROJECT_STATUSES = ["Brief", "Concept", "Design", "Procurement", "Install", "Handover"];
 
 // User-editable fields per resource (mirrors the backend Zod schemas; only the
 // fields a create/edit form needs — opaque *_json fields are omitted).
@@ -52,10 +58,10 @@ const REGISTRY: Record<string, { title: string; fields: Field[] }> = {
   projects: {
     title: "Project",
     fields: [
-      { name: "name", label: "Project name" },
-      { name: "status", label: "Status" },
-      { name: "manager_user_id", label: "Manager" },
-      { name: "target_end_date", label: "Target end", type: "date" },
+      { name: "title", label: "Project name" },
+      { name: "status", label: "Status", type: "select", options: PROJECT_STATUSES },
+      { name: "owner", label: "Owner" },
+      { name: "due", label: "Due date" },
     ],
   },
   conversations: {
@@ -123,13 +129,29 @@ function RecordForm({ resource, recordId }: { resource: string; recordId: string
           className="flex flex-col gap-1 text-[13px] text-secondary"
         >
           {f.label}
-          <Input
-            id={`crm-field-${f.name}`}
-            aria-label={f.label}
-            type={f.type ?? "text"}
-            value={form[f.name] ?? ""}
-            onChange={(e) => setForm((s) => ({ ...s, [f.name]: e.target.value }))}
-          />
+          {f.type === "select" ? (
+            <select
+              id={`crm-field-${f.name}`}
+              aria-label={f.label}
+              value={form[f.name] ?? f.options?.[0] ?? ""}
+              onChange={(e) => setForm((s) => ({ ...s, [f.name]: e.target.value }))}
+              className="h-9 rounded-md border border-border bg-background px-2 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-foreground"
+            >
+              {(f.options ?? []).map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Input
+              id={`crm-field-${f.name}`}
+              aria-label={f.label}
+              type={f.type ?? "text"}
+              value={form[f.name] ?? ""}
+              onChange={(e) => setForm((s) => ({ ...s, [f.name]: e.target.value }))}
+            />
+          )}
         </label>
       ))}
       <div className="mt-2 flex justify-end gap-2">

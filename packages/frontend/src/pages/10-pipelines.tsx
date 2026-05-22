@@ -1,7 +1,13 @@
 /* Generated from brief/mockups/10-pipelines.html via Codex fidelity pass 2026-05-19. Do not hand-edit. */
 
 import { useNavigate } from "react-router-dom";
-import { useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  DndContext,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import {
   BarChart3,
   Bell,
@@ -82,7 +88,7 @@ const workspaceNavItems: NavItem[] = [
   { label: "Projects", icon: Layers },
   { label: "Calendar", icon: Calendar },
   { label: "Conversations", icon: MessagesSquare },
-  { label: "Forms", icon: ClipboardList },
+  // { label: "Forms", icon: ClipboardList }, // hidden
   { label: "Workflows", icon: Zap },
   { label: "Reports", icon: BarChart3 },
   { label: "Settings", icon: Settings },
@@ -277,9 +283,23 @@ function ViewButton({ active, icon: Icon, children }: { active?: boolean; icon: 
   );
 }
 
-function OpportunityCard({ card }: { card: OpportunityCard }) {
+function OpportunityCard({ card, columnTitle }: { card: OpportunityCard; columnTitle: string }) {
+  const dragId = `${columnTitle}::${card.title}`;
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: dragId,
+  });
+  const dragStyle = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 50 }
+    : undefined;
   return (
-    <Card className="cursor-grab rounded-md border-border bg-background p-3 transition-colors hover:border-border-strong hover:shadow-card">
+    <Card
+      ref={setNodeRef}
+      style={dragStyle}
+      {...attributes}
+      {...listeners}
+      data-dragging={isDragging ? "true" : "false"}
+      className="cursor-grab rounded-md border-border bg-background p-3 transition-colors hover:border-border-strong hover:shadow-card"
+    >
       <div className="mb-1.5 flex items-start justify-between">
         <div className="text-[13px] font-semibold leading-snug text-foreground">{card.title}</div>
         <IconButton title="Opportunity menu" className="size-5">
@@ -298,7 +318,69 @@ function OpportunityCard({ card }: { card: OpportunityCard }) {
   );
 }
 
+function useDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+  return { open, setOpen, ref };
+}
+
+function FilterDropdown({
+  label,
+  icon: Icon,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  icon?: React.ElementType;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const dd = useDropdown();
+  return (
+    <div className="relative" ref={dd.ref}>
+      <Button
+        type="button"
+        variant="secondary"
+        className="h-auto gap-1.5 px-3.5 py-[7px] text-[12px] focus-visible:ring-foreground"
+        onClick={() => dd.setOpen((v) => !v)}
+      >
+        {Icon && <Icon className={iconClass} aria-hidden="true" />}
+        {label}: {value}
+        <ChevronDown className="size-4 text-muted" aria-hidden="true" />
+      </Button>
+      {dd.open && (
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] rounded-lg border border-border bg-background py-1 shadow-lg">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => { onChange(opt); dd.setOpen(false); }}
+              className={cn(
+                "flex w-full items-center px-3 py-2 text-left text-[13px] hover:bg-hover",
+                opt === value ? "font-medium text-primary" : "text-foreground",
+              )}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function KanbanColumn({ column }: { column: PipelineColumn }) {
+  const { setNodeRef, isOver } = useDroppable({ id: column.title });
   return (
     <div className="flex w-[280px] min-w-[280px] flex-col rounded-lg border border-border bg-subtle">
       <div className="flex items-center justify-between border-b border-border px-3.5 py-3 text-[12px] font-semibold text-foreground">
@@ -315,9 +397,16 @@ function KanbanColumn({ column }: { column: PipelineColumn }) {
         <div className="text-[11px] uppercase tracking-wider text-muted">Total value</div>
         <div className="text-[13px] font-semibold text-foreground">{column.total}</div>
       </div>
-      <div className="flex min-h-[200px] flex-1 flex-col gap-2 p-2.5">
+      <div
+        ref={setNodeRef}
+        data-drop-target={isOver ? "true" : "false"}
+        className={cn(
+          "flex min-h-[200px] flex-1 flex-col gap-2 p-2.5 transition-colors",
+          isOver && "bg-primary-tint/40",
+        )}
+      >
         {column.cards.map((card) => (
-          <OpportunityCard key={card.title} card={card} />
+          <OpportunityCard key={card.title} card={card} columnTitle={column.title} />
         ))}
       </div>
     </div>
@@ -328,6 +417,10 @@ export default function Pipelines() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const [activePipelineFilter, setActivePipelineFilter] = useState<string | null>(null);
+  const [ownerFilter, setOwnerFilter] = useState<string>("Any");
+  const [stageFilter, setStageFilter] = useState<string>("Any");
+  // Track moves performed via DnD: dragId ("colTitle::cardTitle") -> destColumn.
+  const [moves, setMoves] = useState<Record<string, string>>({});
   const _st = useList<PipelineStageRow & { id?: string }>("pipeline-stages").data?.data ?? [];
   const _pp = useList<PipelineRow>("pipelines").data?.data ?? [];
   const _deals =
@@ -376,6 +469,62 @@ export default function Pipelines() {
         })
       : pipelineColumns;
 
+  // Apply DnD moves and filters on top of the resolved columns.
+  const displayColumns = useMemo<PipelineColumn[]>(() => {
+    const allTitles = _pipelineColumns.map((c) => c.title);
+    // Re-bucket cards based on `moves` table — dragId encodes source column.
+    const buckets = new Map<string, OpportunityCard[]>();
+    allTitles.forEach((t) => buckets.set(t, []));
+    for (const col of _pipelineColumns) {
+      for (const card of col.cards) {
+        const dragId = `${col.title}::${card.title}`;
+        const dest = moves[dragId] ?? col.title;
+        if (!buckets.has(dest)) buckets.set(dest, []);
+        if (ownerFilter !== "Any" && card.owner !== ownerFilter) continue;
+        buckets.get(dest)!.push(card);
+      }
+    }
+    let cols = _pipelineColumns.map((col) => ({
+      ...col,
+      cards: buckets.get(col.title) ?? [],
+      count: String((buckets.get(col.title) ?? []).length),
+    }));
+    if (stageFilter !== "Any") {
+      cols = cols.filter((c) => c.title === stageFilter);
+    }
+    return cols;
+  }, [_pipelineColumns, moves, ownerFilter, stageFilter]);
+
+  const ownerOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const col of _pipelineColumns) for (const c of col.cards) set.add(c.owner);
+    return ["Any", ...Array.from(set).sort()];
+  }, [_pipelineColumns]);
+
+  const stageOptions = useMemo(
+    () => ["Any", ..._pipelineColumns.map((c) => c.title)],
+    [_pipelineColumns],
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    const dragId = String(active.id);
+    const dest = String(over.id);
+    const [srcCol] = dragId.split("::");
+    if (srcCol === dest) {
+      // Reset any prior move so it stays in the original column.
+      setMoves((m) => {
+        if (!(dragId in m)) return m;
+        const next = { ...m };
+        delete next[dragId];
+        return next;
+      });
+      return;
+    }
+    setMoves((m) => ({ ...m, [dragId]: dest }));
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
       <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -410,7 +559,7 @@ export default function Pipelines() {
           <div className="mb-1.5 mt-3.5 px-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Workspace</div>
           <div className="flex flex-col gap-0.5">
             {workspaceNavItems.map((item) => (
-              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/pipelines",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
+              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/reports",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
             ))}
           </div>
           <div className="mb-1.5 mt-3.5 px-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Surfaces</div>
@@ -480,10 +629,19 @@ export default function Pipelines() {
                   <ViewButton icon={List}>List</ViewButton>
                   <ViewButton icon={BarChart3}>Forecast</ViewButton>
                 </div>
-                <Button type="button" variant="secondary" onClick={() => alert("Filter panel — coming soon")} className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground">
-                  <Filter className={iconClass} aria-hidden="true" />
-                  Filter
-                </Button>
+                <FilterDropdown
+                  label="Owner"
+                  icon={Filter}
+                  options={ownerOptions}
+                  value={ownerFilter}
+                  onChange={setOwnerFilter}
+                />
+                <FilterDropdown
+                  label="Stage"
+                  options={stageOptions}
+                  value={stageFilter}
+                  onChange={setStageFilter}
+                />
                 <Button type="button" onClick={() => useUIStore.getState().openCreate("pipelines")} className="h-auto gap-1.5 bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover">
                   <Plus className={iconClass} aria-hidden="true" />
                   New opportunity
@@ -509,11 +667,13 @@ export default function Pipelines() {
             </div>
 
             <div className="flex-1 overflow-x-auto">
-              <div className="flex min-w-min gap-4 p-6">
-                {pipelineColumns.map((column, index) => (
-                  <KanbanColumn key={column.title} column={_pipelineColumns[index] ?? column} />
-                ))}
-              </div>
+              <DndContext onDragEnd={handleDragEnd}>
+                <div className="flex min-w-min gap-4 p-6">
+                  {displayColumns.map((column) => (
+                    <KanbanColumn key={column.title} column={column} />
+                  ))}
+                </div>
+              </DndContext>
             </div>
           </div>
         </main>

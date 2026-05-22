@@ -42,8 +42,15 @@ const PHASE2_LABELS = new Set([
   "outlook add-in",
   "teams app",
   "m365 launcher",
-  "reports",
 ]);
+
+// Imperative API — fire-and-forget toast from any component:
+//   pushToast("Invite sent to alice@example.com");
+const TOAST_EVENT = "dm:toast";
+export function pushToast(text: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<string>(TOAST_EVENT, { detail: text }));
+}
 
 function applyPhase2Markers() {
   const labels = Array.from(PHASE2_LABELS);
@@ -143,6 +150,11 @@ export function DemoInteractionLayer() {
       const target = isInteractive(ev.target as Element | null);
       if (!target) return;
 
+      // Subtrees that opt out of the global click hijack — used by the vendor
+      // portal so its tab labels (Projects, Conversations, …) don't trigger
+      // navigation to the admin CRM pages of the same name.
+      if (target.closest('[data-no-demo-nav="true"]')) return;
+
       const label = labelOf(target);
       const key = label.toLowerCase();
 
@@ -176,9 +188,16 @@ export function DemoInteractionLayer() {
       push(label);
     }
 
+    function onToast(ev: Event) {
+      const ce = ev as CustomEvent<string>;
+      if (typeof ce.detail === "string" && ce.detail.length > 0) push(ce.detail);
+    }
+
     document.addEventListener("click", onClick, true);
+    window.addEventListener(TOAST_EVENT, onToast);
     return () => {
       document.removeEventListener("click", onClick, true);
+      window.removeEventListener(TOAST_EVENT, onToast);
       obs.disconnect();
     };
   }, [navigate, push]);

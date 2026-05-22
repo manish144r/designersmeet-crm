@@ -78,6 +78,7 @@ import {
 } from "@/hooks/usePreferences";
 import { useCreate, useList, useRemove, useUpdate } from '../hooks/useResource.js';
 import { downloadInvoicePdf } from "@/lib/invoicePdf";
+import { pushToast } from "@/lib/demoInteractions";
 import {
   ApiKeysSlot,
   SessionsSlot,
@@ -120,7 +121,7 @@ const workspaceNavItems: NavItem[] = [
   { label: "Projects", icon: Layers },
   { label: "Calendar", icon: Calendar },
   { label: "Conversations", icon: MessagesSquare },
-  { label: "Forms", icon: ClipboardList },
+  // { label: "Forms", icon: ClipboardList }, // hidden
   { label: "Workflows", icon: Zap },
   { label: "Reports", icon: BarChart3 },
   { label: "Settings", icon: SettingsIcon, active: true },
@@ -678,9 +679,114 @@ function BrandingPanel() {
   );
 }
 
+type InviteRole = "Admin" | "Member" | "Viewer";
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function InviteUserModal({
+  open,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (email: string, role: InviteRole) => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<InviteRole>("Member");
+  const [touched, setTouched] = useState(false);
+  const emailValid = EMAIL_RE.test(email.trim());
+
+  if (!open) return null;
+
+  function submit() {
+    setTouched(true);
+    if (!emailValid) return;
+    onSubmit(email.trim(), role);
+    setEmail("");
+    setRole("Member");
+    setTouched(false);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-foreground/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Invite user"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-[420px] rounded-lg border border-border bg-background p-5 shadow-pop">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-[16px] font-semibold text-foreground">
+            Invite user
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-md p-1 text-muted hover:bg-hover hover:text-foreground"
+          >
+            <X className={iconClass} aria-hidden="true" />
+          </button>
+        </div>
+        <div className="space-y-3">
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Email</span>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              placeholder="alice@example.com"
+              className="mt-1 h-[34px] text-[13px]"
+              aria-invalid={touched && !emailValid}
+            />
+            {touched && !emailValid ? (
+              <span className="mt-1 block text-[11px] text-danger">
+                Enter a valid email address.
+              </span>
+            ) : null}
+          </label>
+          <label className="block">
+            <span className="text-[12px] font-medium text-secondary">Role</span>
+            <select
+              value={role}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as InviteRole)}
+              className="mt-1 h-[34px] w-full rounded-md border border-border bg-background px-2 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-foreground"
+            >
+              <option value="Admin">Admin</option>
+              <option value="Member">Member</option>
+              <option value="Viewer">Viewer</option>
+            </select>
+          </label>
+        </div>
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            className="h-auto px-3 py-[7px] text-[13px] text-secondary"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={submit}
+            className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+          >
+            Send Invite
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function UsersRolesPanel() {
   const { data } = useList('users');
   const { mutate: updateUser } = useUpdate('users');
+  const [inviteOpen, setInviteOpen] = useState(false);
   return (
     <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Users & roles">
       <div className="mb-6 flex items-end justify-between gap-3">
@@ -696,7 +802,7 @@ function UsersRolesPanel() {
           type="button"
           variant="secondary"
           className="h-auto gap-1.5 px-3.5 py-[7px] text-[13px] focus-visible:ring-foreground"
-          onClick={() => undefined}
+          onClick={() => setInviteOpen(true)}
         >
           <Plus className={iconClass} aria-hidden="true" />
           Invite member
@@ -727,11 +833,67 @@ function UsersRolesPanel() {
           ))}
         </CardContent>
       </Card>
+      <InviteUserModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onSubmit={(email, role) => {
+          pushToast(`Invite sent to ${email} (${role})`);
+          setInviteOpen(false);
+        }}
+      />
     </div>
   );
 }
 
+interface SsoConfig {
+  clientId: string;
+  clientSecret: string;
+}
+
 function SsoProvidersPanel() {
+  const providers = useMemo(
+    () => [
+      { id: "entra", logo: <MicrosoftLogo className="size-5 text-foreground" />, name: "Microsoft Entra ID", sub: "Multi-tenant · admin consented" },
+      { id: "google", logo: <GoogleLogo className="size-5 text-foreground" />, name: "Google Identity", sub: "OAuth · openid email profile" },
+      { id: "apple", logo: <AppleLogo className="size-5 text-foreground" />, name: "Sign in with Apple", sub: "Services ID configured" },
+    ],
+    [],
+  );
+  const [connected, setConnected] = useState<Record<string, SsoConfig>>({});
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState("");
+  const [draftSecret, setDraftSecret] = useState("");
+
+  function openConnect(id: string) {
+    const existing = connected[id];
+    setDraftId(existing?.clientId ?? "");
+    setDraftSecret(existing?.clientSecret ?? "");
+    setEditing(id);
+  }
+
+  function saveConnect() {
+    if (!editing) return;
+    const id = draftId.trim();
+    const secret = draftSecret.trim();
+    if (!id || !secret) return;
+    setConnected((cur) => ({ ...cur, [editing]: { clientId: id, clientSecret: secret } }));
+    const name = providers.find((p) => p.id === editing)?.name ?? editing;
+    pushToast(`${name} connected`);
+    setEditing(null);
+    setDraftId("");
+    setDraftSecret("");
+  }
+
+  function disconnect(id: string) {
+    setConnected((cur) => {
+      const next = { ...cur };
+      delete next[id];
+      return next;
+    });
+    const name = providers.find((p) => p.id === id)?.name ?? id;
+    pushToast(`${name} disconnected`);
+  }
+
   return (
     <div className="max-w-[1100px] px-8 py-6" data-settings-panel="SSO providers">
       <div className="mb-6">
@@ -745,25 +907,124 @@ function SsoProvidersPanel() {
       <Card className="rounded-lg border-border bg-background">
         <CardContent className="p-[18px]">
           <div className="grid grid-cols-3 gap-3">
-            {[
-              { logo: <MicrosoftLogo className="size-5 text-foreground" />, name: "Microsoft Entra ID", sub: "Multi-tenant · admin consented" },
-              { logo: <GoogleLogo className="size-5 text-foreground" />, name: "Google Identity", sub: "OAuth · openid email profile" },
-              { logo: <AppleLogo className="size-5 text-foreground" />, name: "Sign in with Apple", sub: "Services ID configured" },
-            ].map((p) => (
-              <div key={p.name} className="rounded-lg border border-border p-4">
-                <div className="mb-3 flex items-start justify-between">
-                  {p.logo}
-                  <Badge variant="success" dot>
-                    Enabled
-                  </Badge>
+            {providers.map((p) => {
+              const isConnected = !!connected[p.id];
+              return (
+                <div key={p.id} className="rounded-lg border border-border p-4">
+                  <div className="mb-3 flex items-start justify-between">
+                    {p.logo}
+                    {isConnected ? (
+                      <Badge variant="success" dot>
+                        Connected
+                      </Badge>
+                    ) : (
+                      <Badge variant="neutral">Disconnected</Badge>
+                    )}
+                  </div>
+                  <div className="text-[13px] font-semibold text-foreground">{p.name}</div>
+                  <div className="mt-0.5 text-[11px] text-muted">{p.sub}</div>
+                  <div className="mt-3 flex gap-2">
+                    {isConnected ? (
+                      <>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => openConnect(p.id)}
+                          className="h-auto px-3 py-1.5 text-[12px] focus-visible:ring-foreground"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => disconnect(p.id)}
+                          className="h-auto px-3 py-1.5 text-[12px] text-secondary hover:text-destructive focus-visible:ring-foreground"
+                        >
+                          Disconnect
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        type="button"
+                        onClick={() => openConnect(p.id)}
+                        className="h-auto bg-primary px-3 py-1.5 text-[12px] text-background hover:bg-primary-hover"
+                      >
+                        Connect
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="text-[13px] font-semibold text-foreground">{p.name}</div>
-                <div className="mt-0.5 text-[11px] text-muted">{p.sub}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
+
+      {editing ? (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-foreground/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Configure SSO provider"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditing(null);
+          }}
+        >
+          <div className="w-full max-w-[420px] rounded-lg border border-border bg-background p-5 shadow-pop">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-display text-[16px] font-semibold text-foreground">
+                Configure {providers.find((p) => p.id === editing)?.name ?? "SSO"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                aria-label="Close"
+                className="rounded-md p-1 text-muted hover:bg-hover hover:text-foreground"
+              >
+                <X className={iconClass} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-[12px] font-medium text-secondary">Client ID</span>
+                <Input
+                  value={draftId}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setDraftId(e.target.value)}
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  className="mt-1 h-[34px] text-[13px]"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[12px] font-medium text-secondary">Client Secret</span>
+                <Input
+                  type="password"
+                  value={draftSecret}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setDraftSecret(e.target.value)}
+                  placeholder="••••••••"
+                  className="mt-1 h-[34px] text-[13px]"
+                />
+              </label>
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setEditing(null)}
+                className="h-auto px-3 py-[7px] text-[13px] text-secondary"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={saveConnect}
+                className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1205,6 +1466,7 @@ interface TeamRow {
   color: string;
   members: string[];
   workspace_id?: string;
+  description?: string;
 }
 
 interface UserRow {
@@ -1212,6 +1474,115 @@ interface UserRow {
   name: string;
   email: string;
   role: string;
+}
+
+function TeamRowEditor({ team, users }: { team: TeamRow; users: UserRow[] }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(team.name);
+  const [description, setDescription] = useState(team.description ?? "");
+
+  function save() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    demoStore.update("teams", team.id, {
+      name: trimmed,
+      description: description.trim(),
+    });
+    pushToast(`Team "${trimmed}" saved`);
+    setEditing(false);
+  }
+
+  function cancel() {
+    setName(team.name);
+    setDescription(team.description ?? "");
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div
+        data-team-id={team.id}
+        className="space-y-3 border-b border-border-subtle bg-subtle px-5 py-4 last:border-b-0"
+      >
+        <label className="block">
+          <span className="text-[12px] font-medium text-secondary">Name</span>
+          <Input
+            value={name}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+            className="mt-1 h-[34px] text-[13px]"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[12px] font-medium text-secondary">Description</span>
+          <Input
+            value={description}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)}
+            placeholder="What this team owns"
+            className="mt-1 h-[34px] text-[13px]"
+          />
+        </label>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            onClick={save}
+            className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover"
+          >
+            Save
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={cancel}
+            className="h-auto px-3 py-[7px] text-[13px] text-secondary"
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-team-id={team.id}
+      className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
+    >
+      <div
+        className="size-3 shrink-0 rounded-full"
+        style={{ backgroundColor: team.color }}
+      />
+      <div className="flex-1">
+        <div className="text-[13px] font-semibold text-foreground">{team.name}</div>
+        <div className="text-[11px] text-muted">
+          {team.description ? `${team.description} · ` : ""}
+          {team.members.length} member{team.members.length === 1 ? "" : "s"}
+          {team.members.length > 0
+            ? ` · ${team.members
+                .map((m) => users.find((u) => u.id === m)?.name ?? m)
+                .join(", ")}`
+            : ""}
+        </div>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => setEditing(true)}
+        className="h-auto px-2.5 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-foreground focus-visible:ring-foreground"
+      >
+        Edit
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => demoStore.remove("teams", team.id)}
+        aria-label="Delete team"
+        title="Delete team"
+        className="h-auto px-2 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-destructive focus-visible:ring-foreground"
+      >
+        <Trash2 className={iconClass} aria-hidden="true" />
+      </Button>
+    </div>
+  );
 }
 
 function TeamsPanel() {
@@ -1358,34 +1729,7 @@ function TeamsPanel() {
             </div>
           ) : (
             scoped.map((t) => (
-              <div
-                key={t.id}
-                data-team-id={t.id}
-                className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
-              >
-                <div className="size-3 shrink-0 rounded-full" style={{ backgroundColor: t.color }} />
-                <div className="flex-1">
-                  <div className="text-[13px] font-semibold text-foreground">{t.name}</div>
-                  <div className="text-[11px] text-muted">
-                    {t.members.length} member{t.members.length === 1 ? "" : "s"}
-                    {t.members.length > 0
-                      ? ` · ${t.members
-                          .map((m) => users.find((u) => u.id === m)?.name ?? m)
-                          .join(", ")}`
-                      : ""}
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => demoStore.remove("teams", t.id)}
-                  aria-label="Delete team"
-                  title="Delete team"
-                  className="h-auto px-2 py-1.5 text-[12px] text-secondary hover:bg-hover hover:text-destructive focus-visible:ring-foreground"
-                >
-                  <Trash2 className={iconClass} aria-hidden="true" />
-                </Button>
-              </div>
+              <TeamRowEditor key={t.id} team={t} users={users} />
             ))
           )}
         </CardContent>
@@ -1481,6 +1825,7 @@ const PLAN_TIERS = [
 ];
 
 function UpgradeModal({ onClose }: { onClose: () => void }) {
+  const [selected, setSelected] = useState<string | null>(null);
   return (
     <div
       className="fixed inset-0 z-[10000] flex items-start justify-center overflow-auto bg-foreground/40 px-4 py-12"
@@ -1497,38 +1842,74 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
             <div className="text-[15px] font-semibold text-foreground">Upgrade your plan</div>
-            <div className="text-[12px] text-muted">Demo only · no real billing happens</div>
+            <div className="text-[12px] text-muted">
+              {selected ? `Selected: ${selected}` : "Click a plan card to select"}
+            </div>
           </div>
           <IconButton title="Close" onClick={onClose}>
             <X className={iconClass} aria-hidden="true" />
           </IconButton>
         </div>
         <div className="grid grid-cols-4 gap-3 px-5 py-5">
-          {PLAN_TIERS.map((tier) => (
-            <div
-              key={tier.name}
-              data-tier={tier.name}
-              data-current={tier.current ? "true" : "false"}
-              className={cn(
-                "rounded-lg border p-4",
-                tier.current ? "border-primary bg-primary-tint/20" : "border-border bg-background",
-              )}
-            >
-              <div className="flex items-baseline justify-between">
-                <div className="text-[14px] font-semibold text-foreground">{tier.name}</div>
-                {tier.current ? <Badge variant="success">Current</Badge> : null}
-              </div>
-              <div className="mt-1 text-[12px] text-muted">{tier.price}</div>
-              <ul className="mt-3 space-y-1.5 text-[12px] text-secondary">
-                {tier.features.map((f) => (
-                  <li key={f} className="flex items-start gap-1.5">
-                    <CheckCircle2 className="mt-[1px] size-3.5 shrink-0 text-primary" aria-hidden="true" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {PLAN_TIERS.map((tier) => {
+            const isSelected = selected === tier.name;
+            return (
+              <button
+                key={tier.name}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                data-tier={tier.name}
+                data-selected={isSelected ? "true" : "false"}
+                data-current={tier.current ? "true" : "false"}
+                onClick={() => setSelected(tier.name)}
+                className={cn(
+                  "rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+                  isSelected
+                    ? "border-foreground bg-primary-tint/30 shadow-card"
+                    : tier.current
+                      ? "border-primary bg-primary-tint/20"
+                      : "border-border bg-background hover:border-border-strong",
+                )}
+              >
+                <div className="flex items-baseline justify-between">
+                  <div className="text-[14px] font-semibold text-foreground">{tier.name}</div>
+                  {tier.current ? <Badge variant="success">Current</Badge> : null}
+                </div>
+                <div className="mt-1 text-[12px] text-muted">{tier.price}</div>
+                <ul className="mt-3 space-y-1.5 text-[12px] text-secondary">
+                  {tier.features.map((f) => (
+                    <li key={f} className="flex items-start gap-1.5">
+                      <CheckCircle2 className="mt-[1px] size-3.5 shrink-0 text-primary" aria-hidden="true" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            className="h-auto px-3 py-[7px] text-[13px] text-secondary"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            disabled={!selected}
+            onClick={() => {
+              if (!selected) return;
+              pushToast(`Upgrade to ${selected} initiated — contact support to complete.`);
+              onClose();
+            }}
+            className="h-auto bg-primary px-3.5 py-[7px] text-[13px] text-background hover:bg-primary-hover disabled:opacity-50"
+          >
+            Upgrade now
+          </Button>
         </div>
       </div>
     </div>
@@ -1546,9 +1927,112 @@ interface InvoiceRow {
   line_items: Array<{ label: string; amount: number }>;
 }
 
+// Seed dummy invoices so the panel has filterable rows in demo mode.
+// Issued dates span the last year to exercise the period filter.
+const SEEDED_INVOICES: Array<
+  InvoiceRow & { invoice_number: string; vendor_name: string }
+> = [
+  {
+    id: "inv-1001",
+    invoice_number: "INV-1001",
+    vendor_name: "Aurora Studio",
+    period: "May 2026",
+    amount: 240000,
+    currency: "₹",
+    status: "paid",
+    issued_at: "2026-05-02T00:00:00Z",
+    paid_at: "2026-05-08T00:00:00Z",
+    line_items: [{ label: "Concept boards × 3", amount: 240000 }],
+  },
+  {
+    id: "inv-1002",
+    invoice_number: "INV-1002",
+    vendor_name: "Manjunath Karpenter Co",
+    period: "May 2026",
+    amount: 184000,
+    currency: "₹",
+    status: "due",
+    issued_at: "2026-05-12T00:00:00Z",
+    paid_at: null,
+    line_items: [{ label: "Modular joinery", amount: 184000 }],
+  },
+  {
+    id: "inv-1003",
+    invoice_number: "INV-1003",
+    vendor_name: "Voltek Electricals",
+    period: "April 2026",
+    amount: 86000,
+    currency: "₹",
+    status: "overdue",
+    issued_at: "2026-04-18T00:00:00Z",
+    paid_at: null,
+    line_items: [{ label: "Smart home wiring", amount: 86000 }],
+  },
+  {
+    id: "inv-1004",
+    invoice_number: "INV-1004",
+    vendor_name: "FabTextiles",
+    period: "March 2026",
+    amount: 142000,
+    currency: "₹",
+    status: "paid",
+    issued_at: "2026-03-05T00:00:00Z",
+    paid_at: "2026-03-22T00:00:00Z",
+    line_items: [{ label: "Drapery + soft furnishings", amount: 142000 }],
+  },
+  {
+    id: "inv-1005",
+    invoice_number: "INV-1005",
+    vendor_name: "Render Boutique",
+    period: "Jan 2026",
+    amount: 198000,
+    currency: "₹",
+    status: "paid",
+    issued_at: "2026-01-22T00:00:00Z",
+    paid_at: "2026-02-04T00:00:00Z",
+    line_items: [{ label: "VR walk-throughs", amount: 198000 }],
+  },
+];
+
+type InvoicePeriod = "30" | "90" | "year" | "all";
+type InvoiceStatusFilter = "all" | "paid" | "pending" | "overdue";
+
+const PERIOD_LABELS: Record<InvoicePeriod, string> = {
+  "30": "Last 30 days",
+  "90": "Last 90 days",
+  year: "This year",
+  all: "All time",
+};
+
 function InvoicesPanel() {
   useDemoStoreTick();
-  const invoices = (demoStore.list("invoices").data as unknown as InvoiceRow[]) ?? [];
+  // Local seed table — the demoStore "invoices" feed lacks invoice_number /
+  // vendor_name, so the panel owns its own data for FIX 14.
+  const [invoices] = useState(SEEDED_INVOICES);
+  const [search, setSearch] = useState("");
+  const [period, setPeriod] = useState<InvoicePeriod>("all");
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatusFilter>("all");
+
+  const now = Date.now();
+  const cutoff: Record<InvoicePeriod, number> = {
+    "30": now - 30 * 86400000,
+    "90": now - 90 * 86400000,
+    year: new Date(new Date().getFullYear(), 0, 1).getTime(),
+    all: 0,
+  };
+
+  const filtered = invoices.filter((inv) => {
+    const q = search.trim().toLowerCase();
+    if (q && !inv.invoice_number.toLowerCase().includes(q) && !inv.vendor_name.toLowerCase().includes(q))
+      return false;
+    const t = new Date(inv.issued_at).getTime();
+    if (t < cutoff[period]) return false;
+    if (statusFilter === "all") return true;
+    if (statusFilter === "paid") return inv.status === "paid";
+    if (statusFilter === "overdue") return inv.status === "overdue";
+    if (statusFilter === "pending") return inv.status === "due";
+    return true;
+  });
 
   return (
     <div className="max-w-[1100px] px-8 py-6" data-settings-panel="Invoices">
@@ -1557,48 +2041,114 @@ function InvoicesPanel() {
           Invoices
         </h1>
         <p className="mt-1 text-[13px] text-muted">
-          {invoices.length} invoice{invoices.length === 1 ? "" : "s"} · click <em>Download</em> for the PDF
+          {filtered.length} of {invoices.length} invoice{invoices.length === 1 ? "" : "s"} ·
+          search by number or vendor
         </p>
       </div>
 
+      <Card className="mb-4 rounded-lg border-border bg-background">
+        <CardContent className="grid grid-cols-1 gap-3 px-[18px] py-4 md:grid-cols-4">
+          <label className="md:col-span-2 block">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">
+              Search
+            </span>
+            <Input
+              value={search}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+              placeholder="INV-1003 or vendor name"
+              className="mt-1 h-[34px] text-[13px]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">
+              Period
+            </span>
+            <select
+              value={period}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setPeriod(e.target.value as InvoicePeriod)}
+              className="mt-1 h-[34px] w-full rounded-md border border-border bg-background px-2 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-foreground"
+            >
+              {(Object.keys(PERIOD_LABELS) as InvoicePeriod[]).map((k) => (
+                <option key={k} value={k}>
+                  {PERIOD_LABELS[k]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">
+              Status
+            </span>
+            <select
+              value={statusFilter}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as InvoiceStatusFilter)}
+              className="mt-1 h-[34px] w-full rounded-md border border-border bg-background px-2 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-foreground"
+            >
+              <option value="all">All</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </label>
+        </CardContent>
+      </Card>
+
       <Card className="rounded-lg border-border bg-background">
         <CardContent className="p-0">
-          {invoices.map((inv) => {
-            const statusVariant: BadgeVariant = inv.status === "paid" ? "success" : "neutral";
-            return (
-              <div
-                key={inv.id}
-                data-invoice-id={inv.id}
-                data-invoice-status={inv.status}
-                className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
-              >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background text-secondary">
-                  <Receipt className={iconClass} aria-hidden="true" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13px] font-semibold text-foreground">
-                    {inv.period} · {inv.currency} {inv.amount.toLocaleString("en-IN")}
-                  </div>
-                  <div className="text-[11px] text-muted">
-                    Issued {inv.issued_at?.slice(0, 10)}
-                    {inv.paid_at ? ` · Paid ${inv.paid_at.slice(0, 10)}` : ""}
-                  </div>
-                </div>
-                <Badge variant={statusVariant} dot={inv.status !== "paid"}>
-                  {inv.status === "paid" ? "Paid" : inv.status === "due" ? "Due" : "Overdue"}
-                </Badge>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => downloadInvoicePdf(inv)}
-                  className="h-auto gap-1.5 px-3 py-1.5 text-[12px] focus-visible:ring-foreground"
+          {filtered.length === 0 ? (
+            <div className="px-5 py-8 text-center text-[12px] text-muted">
+              No invoices match the current filters.
+            </div>
+          ) : (
+            filtered.map((inv) => {
+              const statusVariant: BadgeVariant = inv.status === "paid" ? "success" : "neutral";
+              return (
+                <div
+                  key={inv.id}
+                  data-invoice-id={inv.id}
+                  data-invoice-status={inv.status}
+                  className="flex items-center gap-3 border-b border-border-subtle px-5 py-3 last:border-b-0"
                 >
-                  <Download className={iconClass} aria-hidden="true" />
-                  Download
-                </Button>
-              </div>
-            );
-          })}
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background text-secondary">
+                    <Receipt className={iconClass} aria-hidden="true" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[13px] font-semibold text-foreground">
+                      {inv.invoice_number} · {inv.vendor_name}
+                    </div>
+                    <div className="text-[11px] text-muted">
+                      {inv.period} · {inv.currency} {inv.amount.toLocaleString("en-IN")} · Issued{" "}
+                      {inv.issued_at?.slice(0, 10)}
+                      {inv.paid_at ? ` · Paid ${inv.paid_at.slice(0, 10)}` : ""}
+                    </div>
+                  </div>
+                  <Badge variant={statusVariant} dot={inv.status !== "paid"}>
+                    {inv.status === "paid"
+                      ? "Paid"
+                      : inv.status === "due"
+                        ? "Pending"
+                        : "Overdue"}
+                  </Badge>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      pushToast(`Downloading invoice ${inv.invoice_number}`);
+                      try {
+                        downloadInvoicePdf(inv);
+                      } catch {
+                        // PDF library is best-effort in the demo build.
+                      }
+                    }}
+                    className="h-auto gap-1.5 px-3 py-1.5 text-[12px] focus-visible:ring-foreground"
+                  >
+                    <Download className={iconClass} aria-hidden="true" />
+                    Download
+                  </Button>
+                </div>
+              );
+            })
+          )}
         </CardContent>
       </Card>
     </div>
@@ -1732,7 +2282,7 @@ export default function Settings() {
           </div>
           <div className="space-y-0.5">
             {workspaceNavItems.map((item) => (
-              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/pipelines",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
+              <SidebarNavItem key={item.label} item={item} onClick={() => { const r = ({Dashboard:"/dashboard",Contacts:"/contacts",Vendors:"/vendors",Pipelines:"/pipelines",Projects:"/projects",Calendar:"/calendar",Conversations:"/conversations",Forms:"/forms",Workflows:"/workflows",Reports:"/reports",Settings:"/settings"} as Record<string,string>)[item.label]; if (r) navigate(r); }} />
             ))}
           </div>
 
