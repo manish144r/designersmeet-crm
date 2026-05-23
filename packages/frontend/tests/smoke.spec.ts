@@ -26,19 +26,24 @@ if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 const BASE = process.env.DEPLOY_URL ?? "https://designersmeet-crm-backend.vercel.app";
 
 // Routes that must return 200 + application/json
+// Source of truth: packages/backend/src/crm/types.ts RESOURCES + waveBRouter
 const JSON_ROUTES = [
   "/health",
   "/api/health",
   "/api/healthz",
   "/api/contacts",
   "/api/vendors",
+  "/api/clients",
   "/api/projects",
   "/api/pipelines",
   "/api/pipeline-stages",
+  "/api/pipeline-deals",
   "/api/conversations",
   "/api/calendar-events",
-  "/api/services",
-  "/api/orders",
+  "/api/workflows",
+  "/api/campaigns",
+  "/api/segments",
+  "/api/users",
 ];
 
 // Routes that must return 200 + text/html (SPA shell)
@@ -47,6 +52,8 @@ const HTML_ROUTES = ["/", "/dashboard", "/contacts", "/pipelines", "/calendar"];
 // Routes that return 404 JSON (entity renamed or not yet registered — expected)
 const EXPECTED_404_ROUTES = [
   "/api/freelancers", // renamed to /api/vendors in brand-change branch
+  "/api/services",    // not a registered resource in this branch
+  "/api/orders",      // not a registered resource in this branch (handled via Wave B)
 ];
 
 const results: Array<{

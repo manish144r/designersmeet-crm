@@ -145,6 +145,12 @@ export function createApp(): Express {
     }),
   );
 
+  // JSON 404 for unmatched /api/* routes — prevents Express default HTML 404
+  // which would fool the smoke-test SPA-catch-all detector.
+  app.use("/api", (_req, res) => {
+    res.status(404).json({ error: "not_found", message: "No such API route" });
+  });
+
   app.use(errorHandler);
 
   // Production static-file serving: only when running outside Vercel.
