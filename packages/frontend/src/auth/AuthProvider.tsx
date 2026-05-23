@@ -1,10 +1,9 @@
-// DesignersMeet auth context.
-// Real path: Microsoft Entra (MSAL loginPopup) when VITE_MSAL_CLIENT_ID is set.
-// Demo path: instant bypass when VITE_MSAL_CLIENT_ID is not configured.
+// DesignersMeet auth context — powered by Clerk.
+// Demo path: instant bypass when VITE_CLERK_PUBLISHABLE_KEY is not configured.
+// Real path: Clerk hosted sign-in (Microsoft 365 + Google social connections).
 //
-// Backend token strategy: we send the MSAL ID token (aud=client_id) rather than
-// the access token (aud=graph.microsoft.com) so the backend JWKS validation
-// works without requiring a custom API scope in Azure App Registration.
+// Same useAuth() API surface as the previous MSAL implementation so all
+// consumers (NavGuard, page components, API client token getter) work unchanged.
 import {
   createContext,
   useContext,
@@ -15,11 +14,11 @@ import {
   type ReactNode,
 } from "react";
 import {
-  PublicClientApplication,
-  type AccountInfo,
-  InteractionRequiredAuthError,
-  BrowserAuthError,
-} from "@azure/msal-browser";
+  ClerkProvider,
+  useUser,
+  useAuth as useClerkAuth,
+  SignIn,
+} from "@clerk/clerk-react";
 import { setTokenGetter } from "../api/client.js";
 
 export type AppRole = "admin" | "pm" | "designer" | "vendor" | "viewer";
@@ -50,41 +49,10 @@ const DEMO_USER: AuthUser = {
   via: "demo",
 };
 
-// Demo mode when MSAL client ID is not configured.
-// Set VITE_MSAL_CLIENT_ID in Vercel env vars to enable real Microsoft auth.
-const MSAL_CLIENT_ID = import.meta.env.VITE_MSAL_CLIENT_ID ?? "";
-const MSAL_TENANT = import.meta.env.VITE_MSAL_TENANT ?? "designersmeet.com";
-const DEMO_MODE = !MSAL_CLIENT_ID;
-
-const MSAL_SCOPES = ["openid", "profile", "email", "User.Read"];
-
-export const msalConfig = {
-  auth: {
-    clientId: MSAL_CLIENT_ID,
-    authority: `https://login.microsoftonline.com/${MSAL_TENANT}`,
-    redirectUri: typeof window !== "undefined" ? window.location.origin : "",
-  },
-  cache: { cacheLocation: "localStorage" as const, storeAuthStateInCookie: true },
-  system: { allowNativeBroker: false },
-};
-
-// MSAL singleton — only created when client ID is present.
-let _msalApp: PublicClientApplication | null = null;
-function getMsalApp(): PublicClientApplication | null {
-  if (DEMO_MODE) return null;
-  if (!_msalApp) _msalApp = new PublicClientApplication(msalConfig);
-  return _msalApp;
-}
-
-function accountToUser(account: AccountInfo): AuthUser {
-  return {
-    sub: account.homeAccountId,
-    email: account.username,
-    name: account.name ?? account.username,
-    roles: ["admin"],
-    via: "microsoft",
-  };
-}
+// Demo mode when Clerk publishable key is not configured.
+// Set VITE_CLERK_PUBLISHABLE_KEY in Vercel env vars to enable real Clerk auth.
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ?? "";
+const DEMO_MODE = !CLERK_PUBLISHABLE_KEY;
 
 const AuthContext = createContext<AuthContextValue>({
   user: DEMO_MODE ? DEMO_USER : null,
@@ -95,93 +63,44 @@ const AuthContext = createContext<AuthContextValue>({
   signOut: () => undefined,
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(DEMO_MODE ? DEMO_USER : null);
-  const [ready, setReady] = useState(DEMO_MODE); // demo is always ready
+// ─── Inner provider — only rendered when Clerk is active ─────────────────────
+function ClerkAuthInner({ children }: { children: ReactNode }) {
+  const { user: clerkUser, isLoaded, isSignedIn } = useUser();
+  const { getToken, signOut: clerkSignOut } = useClerkAuth();
 
-  // Initialise MSAL and restore any existing session.
-  useEffect(() => {
-    if (DEMO_MODE) return;
-    const app = getMsalApp()!;
-    app
-      .initialize()
-      .then(() => app.handleRedirectPromise())
-      .then((resp) => {
-        if (resp?.account) {
-          setUser(accountToUser(resp.account));
-        } else {
-          const accounts = app.getAllAccounts();
-          if (accounts.length > 0) setUser(accountToUser(accounts[0]));
-        }
-      })
-      .catch(console.error)
-      .finally(() => setReady(true));
-  }, []);
+  const user = useMemo<AuthUser | null>(() => {
+    if (!isLoaded || !isSignedIn || !clerkUser) return null;
+    // Derive app role: check publicMetadata.role first, default to admin.
+    const metaRole = (clerkUser.publicMetadata?.role as AppRole | undefined) ?? "admin";
+    const via: AuthProviderKind =
+      clerkUser.primaryEmailAddress?.emailAddress?.endsWith("@microsoft.com")
+        ? "microsoft"
+        : "google";
+    return {
+      sub: clerkUser.id,
+      email: clerkUser.primaryEmailAddress?.emailAddress ?? "",
+      name: clerkUser.fullName ?? clerkUser.primaryEmailAddress?.emailAddress ?? "",
+      roles: [metaRole],
+      via,
+    };
+  }, [clerkUser, isLoaded, isSignedIn]);
 
-  const signIn = useCallback(async (via: AuthProviderKind) => {
-    if (DEMO_MODE) {
-      setUser({ ...DEMO_USER, via });
-      return;
-    }
-    if (via !== "microsoft") {
-      // Google / Apple not wired yet — use demo user as placeholder.
-      setUser({ ...DEMO_USER, via });
-      return;
-    }
-    const app = getMsalApp();
-    if (!app) return;
-    try {
-      const resp = await app.loginPopup({ scopes: MSAL_SCOPES });
-      if (resp?.account) setUser(accountToUser(resp.account));
-    } catch (err) {
-      if (err instanceof BrowserAuthError && err.errorCode === "popup_window_error") {
-        // Popup blocked — fall back to redirect flow.
-        await app.loginRedirect({ scopes: MSAL_SCOPES });
-      } else {
-        console.error("MSAL login error", err);
-      }
-    }
+  const signIn = useCallback(async (_via: AuthProviderKind) => {
+    // Clerk handles sign-in via its hosted UI — this is a no-op in the Clerk path.
+    // The ClerkProvider renders <SignIn> when the user is not signed in.
   }, []);
 
   const signOut = useCallback(() => {
-    if (DEMO_MODE) {
-      setUser(null);
-      return;
-    }
-    const app = getMsalApp();
-    const accounts = app?.getAllAccounts() ?? [];
-    setUser(null);
-    if (app && accounts.length > 0) {
-      app.logoutRedirect({
-        account: accounts[0],
-        postLogoutRedirectUri: window.location.origin,
-      });
-    }
-  }, []);
+    clerkSignOut();
+  }, [clerkSignOut]);
 
   const getAccessToken = useCallback(async (): Promise<string | null> => {
-    if (DEMO_MODE) return "demo-token";
-    const app = getMsalApp();
-    if (!app) return null;
-    const accounts = app.getAllAccounts();
-    if (!accounts.length) return null;
     try {
-      // Return idToken (aud=client_id) — backend validates against ENTRA_CLIENT_ID.
-      // Access token has aud=graph.microsoft.com and would fail backend JWKS check.
-      const result = await app.acquireTokenSilent({ scopes: MSAL_SCOPES, account: accounts[0] });
-      return result.idToken;
-    } catch (err) {
-      if (err instanceof InteractionRequiredAuthError) {
-        try {
-          const result = await app.acquireTokenPopup({ scopes: MSAL_SCOPES, account: accounts[0] });
-          return result.idToken;
-        } catch {
-          return null;
-        }
-      }
+      return await getToken();
+    } catch {
       return null;
     }
-  }, []);
+  }, [getToken]);
 
   // Wire the token getter into the API client so every fetch includes Bearer header.
   useEffect(() => {
@@ -189,14 +108,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [getAccessToken]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, signedIn: !!user, demoMode: DEMO_MODE, signIn, getAccessToken, signOut }),
+    () => ({
+      user,
+      signedIn: !!user,
+      demoMode: false,
+      signIn,
+      getAccessToken,
+      signOut,
+    }),
     [user, signIn, getAccessToken, signOut],
   );
 
-  // Don't render until MSAL is initialised (prevents auth flicker on redirect).
-  if (!ready) return null;
+  // Show Clerk sign-in screen when not authenticated (replaces loginPopup).
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <SignIn routing="hash" />
+      </div>
+    );
+  }
+
+  // Don't render children until Clerk has resolved the session.
+  if (!isLoaded) return null;
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// ─── Demo inner provider — when no Clerk key is configured ────────────────────
+function DemoAuthInner({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(DEMO_USER);
+
+  const signIn = useCallback(async (via: AuthProviderKind) => {
+    setUser({ ...DEMO_USER, via });
+  }, []);
+
+  const signOut = useCallback(() => {
+    setUser(null);
+  }, []);
+
+  const getAccessToken = useCallback(async (): Promise<string | null> => {
+    return "demo-token";
+  }, []);
+
+  useEffect(() => {
+    setTokenGetter(getAccessToken);
+  }, [getAccessToken]);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({ user, signedIn: !!user, demoMode: true, signIn, getAccessToken, signOut }),
+    [user, signIn, getAccessToken, signOut],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// ─── Public AuthProvider ──────────────────────────────────────────────────────
+export function AuthProvider({ children }: { children: ReactNode }) {
+  if (DEMO_MODE) {
+    return <DemoAuthInner>{children}</DemoAuthInner>;
+  }
+
+  return (
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} afterSignOutUrl="/">
+      <ClerkAuthInner>{children}</ClerkAuthInner>
+    </ClerkProvider>
+  );
 }
 
 export const useAuth = () => useContext(AuthContext);

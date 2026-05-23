@@ -8,7 +8,11 @@ const Env = z.object({
 
   DATA_PROVIDER: z.enum(["memory", "dataverse", "sqlserver"]).default("memory"),
   QUEUE_PROVIDER: z.enum(["memory", "azure-service-bus", "supabase"]).default("memory"),
-  AUTH_MODE: z.enum(["dev", "entra"]).default("dev"),
+  AUTH_MODE: z.enum(["dev", "entra", "clerk"]).default("dev"),
+
+  // ── Clerk (replaces MSAL for external-facing auth) ──────────────────────────
+  CLERK_PUBLISHABLE_KEY: z.string().optional(),
+  CLERK_SECRET_KEY: z.string().optional(),
 
   DATAVERSE_URL: z.string().optional(),
   AZURE_TENANT_ID: z.string().optional(),
@@ -80,7 +84,12 @@ export type Config = z.infer<typeof Env>;
 if (config.NODE_ENV === "production" && !config.DEMO_BYPASS) {
   if (config.AUTH_MODE === "dev") {
     throw new Error(
-      "FATAL: AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=entra and configure ENTRA_* variables, or set DEMO_BYPASS=true for a demo deployment.",
+      "FATAL: AUTH_MODE=dev is not allowed in production. Set AUTH_MODE=clerk (+ CLERK_SECRET_KEY) or AUTH_MODE=entra (+ ENTRA_* vars), or set DEMO_BYPASS=true for a demo deployment.",
+    );
+  }
+  if (config.AUTH_MODE === "clerk" && !config.CLERK_SECRET_KEY) {
+    throw new Error(
+      "FATAL: AUTH_MODE=clerk requires CLERK_SECRET_KEY in production.",
     );
   }
   if (config.QUEUE_PROVIDER === "memory" && !config.SUPABASE_URL && !config.SERVICE_BUS_CONNECTION_STRING) {
