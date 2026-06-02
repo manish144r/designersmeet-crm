@@ -1,0 +1,662 @@
+<!-- GHL Compatible -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DesignersMeet Brand Identity — Your Brand. Unforgettable.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+  :root {
+    --warm-dark: #120e08;
+    --gold: #F59E0B;
+    --gold-light: #FCD34D;
+    --cream: #FDF6E3;
+    --gold-dim: rgba(245,158,11,0.12);
+    --gold-border: rgba(245,158,11,0.25);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--warm-dark);
+    color: var(--cream);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 256px;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 1000;
+    background: rgba(18,14,8,0.8);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(245,158,11,0.15);
+    padding: 1.1rem 2.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.3rem; color: var(--cream); letter-spacing: 0.5px; }
+  .logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 2.5rem; align-items: center; }
+  .nav-links a { color: rgba(253,246,227,0.55); text-decoration: none; font-size: 0.875rem; font-weight: 400; transition: color 0.3s; letter-spacing: 0.3px; }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-cta {
+    border: 1.5px solid var(--gold); color: var(--gold);
+    padding: 0.55rem 1.4rem; border-radius: 4px;
+    font-weight: 500; font-size: 0.875rem; text-decoration: none;
+    font-family: 'Inter', sans-serif; letter-spacing: 0.5px;
+    transition: all 0.3s;
+  }
+  .nav-cta:hover { background: var(--gold); color: #000; }
+
+  /* HERO */
+  #hero {
+    position: relative; min-height: 100vh;
+    display: flex; align-items: center;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 30% 60%, rgba(245,158,11,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(245,158,11,0.04) 0%, transparent 50%);
+  }
+
+  .hero-inner {
+    max-width: 1300px; margin: 0 auto; padding: 0 3rem;
+    padding-top: 7rem; padding-bottom: 5rem;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 5rem; align-items: center;
+    position: relative; z-index: 1;
+  }
+  @media (max-width: 1000px) { .hero-inner { grid-template-columns: 1fr; gap: 3rem; } }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+  .eyebrow-line { width: 40px; height: 1px; background: var(--gold); }
+  .eyebrow-text { font-size: 0.75rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); }
+
+  .hero-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3.5rem, 6.5vw, 6rem);
+    line-height: 1.05;
+    font-weight: 700;
+    margin-bottom: 2rem;
+  }
+  .hero-headline .italic-gold {
+    font-style: italic;
+    color: var(--gold);
+    display: block;
+    position: relative;
+  }
+  .gold-underline-draw {
+    position: absolute; bottom: -8px; left: 0;
+    height: 2px; width: 0;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 1px;
+    transition: width 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hero-sub { font-size: 1.05rem; color: rgba(253,246,227,0.5); line-height: 1.8; max-width: 480px; margin-bottom: 3rem; font-weight: 300; }
+  .hero-btns { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+  .btn-ghost { border: 1px solid rgba(253,246,227,0.25); color: rgba(253,246,227,0.7); padding: 0.85rem 2.2rem; border-radius: 4px; font-weight: 500; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; display: inline-block; letter-spacing: 0.3px; }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-gold { background: var(--gold); color: #000; padding: 0.85rem 2.2rem; border-radius: 4px; font-weight: 600; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; display: inline-block; letter-spacing: 0.3px; }
+  .btn-gold:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(245,158,11,0.3); }
+
+  /* HERO EDITORIAL SIDE */
+  .hero-right { display: flex; flex-direction: column; gap: 1.5rem; }
+  .hero-stat-block { border-left: 2px solid var(--gold-border); padding-left: 1.5rem; }
+  .hero-stat-num { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; color: var(--gold); line-height: 1; }
+  .hero-stat-label { font-size: 0.8rem; color: rgba(253,246,227,0.4); margin-top: 0.3rem; letter-spacing: 0.5px; }
+  .hero-stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .hero-quote { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.1rem; color: rgba(253,246,227,0.6); line-height: 1.7; }
+  .hero-quote-attribution { font-size: 0.8rem; color: var(--gold); margin-top: 0.5rem; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* CLIENT PILLS */
+  .client-pills { display: flex; gap: 0.75rem; margin-top: 2.5rem; flex-wrap: wrap; }
+  .client-pill { border: 1px solid rgba(245,158,11,0.2); padding: 0.4rem 1.1rem; border-radius: 100px; font-size: 0.8rem; color: rgba(253,246,227,0.5); font-weight: 500; letter-spacing: 0.5px; }
+
+  /* SERVICES */
+  .services-section { max-width: 1300px; margin: 0 auto; padding: 8rem 3rem; }
+  .section-number { font-size: 0.7rem; font-weight: 700; color: rgba(245,158,11,0.5); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .section-label { font-size: 0.75rem; font-weight: 600; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1.5rem; }
+  .section-heading { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 700; margin-bottom: 1rem; line-height: 1.2; }
+  .section-body { color: rgba(253,246,227,0.45); font-size: 0.95rem; line-height: 1.8; max-width: 560px; font-weight: 300; }
+
+  .services-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.1); border-radius: 2px; overflow: hidden; margin-top: 4rem; }
+  @media (max-width: 768px) { .services-cards { grid-template-columns: 1fr; } }
+  .svc-card { background: var(--warm-dark); padding: 3rem; transition: background 0.4s; position: relative; cursor: default; }
+  .svc-card:hover { background: rgba(245,158,11,0.04); }
+  .svc-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gold); transform: scaleX(0); transform-origin: left; transition: transform 0.4s; }
+  .svc-card:hover::before { transform: scaleX(1); }
+  .svc-from { font-size: 0.75rem; color: var(--gold); letter-spacing: 1px; margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; }
+  .svc-price { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; }
+  .svc-name { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.75rem; }
+  .svc-desc { font-size: 0.875rem; color: rgba(253,246,227,0.45); line-height: 1.7; }
+
+  /* PORTFOLIO */
+  .portfolio-section { padding: 8rem 3rem; max-width: 1300px; margin: 0 auto; }
+  .portfolio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: rgba(245,158,11,0.06); margin-top: 4rem; }
+  @media (max-width: 900px) { .portfolio-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .portfolio-grid { grid-template-columns: 1fr; } }
+  .brand-card {
+    background: var(--warm-dark); padding: 2.5rem;
+    transition: all 0.4s; cursor: pointer; position: relative; overflow: hidden;
+  }
+  .brand-card::after {
+    content: ''; position: absolute; inset: 0; opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+  }
+  .brand-card:hover::after { opacity: 1; }
+  .bc-axiom::after { background: radial-gradient(circle at 50% 50%, rgba(59,130,246,0.08), transparent 70%); }
+  .bc-bloom::after { background: radial-gradient(circle at 50% 50%, rgba(134,239,172,0.08), transparent 70%); }
+  .bc-nova::after { background: radial-gradient(circle at 50% 50%, rgba(245,158,11,0.08), transparent 70%); }
+  .bc-evergreen::after { background: radial-gradient(circle at 50% 50%, rgba(34,197,94,0.08), transparent 70%); }
+  .bc-zenith::after { background: radial-gradient(circle at 50% 50%, rgba(245,158,11,0.08), transparent 70%); }
+  .bc-forge::after { background: radial-gradient(circle at 50% 50%, rgba(249,115,22,0.08), transparent 70%); }
+
+  .brand-card:hover { transform: translateY(-3px); }
+  .brand-industry { font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: 0.75rem; }
+  .brand-name { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; }
+  .palette-dots { display: flex; gap: 0.5rem; align-items: center; }
+  .dot { width: 28px; height: 28px; border-radius: 50%; transition: transform 0.3s; }
+  .brand-card:hover .dot { transform: scale(1.15); }
+  .brand-desc { font-size: 0.8rem; color: rgba(253,246,227,0.3); margin-top: 1rem; line-height: 1.6; }
+
+  /* CHECKLIST */
+  .includes-section { padding: 8rem 3rem; background: radial-gradient(ellipse at 50% 50%, rgba(245,158,11,0.06) 0%, transparent 70%); }
+  .includes-inner { max-width: 1300px; margin: 0 auto; }
+  .includes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start; margin-top: 4rem; }
+  @media (max-width: 900px) { .includes-grid { grid-template-columns: 1fr; } }
+  .checklist { display: flex; flex-direction: column; gap: 0; }
+  .check-item { display: flex; align-items: center; gap: 1.25rem; padding: 1.1rem 0; border-bottom: 1px solid rgba(245,158,11,0.08); transition: all 0.3s; }
+  .check-item:first-child { border-top: 1px solid rgba(245,158,11,0.08); }
+  .check-item:hover { padding-left: 0.5rem; }
+  .check-icon { width: 28px; height: 28px; border: 1px solid var(--gold-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--gold); flex-shrink: 0; transition: all 0.3s; }
+  .check-item:hover .check-icon { background: var(--gold); color: #000; border-color: var(--gold); }
+  .check-label { font-size: 0.95rem; color: rgba(253,246,227,0.7); font-weight: 400; }
+  .includes-quote-block { border: 1px solid rgba(245,158,11,0.15); border-radius: 4px; padding: 3rem; background: rgba(245,158,11,0.03); position: sticky; top: 8rem; }
+  .iq-heading { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; line-height: 1.3; margin-bottom: 1.5rem; }
+  .iq-heading em { color: var(--gold); font-style: italic; }
+  .iq-body { font-size: 0.9rem; color: rgba(253,246,227,0.45); line-height: 1.8; margin-bottom: 2rem; }
+  .iq-cta { display: inline-block; background: var(--gold); color: #000; padding: 0.85rem 2rem; border-radius: 4px; font-weight: 600; font-size: 0.9rem; text-decoration: none; transition: all 0.3s; }
+  .iq-cta:hover { background: var(--gold-light); transform: translateY(-2px); }
+
+  /* PROCESS - VERTICAL TIMELINE */
+  .process-section { max-width: 1300px; margin: 0 auto; padding: 8rem 3rem; }
+  .timeline { position: relative; padding-left: 4rem; margin-top: 4rem; }
+  .timeline::before { content: ''; position: absolute; left: 12px; top: 0; bottom: 0; width: 1px; background: linear-gradient(180deg, var(--gold-border) 0%, transparent 100%); }
+  .timeline-item { position: relative; padding-bottom: 3.5rem; }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .tl-dot {
+    position: absolute; left: -3.55rem; top: 4px;
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid var(--gold-border); background: var(--warm-dark);
+    display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--gold); font-weight: 700;
+    transition: all 0.3s;
+  }
+  .timeline-item:hover .tl-dot { background: var(--gold); border-color: var(--gold); color: #000; }
+  .tl-num { font-size: 0.7rem; color: rgba(245,158,11,0.5); font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.4rem; }
+  .tl-name { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .tl-desc { font-size: 0.875rem; color: rgba(253,246,227,0.45); line-height: 1.7; max-width: 560px; }
+
+  /* CONTACT */
+  #contact { padding: 8rem 3rem; }
+  .contact-inner { max-width: 900px; margin: 0 auto; }
+  .contact-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center; }
+  @media (max-width: 900px) { .contact-layout { grid-template-columns: 1fr; gap: 3rem; } }
+  .contact-headline { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.2; margin-bottom: 1rem; }
+  .contact-headline em { font-style: italic; color: var(--gold); }
+  .contact-body { font-size: 0.9rem; color: rgba(253,246,227,0.45); line-height: 1.8; margin-bottom: 2rem; font-weight: 300; }
+  .contact-detail { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; font-size: 0.875rem; color: rgba(253,246,227,0.5); }
+  .contact-detail::before { content: '—'; color: var(--gold); }
+  .contact-form-box { background: rgba(245,158,11,0.04); border: 1px solid rgba(245,158,11,0.15); border-radius: 4px; padding: 2.5rem; }
+  .c-label { font-size: 0.75rem; font-weight: 600; color: rgba(245,158,11,0.7); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.5rem; display: block; }
+  .c-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(253,246,227,0.1); border-radius: 3px; padding: 0.85rem 1rem; color: var(--cream); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border 0.3s; margin-bottom: 1.2rem; }
+  .c-input:focus { border-color: var(--gold); }
+  .c-input::placeholder { color: rgba(253,246,227,0.2); }
+  .c-submit { width: 100%; background: var(--gold); color: #000; border: none; border-radius: 3px; padding: 1rem; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+  .c-submit:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+  /* FOOTER */
+  footer { border-top: 1px solid rgba(245,158,11,0.1); padding: 5rem 3rem 2.5rem; }
+  .footer-inner { max-width: 1300px; margin: 0 auto; }
+  .footer-grid { display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 4rem; }
+  @media (max-width: 1000px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .footer-grid { grid-template-columns: 1fr; } }
+  .footer-brand-tagline { font-family: 'Playfair Display', serif; font-style: italic; color: rgba(253,246,227,0.35); font-size: 0.9rem; margin-top: 1rem; line-height: 1.6; max-width: 260px; }
+  .f-col h5 { font-size: 0.75rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(245,158,11,0.6); margin-bottom: 1.2rem; }
+  .f-col a { display: block; font-size: 0.85rem; color: rgba(253,246,227,0.35); text-decoration: none; margin-bottom: 0.7rem; transition: color 0.3s; }
+  .f-col a:hover { color: var(--gold); }
+  .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 2.5rem; border-top: 1px solid rgba(253,246,227,0.06); flex-wrap: wrap; gap: 1rem; }
+  .footer-bottom p { font-size: 0.78rem; color: rgba(253,246,227,0.2); }
+  .socials { display: flex; gap: 1rem; }
+  .soc-link { font-size: 0.78rem; color: rgba(253,246,227,0.35); text-decoration: none; letter-spacing: 1px; transition: color 0.3s; }
+  .soc-link:hover { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="logo">Designers<span>Meet</span></div>
+  <div class="nav-links">
+    <a href="#services">Services</a>
+    <a href="#portfolio">Work</a>
+    <a href="#process">Process</a>
+    <a href="#contact">Contact</a>
+    <a href="#contact" class="nav-cta">Get Quote</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="hero-inner">
+    <!-- LEFT: Editorial headline -->
+    <div>
+      <div class="hero-eyebrow">
+        <div class="eyebrow-line"></div>
+        <div class="eyebrow-text">Brand & Identity Design</div>
+      </div>
+      <h1 class="hero-headline" id="hero-headline">
+        Your Brand.
+        <span class="italic-gold" id="unforgettable">
+          Unforgettable.
+          <span class="gold-underline-draw" id="gold-line"></span>
+        </span>
+      </h1>
+      <p class="hero-sub">Strategic brand identity for companies that want to be remembered — crafted with intention and built to last decades.</p>
+      <div class="hero-btns">
+        <a href="#portfolio" class="btn-ghost">Our Work</a>
+        <a href="#contact" class="btn-gold">Build My Brand →</a>
+      </div>
+      <div class="client-pills" id="client-pills">
+        <span class="client-pill">Axiom</span>
+        <span class="client-pill">Bloom Wellness</span>
+        <span class="client-pill">Nova Capital</span>
+        <span class="client-pill">Evergreen</span>
+        <span class="client-pill">Zenith</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Editorial stats -->
+    <div class="hero-right" id="hero-right">
+      <div class="hero-stats-row">
+        <div class="hero-stat-block">
+          <div class="hero-stat-num" data-count="150">0</div>
+          <div class="hero-stat-label">Brands Created</div>
+        </div>
+        <div class="hero-stat-block">
+          <div class="hero-stat-num">8+</div>
+          <div class="hero-stat-label">Years of Practice</div>
+        </div>
+      </div>
+      <div class="hero-stats-row">
+        <div class="hero-stat-block">
+          <div class="hero-stat-num">12</div>
+          <div class="hero-stat-label">Design Awards</div>
+        </div>
+        <div class="hero-stat-block">
+          <div class="hero-stat-num" data-count="97">0</div>
+          <div class="hero-stat-label">% Client Satisfaction</div>
+        </div>
+      </div>
+      <div style="border: 1px solid rgba(245,158,11,0.12); border-radius: 4px; padding: 1.75rem; margin-top: 0.5rem; background: rgba(245,158,11,0.03);">
+        <div class="hero-quote">"A brand is the set of expectations, memories, stories and relationships that, taken together, account for a consumer's decision."</div>
+        <div class="hero-quote-attribution" style="margin-top:0.75rem;">— Seth Godin</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<div class="services-section" id="services">
+  <div class="section-label">What We Create</div>
+  <h2 class="section-heading">Identity systems that<br>tell your story.</h2>
+  <p class="section-body">Every brand we create begins with deep strategic thinking. We don't just make things look beautiful — we make them mean something.</p>
+  <div class="services-cards">
+    <div class="svc-card">
+      <div class="svc-from">From</div>
+      <div class="svc-price">$799</div>
+      <div class="svc-name">Logo Design</div>
+      <div class="svc-desc">Primary and secondary logo marks, icon system, and a comprehensive usage guidelines document. Delivered in all formats across every use case.</div>
+    </div>
+    <div class="svc-card">
+      <div class="svc-from">From</div>
+      <div class="svc-price">$1,799</div>
+      <div class="svc-name">Brand Identity</div>
+      <div class="svc-desc">The complete visual language: logo suite, colour palette, typography system, photography direction, and stationery design. Ready to deploy across every channel.</div>
+    </div>
+    <div class="svc-card">
+      <div class="svc-from">From</div>
+      <div class="svc-price">$2,499</div>
+      <div class="svc-name">Brand Strategy</div>
+      <div class="svc-desc">Positioning, brand voice, key messaging, competitive analysis, and audience personas. The strategic foundation that makes every visual decision intentional.</div>
+    </div>
+    <div class="svc-card">
+      <div class="svc-from">From</div>
+      <div class="svc-price">$3,499</div>
+      <div class="svc-name">Full Identity System</div>
+      <div class="svc-desc">Strategy, identity, social templates, brand guide PDF — the whole picture. For businesses serious about building something enduring from day one.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PORTFOLIO -->
+<div class="portfolio-section" id="portfolio">
+  <div class="section-label">Selected Work</div>
+  <h2 class="section-heading">Brands we've made<br><em style="font-style:italic;color:var(--gold);">unforgettable.</em></h2>
+  <div class="portfolio-grid" id="portfolio-grid">
+    <div class="brand-card bc-axiom" data-bg="rgba(59,130,246,0.06)">
+      <div class="brand-industry">Fintech</div>
+      <div class="brand-name">Axiom</div>
+      <div class="palette-dots">
+        <div class="dot" style="background:#3b82f6;"></div>
+        <div class="dot" style="background:#94a3b8;"></div>
+        <div class="dot" style="background:#f8fafc;border:1px solid rgba(255,255,255,0.2);"></div>
+        <div class="dot" style="background:#1e3a5f;"></div>
+      </div>
+      <div class="brand-desc">Full identity system for a Series B fintech platform redefining digital banking in Southeast Asia.</div>
+    </div>
+    <div class="brand-card bc-bloom" data-bg="rgba(134,239,172,0.06)">
+      <div class="brand-industry">Wellness</div>
+      <div class="brand-name">Bloom</div>
+      <div class="palette-dots">
+        <div class="dot" style="background:#86efac;"></div>
+        <div class="dot" style="background:#fef9c3;border:1px solid rgba(255,255,255,0.15);"></div>
+        <div class="dot" style="background:#f9a8d4;"></div>
+        <div class="dot" style="background:#d1fae5;border:1px solid rgba(255,255,255,0.1);"></div>
+      </div>
+      <div class="brand-desc">Brand identity and product packaging for a wellness startup with 40K monthly subscribers.</div>
+    </div>
+    <div class="brand-card bc-nova" data-bg="rgba(245,158,11,0.06)">
+      <div class="brand-industry">Investment</div>
+      <div class="brand-name">Nova Capital</div>
+      <div class="palette-dots">
+        <div class="dot" style="background:#1e3a5f;"></div>
+        <div class="dot" style="background:#F59E0B;"></div>
+        <div class="dot" style="background:#f8f4ed;border:1px solid rgba(255,255,255,0.1);"></div>
+        <div class="dot" style="background:#0f2944;"></div>
+      </div>
+      <div class="brand-desc">Premium investment advisory brand built for trust, authority, and discernment.</div>
+    </div>
+    <div class="brand-card bc-evergreen" data-bg="rgba(34,197,94,0.06)">
+      <div class="brand-industry">Hospitality</div>
+      <div class="brand-name">Evergreen</div>
+      <div class="palette-dots">
+        <div class="dot" style="background:#78350f;"></div>
+        <div class="dot" style="background:#fef9c3;border:1px solid rgba(255,255,255,0.1);"></div>
+        <div class="dot" style="background:#14532d;"></div>
+        <div class="dot" style="background:#d97706;"></div>
+      </div>
+      <div class="brand-desc">Artisan coffee chain identity — from logo and packaging to interior branding across 12 locations.</div>
+    </div>
+    <div class="brand-card bc-zenith" data-bg="rgba(245,158,11,0.06)">
+      <div class="brand-industry">Real Estate</div>
+      <div class="brand-name">Zenith</div>
+      <div class="palette-dots">
+        <div class="dot" style="background:#1c1c1c;border:1px solid rgba(255,255,255,0.15);"></div>
+        <div class="dot" style="background:#d4af37;"></div>
+        <div class="dot" style="background:#f1ede8;border:1px solid rgba(255,255,255,0.1);"></div>
+        <div class="dot" style="background:#2d2d2d;border:1px solid rgba(255,255,255,0.1);"></div>
+      </div>
+      <div class="brand-desc">Luxury real estate brand identity positioned in the top 1% of the Sydney market.</div>
+    </div>
+    <div class="brand-card bc-forge" data-bg="rgba(249,115,22,0.06)">
+      <div class="brand-industry">Construction</div>
+      <div class="brand-name">Forge</div>
+      <div class="palette-dots">
+        <div class="dot" style="background:#ea580c;"></div>
+        <div class="dot" style="background:#71717a;"></div>
+        <div class="dot" style="background:#09090b;border:1px solid rgba(255,255,255,0.15);"></div>
+        <div class="dot" style="background:#c2410c;"></div>
+      </div>
+      <div class="brand-desc">Industrial-strength brand for a construction firm winning $20M+ government contracts.</div>
+    </div>
+  </div>
+</div>
+
+<!-- WHAT'S INCLUDED -->
+<div class="includes-section">
+  <div class="includes-inner">
+    <div class="section-label">What's Included</div>
+    <h2 class="section-heading">Everything your brand needs<br>to exist in the world.</h2>
+    <div class="includes-grid">
+      <div class="checklist">
+        <div class="check-item"><div class="check-icon">✓</div><span class="check-label">Primary Logo (all formats)</span></div>
+        <div class="check-item"><div class="check-icon">✓</div><span class="check-label">Secondary Logo Variants</span></div>
+        <div class="check-item"><div class="check-icon">✓</div><span class="check-label">Colour Palette with HEX/RGB/CMYK</span></div>
+        <div class="check-item"><div class="check-icon">✓</div><span class="check-label">Typography System (2-3 typefaces)</span></div>
+        <div class="check-item"><div class="check-icon">✓</div><span class="check-label">Brand Guidelines PDF (30+ pages)</span></div>
+        <div class="check-item"><div class="check-icon">✓</div><span class="check-label">Business Card Design</span></div>
+        <div class="check-item"><div class="check-icon">✓</div><span class="check-label">Social Media Templates (10 sizes)</span></div>
+        <div class="check-item"><div class="check-icon">✓</div><span class="check-label">Email Signature Design</span></div>
+        <div class="check-item"><div class="check-icon">✓</div><span class="check-label">30 Days of Post-Delivery Support</span></div>
+      </div>
+      <div class="includes-quote-block">
+        <h3 class="iq-heading">Ready to create something <em>truly unforgettable?</em></h3>
+        <p class="iq-body">We take on a limited number of brand projects each month to ensure every client receives our full attention and creative energy. If you're ready to invest in a brand that will represent your business for years to come, let's talk.</p>
+        <a href="#contact" class="iq-cta">Start My Brand Project →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROCESS -->
+<div class="process-section" id="process">
+  <div class="section-label">Our Process</div>
+  <h2 class="section-heading">Five stages to a brand<br>built to endure.</h2>
+  <div class="timeline" id="timeline">
+    <div class="timeline-item">
+      <div class="tl-dot">01</div>
+      <div class="tl-num">Stage One</div>
+      <div class="tl-name">Brand Audit</div>
+      <div class="tl-desc">We examine your current brand position (if any), your competitors, your target audience, and where you want to go. This shapes every creative decision that follows.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-dot">02</div>
+      <div class="tl-num">Stage Two</div>
+      <div class="tl-name">Strategy Session</div>
+      <div class="tl-desc">A deep 90-minute session where we define your brand's purpose, personality, positioning, and promise. The creative brief is locked here.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-dot">03</div>
+      <div class="tl-num">Stage Three</div>
+      <div class="tl-name">Concept Development</div>
+      <div class="tl-desc">We develop 2-3 distinct creative directions, each with a full rationale. You see real concepts — not just mood boards — grounded in your strategy.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-dot">04</div>
+      <div class="tl-num">Stage Four</div>
+      <div class="tl-name">Refinement</div>
+      <div class="tl-desc">We take the chosen direction and refine it across every touchpoint — logomark, wordmark, colour, type, pattern. Two rounds of revisions are included.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-dot">05</div>
+      <div class="tl-num">Stage Five</div>
+      <div class="tl-name">Brand Book Delivery</div>
+      <div class="tl-desc">You receive a comprehensive brand guidelines document, all source files, and a 30-minute handover call. Your brand is ready to deploy everywhere.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div id="contact">
+  <div class="contact-inner">
+    <div class="contact-layout">
+      <div>
+        <div class="section-label">Let's Create Together</div>
+        <h2 class="contact-headline">Your brand story<br>starts <em>here.</em></h2>
+        <p class="contact-body">We work with a small number of clients at a time to ensure every brand gets the deep focus it deserves. Tell us about your project and let's see if we're the right fit.</p>
+        <div class="contact-detail">hello@designersmeet.com.au</div>
+        <div class="contact-detail">Sydney, New South Wales, Australia</div>
+        <div class="contact-detail">+61 2 0000 0000</div>
+      </div>
+      <div class="contact-form-box">
+        <label class="c-label">Your Email</label>
+        <input class="c-input" type="email" placeholder="your@company.com">
+        <label class="c-label">Tell us about your brand</label>
+        <input class="c-input" type="text" placeholder="e.g. We're launching a luxury wellness brand...">
+        <button class="c-submit">Build My Brand →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="logo">Designers<span>Meet</span></div>
+        <div class="footer-brand-tagline">"Identity is not just what you look like. It's who you are when no one is watching."</div>
+      </div>
+      <div class="f-col">
+        <h5>Services</h5>
+        <a href="#">Logo Design</a>
+        <a href="#">Brand Identity</a>
+        <a href="#">Brand Strategy</a>
+        <a href="#">Full Systems</a>
+      </div>
+      <div class="f-col">
+        <h5>Studio</h5>
+        <a href="#">About</a>
+        <a href="#">Our Approach</a>
+        <a href="#">Team</a>
+        <a href="#">Careers</a>
+      </div>
+      <div class="f-col">
+        <h5>Work</h5>
+        <a href="#">Portfolio</a>
+        <a href="#">Awards</a>
+        <a href="#">Press</a>
+        <a href="#">Journal</a>
+      </div>
+      <div class="f-col">
+        <h5>Connect</h5>
+        <a href="#">Get in Touch</a>
+        <a href="#">Instagram</a>
+        <a href="#">Behance</a>
+        <a href="#">LinkedIn</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 DesignersMeet Brand Studio. All rights reserved.</p>
+      <div class="socials">
+        <a href="#" class="soc-link">Instagram</a>
+        <a href="#" class="soc-link">Behance</a>
+        <a href="#" class="soc-link">LinkedIn</a>
+        <a href="#" class="soc-link">Dribbble</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// --- HERO ANIMATIONS ---
+const tl = gsap.timeline({ delay: 0.2 });
+tl.from('.hero-eyebrow', { y: -20, opacity: 0, duration: 0.7, ease: 'power2.out' })
+  .from('#hero-headline', { y: 60, opacity: 0, duration: 1, ease: 'power3.out' }, '-=0.3')
+  .from('.hero-sub', { y: 30, opacity: 0, duration: 0.8, ease: 'power2.out' }, '-=0.6')
+  .from('.hero-btns', { y: 20, opacity: 0, duration: 0.7, ease: 'power2.out' }, '-=0.5')
+  .from('.hero-stat-block', { y: 30, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out' }, '-=0.6')
+  .from('.hero-quote', { opacity: 0, duration: 0.8, ease: 'power2.out' }, '-=0.3')
+  .from('.client-pill', { y: 10, opacity: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out' }, '-=0.4');
+
+// Gold underline draw
+setTimeout(() => {
+  document.getElementById('gold-line').style.width = '100%';
+}, 900);
+
+// Hero stat counter
+function countUp(el, end) {
+  const suffix = el.textContent.includes('%') ? '%' : '+';
+  gsap.fromTo({ val: 0 }, { val: end }, {
+    duration: 1.8, ease: 'power2.out',
+    onUpdate() { el.textContent = Math.round(this.targets()[0].val) + suffix; }
+  });
+}
+document.querySelectorAll('.hero-stat-num[data-count]').forEach(el => {
+  countUp(el, parseInt(el.dataset.count));
+});
+
+// --- SERVICE CARDS ---
+gsap.from('.svc-card', {
+  scrollTrigger: { trigger: '.services-cards', start: 'top 80%' },
+  y: 40, opacity: 0, duration: 0.7, stagger: 0.12, ease: 'power2.out'
+});
+
+// --- PORTFOLIO CARDS ---
+const brandCards = document.querySelectorAll('.brand-card');
+brandCards.forEach(card => {
+  card.addEventListener('mouseenter', () => {
+    const bg = card.getAttribute('data-bg');
+    document.body.style.setProperty('--brand-hover-bg', bg);
+  });
+});
+
+gsap.from('.brand-card', {
+  scrollTrigger: { trigger: '#portfolio-grid', start: 'top 80%' },
+  y: 40, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out'
+});
+
+// --- CHECKLIST ---
+gsap.from('.check-item', {
+  scrollTrigger: { trigger: '.checklist', start: 'top 80%' },
+  x: -30, opacity: 0, duration: 0.5, stagger: 0.07, ease: 'power2.out'
+});
+
+gsap.from('.includes-quote-block', {
+  scrollTrigger: { trigger: '.includes-grid', start: 'top 80%' },
+  x: 40, opacity: 0, duration: 0.8, ease: 'power2.out'
+});
+
+// --- TIMELINE ---
+gsap.from('.timeline-item', {
+  scrollTrigger: { trigger: '#timeline', start: 'top 80%' },
+  x: -40, opacity: 0, duration: 0.7, stagger: 0.15, ease: 'power2.out'
+});
+
+// --- CONTACT ---
+gsap.from('.contact-headline, .contact-body, .contact-detail', {
+  scrollTrigger: { trigger: '.contact-layout', start: 'top 80%' },
+  y: 30, opacity: 0, duration: 0.7, stagger: 0.1, ease: 'power2.out'
+});
+
+gsap.from('.contact-form-box', {
+  scrollTrigger: { trigger: '.contact-layout', start: 'top 80%' },
+  x: 40, opacity: 0, duration: 0.8, ease: 'power2.out'
+});
+
+// --- NAV scroll ---
+ScrollTrigger.create({
+  start: 'top -80',
+  onUpdate: (self) => {
+    document.getElementById('nav').style.background = self.progress > 0
+      ? 'rgba(18,14,8,0.97)'
+      : 'rgba(18,14,8,0.8)';
+  }
+});
+
+// --- Horizontal rule animation on services section ---
+gsap.from('.services-cards .svc-card', {
+  scrollTrigger: { trigger: '.services-cards', start: 'top 80%' },
+  scale: 0.97, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out'
+});
+</script>
+</body>
+</html>

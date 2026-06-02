@@ -1,0 +1,692 @@
+<!-- GHL Compatible -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DesignersMeet Mobile Lab — Apps People Actually Use</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --black: #050505;
+    --green: #10b981;
+    --lime: #BFFF00;
+    --green-dim: rgba(16,185,129,0.15);
+    --lime-dim: rgba(191,255,0,0.1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--black); color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 1000;
+    background: rgba(5,5,5,0.75);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(16,185,129,0.12);
+    padding: 1rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
+  .logo span { color: var(--lime); }
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-links a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.3s; }
+  .nav-links a:hover { color: var(--green); }
+  .nav-cta {
+    background: var(--lime); color: #000; padding: 0.55rem 1.3rem;
+    border-radius: 6px; font-weight: 700; font-size: 0.875rem; text-decoration: none;
+    transition: all 0.3s;
+  }
+  .nav-cta:hover { background: var(--green); color: #fff; transform: translateY(-1px); }
+
+  /* HERO */
+  #hero {
+    position: relative; min-height: 100vh;
+    display: flex; align-items: center; overflow: hidden;
+    background: #050505;
+  }
+  #three-bg { position: absolute; inset: 0; z-index: 0; }
+
+  .hero-content {
+    position: relative; z-index: 2;
+    max-width: 1200px; margin: 0 auto; padding: 0 2rem;
+    padding-top: 6rem; padding-bottom: 4rem;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 4rem; align-items: center;
+  }
+  @media (max-width: 900px) { .hero-content { grid-template-columns: 1fr; } }
+
+  .hero-label {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(191,255,0,0.1); border: 1px solid rgba(191,255,0,0.3);
+    color: var(--lime); padding: 0.35rem 0.9rem; border-radius: 6px;
+    font-size: 0.75rem; font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .hero-headline {
+    font-size: clamp(3rem, 5.5vw, 5rem);
+    font-weight: 900; line-height: 1.0; letter-spacing: -2px;
+    margin-bottom: 1.5rem;
+  }
+  .green-underline {
+    display: inline-block; position: relative; color: var(--green);
+  }
+  .green-underline::after {
+    content: ''; position: absolute; bottom: -6px; left: 0; width: 0; height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--lime));
+    border-radius: 2px; transition: width 1.5s ease 0.8s;
+  }
+  .hero-sub { font-size: 1rem; color: rgba(255,255,255,0.55); line-height: 1.7; margin-bottom: 2.5rem; max-width: 440px; }
+  .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-g-outline { border: 1.5px solid var(--green); color: var(--green); padding: 0.85rem 2rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; display: inline-block; }
+  .btn-g-outline:hover { background: var(--green-dim); }
+  .btn-lime-fill { background: var(--lime); color: #000; padding: 0.85rem 2rem; border-radius: 8px; font-weight: 800; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; display: inline-block; }
+  .btn-lime-fill:hover { background: var(--green); color: #fff; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(16,185,129,0.4); }
+
+  /* PHONE MOCKUP */
+  .phone-mockup {
+    width: 260px; height: 520px; margin: 0 auto;
+    border: 2.5px solid rgba(255,255,255,0.15);
+    border-radius: 40px; position: relative; overflow: hidden;
+    background: #0d0d0d;
+    box-shadow: 0 0 60px rgba(16,185,129,0.15), 0 0 120px rgba(16,185,129,0.05);
+  }
+  .phone-notch {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 20px; background: #000; border-radius: 10px; z-index: 10;
+  }
+  .phone-screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .app-slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    padding: 2.5rem 1rem 1rem;
+    opacity: 0;
+    transition: opacity 0.6s;
+  }
+  .app-slide.active { opacity: 1; }
+  .app-slide-1 { background: linear-gradient(180deg, #0d1117 0%, #0a1628 100%); }
+  .app-slide-2 { background: linear-gradient(180deg, #050d0a 0%, #0a1f14 100%); }
+  .app-slide-3 { background: linear-gradient(180deg, #0d0515 0%, #150a2a 100%); }
+  .app-slide-4 { background: linear-gradient(180deg, #0d0a05 0%, #1a1204 100%); }
+  .app-slide-5 { background: linear-gradient(180deg, #05090d 0%, #0a1420 100%); }
+
+  .slide-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
+  .slide-app-name { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.9); }
+  .slide-time { font-size: 0.65rem; color: rgba(255,255,255,0.4); }
+  .slide-balance-label { font-size: 0.65rem; color: rgba(255,255,255,0.4); margin-bottom: 0.2rem; }
+  .slide-balance { font-size: 1.6rem; font-weight: 800; margin-bottom: 1rem; }
+  .slide-row { display: flex; gap: 0.5rem; margin-bottom: 0.7rem; }
+  .slide-card { flex: 1; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 0.7rem; }
+  .slide-card-label { font-size: 0.6rem; color: rgba(255,255,255,0.4); }
+  .slide-card-val { font-size: 0.85rem; font-weight: 700; margin-top: 0.2rem; }
+  .slide-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.5rem; overflow: hidden; }
+  .slide-bar-fill { height: 100%; border-radius: 2px; }
+
+  /* SHOWCASE */
+  .showcase-section { max-width: 1200px; margin: 0 auto; padding: 6rem 2rem; }
+  .section-tag { font-size: 0.75rem; font-weight: 700; color: var(--lime); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem; }
+  .section-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -1px; margin-bottom: 1rem; }
+  .section-sub { color: rgba(255,255,255,0.45); font-size: 0.95rem; max-width: 550px; line-height: 1.7; margin-bottom: 3rem; }
+
+  .app-showcase { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1.5rem; }
+  .app-showcase::-webkit-scrollbar { height: 4px; }
+  .app-showcase::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 2px; }
+  .app-showcase::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
+  .app-card {
+    min-width: 220px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px; overflow: hidden; transition: all 0.3s; flex-shrink: 0;
+  }
+  .app-card:hover { border-color: rgba(16,185,129,0.4); transform: translateY(-6px); }
+  .app-card-screen { height: 140px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+  .app-card-body { padding: 1.2rem; }
+  .app-card-name { font-weight: 800; font-size: 0.95rem; margin-bottom: 0.2rem; }
+  .app-card-type { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 0.8rem; }
+  .app-card-stat { display: flex; align-items: center; gap: 0.4rem; }
+  .app-stat-pill { background: var(--green-dim); border: 1px solid rgba(16,185,129,0.3); color: var(--green); font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 100px; }
+  .sc1 { background: linear-gradient(135deg, #0f2937 0%, #064e3b 100%); }
+  .sc2 { background: linear-gradient(135deg, #1a2e1a 0%, #065f46 100%); }
+  .sc3 { background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%); }
+  .sc4 { background: linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 100%); }
+  .sc5 { background: linear-gradient(135deg, #1a1000 0%, #854d0e 100%); }
+
+  /* PRICING */
+  .pricing-section { max-width: 1200px; margin: 0 auto; padding: 6rem 2rem; }
+  .pricing-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  @media (max-width: 900px) { .pricing-cards { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; } }
+  .p-card {
+    border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 2.5rem;
+    background: rgba(255,255,255,0.02); transition: all 0.3s; position: relative;
+  }
+  .p-card.featured { border-color: var(--lime); background: rgba(191,255,0,0.04); }
+  .p-card:hover:not(.featured) { border-color: rgba(16,185,129,0.3); }
+  .p-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: var(--lime); color: #000; font-size: 0.72rem; font-weight: 800; padding: 0.25rem 1rem; border-radius: 100px; white-space: nowrap; text-transform: uppercase; letter-spacing: 1px; }
+  .p-tier { font-size: 0.8rem; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+  .p-price { font-size: 3rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 0.5rem; }
+  .p-desc { font-size: 0.85rem; color: rgba(255,255,255,0.45); margin-bottom: 1.5rem; line-height: 1.6; }
+  .p-features { list-style: none; margin-bottom: 2rem; }
+  .p-features li { font-size: 0.85rem; padding: 0.45rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 0.5rem; }
+  .p-features li::before { content: '→'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+  .p-btn { width: 100%; padding: 0.9rem; border-radius: 10px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.3s; border: none; font-family: 'Inter', sans-serif; }
+  .p-btn-outline { background: transparent; border: 1.5px solid rgba(16,185,129,0.4); color: var(--green); }
+  .p-btn-outline:hover { background: var(--green-dim); }
+  .p-btn-lime { background: var(--lime); color: #000; }
+  .p-btn-lime:hover { background: var(--green); color: #fff; }
+
+  /* TECH STACK */
+  .tech-section { background: rgba(16,185,129,0.04); border-top: 1px solid rgba(16,185,129,0.1); border-bottom: 1px solid rgba(16,185,129,0.1); padding: 5rem 2rem; }
+  .tech-inner { max-width: 1200px; margin: 0 auto; }
+  .tech-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 3rem; }
+  @media (max-width: 768px) { .tech-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 480px) { .tech-grid { grid-template-columns: repeat(2, 1fr); } }
+  .tech-item {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 1.5rem 1rem; text-align: center;
+    transition: all 0.3s;
+  }
+  .tech-item:hover { border-color: rgba(16,185,129,0.4); background: var(--green-dim); transform: translateY(-3px); }
+  .tech-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .tech-name { font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.7); }
+
+  /* PROCESS */
+  .process-section { max-width: 1200px; margin: 0 auto; padding: 6rem 2rem; }
+  .process-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 3rem; position: relative; }
+  @media (max-width: 900px) { .process-steps { grid-template-columns: 1fr; max-width: 400px; margin: 3rem auto 0; } }
+  .ps-item { text-align: center; position: relative; }
+  .ps-num {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: rgba(191,255,0,0.1); border: 1.5px solid rgba(191,255,0,0.3);
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;
+    font-weight: 900; font-size: 1rem; color: var(--lime); position: relative; z-index: 1;
+  }
+  .ps-name { font-weight: 800; font-size: 0.9rem; margin-bottom: 0.5rem; }
+  .ps-desc { font-size: 0.78rem; color: rgba(255,255,255,0.45); line-height: 1.5; }
+  .ps-connector {
+    display: none;
+    position: absolute; top: 28px; left: calc(50% + 35px); width: calc(100% - 70px); height: 2px;
+    background: linear-gradient(90deg, rgba(191,255,0,0.4), rgba(16,185,129,0.2));
+  }
+  @media (min-width: 900px) { .ps-connector { display: block; } }
+  .ps-item:last-child .ps-connector { display: none; }
+
+  /* CONTACT */
+  #contact { padding: 6rem 2rem; background: radial-gradient(ellipse at 50% 0%, rgba(16,185,129,0.08) 0%, transparent 70%); }
+  .contact-inner { max-width: 680px; margin: 0 auto; text-align: center; }
+  .contact-title { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 900; letter-spacing: -1.5px; margin-bottom: 1rem; }
+  .contact-sub { color: rgba(255,255,255,0.45); font-size: 0.95rem; margin-bottom: 2.5rem; line-height: 1.7; }
+  .contact-form { background: rgba(255,255,255,0.03); border: 1px solid rgba(16,185,129,0.2); border-radius: 20px; padding: 3rem; }
+  .contact-row { display: flex; gap: 1rem; }
+  @media (max-width: 600px) { .contact-row { flex-direction: column; } }
+  .c-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 1rem 1.2rem; color: #fff; font-size: 0.95rem; font-family: 'Inter', sans-serif; outline: none; transition: border 0.3s; }
+  .c-input:focus { border-color: var(--green); }
+  .c-input::placeholder { color: rgba(255,255,255,0.25); }
+  .c-btn { background: var(--lime); color: #000; border: none; border-radius: 10px; padding: 1rem 2rem; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; white-space: nowrap; }
+  .c-btn:hover { background: var(--green); color: #fff; transform: translateY(-2px); }
+
+  /* FOOTER */
+  footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 4rem 2rem 2rem; }
+  .footer-inner { max-width: 1200px; margin: 0 auto; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+  @media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .footer-grid { grid-template-columns: 1fr; } }
+  .footer-brand-text { font-size: 0.85rem; color: rgba(255,255,255,0.35); line-height: 1.7; margin-top: 0.75rem; max-width: 260px; }
+  .f-col h5 { font-weight: 700; font-size: 0.85rem; margin-bottom: 1rem; color: rgba(255,255,255,0.8); }
+  .f-col a { display: block; font-size: 0.82rem; color: rgba(255,255,255,0.4); text-decoration: none; margin-bottom: 0.6rem; transition: color 0.3s; }
+  .f-col a:hover { color: var(--green); }
+  .footer-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; gap: 1rem; }
+  .footer-bar p { font-size: 0.78rem; color: rgba(255,255,255,0.25); }
+  .socials { display: flex; gap: 0.75rem; }
+  .soc { width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.4); font-size: 0.78rem; text-decoration: none; font-weight: 700; transition: all 0.3s; }
+  .soc:hover { border-color: var(--green); color: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Designers<span>Meet</span></div>
+  <div class="nav-links">
+    <a href="#showcase">Apps</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#tech">Stack</a>
+    <a href="#contact">Contact</a>
+    <a href="#contact" class="nav-cta">Get Quote</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <canvas id="three-bg"></canvas>
+  <div class="hero-content">
+    <div>
+      <div class="hero-label">Mobile App Development Lab</div>
+      <h1 class="hero-headline">
+        Apps People<br>
+        <span class="green-underline" id="hero-word">Actually Use.</span>
+      </h1>
+      <p class="hero-sub">From idea to App Store in 90 days. React Native, Flutter, Swift, Kotlin — built by engineers who ship.</p>
+      <div class="hero-btns">
+        <a href="#showcase" class="btn-g-outline">View Portfolio</a>
+        <a href="#contact" class="btn-lime-fill">Ship My App →</a>
+      </div>
+    </div>
+
+    <!-- PHONE MOCKUP -->
+    <div style="display:flex;justify-content:center;">
+      <div class="phone-mockup">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <!-- Slide 1: Banking -->
+          <div class="app-slide app-slide-1 active" id="slide-0">
+            <div style="height:30px;"></div>
+            <div class="slide-header">
+              <div class="slide-app-name">SwiftPay</div>
+              <div class="slide-time">9:41</div>
+            </div>
+            <div class="slide-balance-label">Total Balance</div>
+            <div class="slide-balance" style="color:#10b981;">$12,847.50</div>
+            <div class="slide-row">
+              <div class="slide-card">
+                <div class="slide-card-label">Income</div>
+                <div class="slide-card-val" style="color:#10b981;">+$4,200</div>
+                <div class="slide-bar"><div class="slide-bar-fill" style="width:70%;background:#10b981;"></div></div>
+              </div>
+              <div class="slide-card">
+                <div class="slide-card-label">Expenses</div>
+                <div class="slide-card-val" style="color:#f87171;">-$1,640</div>
+                <div class="slide-bar"><div class="slide-bar-fill" style="width:40%;background:#f87171;"></div></div>
+              </div>
+            </div>
+            <div style="font-size:0.65rem;color:rgba(255,255,255,0.3);margin-top:auto;text-align:center;padding-top:0.5rem;">SwiftPay Banking · 50K Users</div>
+          </div>
+          <!-- Slide 2: Fitness -->
+          <div class="app-slide app-slide-2" id="slide-1">
+            <div style="height:30px;"></div>
+            <div class="slide-header">
+              <div class="slide-app-name">FitFlow</div>
+              <div class="slide-time" style="color:#10b981;">4.8★</div>
+            </div>
+            <div style="text-align:center;padding:1rem 0;">
+              <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);margin-bottom:0.3rem;">Today's Workout</div>
+              <div style="font-size:1.4rem;font-weight:800;color:#BFFF00;">Upper Body</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:1rem;">
+                <div class="slide-card"><div class="slide-card-label">Sets Done</div><div class="slide-card-val">12 / 16</div></div>
+                <div class="slide-card"><div class="slide-card-label">Calories</div><div class="slide-card-val" style="color:#BFFF00;">487</div></div>
+              </div>
+            </div>
+            <div style="font-size:0.65rem;color:rgba(255,255,255,0.3);margin-top:auto;text-align:center;">FitFlow Fitness · App Store 4.8★</div>
+          </div>
+          <!-- Slide 3: Medical -->
+          <div class="app-slide app-slide-3" id="slide-2">
+            <div style="height:30px;"></div>
+            <div class="slide-header">
+              <div class="slide-app-name">MediTrack</div>
+              <div style="font-size:0.65rem;color:#a78bfa;">Patient</div>
+            </div>
+            <div style="margin-bottom:0.8rem;">
+              <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);margin-bottom:0.3rem;">Next Appointment</div>
+              <div style="font-size:0.9rem;font-weight:700;">Dr. Sarah Williams</div>
+              <div style="font-size:0.7rem;color:#a78bfa;">Tomorrow · 10:30 AM</div>
+            </div>
+            <div class="slide-row">
+              <div class="slide-card"><div class="slide-card-label">Medications</div><div class="slide-card-val" style="color:#a78bfa;">3 Active</div></div>
+              <div class="slide-card"><div class="slide-card-label">Hospitals</div><div class="slide-card-val">12</div></div>
+            </div>
+            <div style="font-size:0.65rem;color:rgba(255,255,255,0.3);margin-top:auto;text-align:center;">MediTrack · 12 Hospital Clients</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP SHOWCASE -->
+<div class="showcase-section" id="showcase">
+  <div class="section-tag">Built. Shipped. Loved.</div>
+  <h2 class="section-title">Apps that dominate their stores.</h2>
+  <p class="section-sub">From funded startups to enterprise mobile portals — every app we ship is engineered to perform and delight.</p>
+  <div class="app-showcase">
+    <div class="app-card">
+      <div class="app-card-screen sc1">💳</div>
+      <div class="app-card-body">
+        <div class="app-card-name">SwiftPay</div>
+        <div class="app-card-type">Mobile Banking App</div>
+        <div class="app-card-stat"><span class="app-stat-pill">50K downloads</span></div>
+      </div>
+    </div>
+    <div class="app-card">
+      <div class="app-card-screen sc2">🏋️</div>
+      <div class="app-card-body">
+        <div class="app-card-name">FitFlow</div>
+        <div class="app-card-type">Fitness Tracker</div>
+        <div class="app-card-stat"><span class="app-stat-pill">4.8★ App Store</span></div>
+      </div>
+    </div>
+    <div class="app-card">
+      <div class="app-card-screen sc3">🏥</div>
+      <div class="app-card-body">
+        <div class="app-card-name">MediTrack</div>
+        <div class="app-card-type">Patient Portal</div>
+        <div class="app-card-stat"><span class="app-stat-pill">12 hospitals</span></div>
+      </div>
+    </div>
+    <div class="app-card">
+      <div class="app-card-screen sc4">✨</div>
+      <div class="app-card-body">
+        <div class="app-card-name">Vibe</div>
+        <div class="app-card-type">Social Discovery</div>
+        <div class="app-card-stat"><span class="app-stat-pill">Series A funded</span></div>
+      </div>
+    </div>
+    <div class="app-card">
+      <div class="app-card-screen sc5">🚚</div>
+      <div class="app-card-body">
+        <div class="app-card-name">LogiTrack</div>
+        <div class="app-card-type">Fleet Management</div>
+        <div class="app-card-stat"><span class="app-stat-pill">200+ operators</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="pricing-section" id="pricing">
+  <div class="section-tag">Transparent Pricing</div>
+  <h2 class="section-title">Pick your launch package.</h2>
+  <p class="section-sub">Fixed pricing, no scope creep. Every package comes with full source code ownership, App Store submission assistance, and 30 days of post-launch support.</p>
+  <div class="pricing-cards">
+    <div class="p-card">
+      <div class="p-tier">MVP</div>
+      <div class="p-price">$4,999</div>
+      <div class="p-desc">Core features, one platform, clean UI. Get to market and start validating in 8 weeks.</div>
+      <ul class="p-features">
+        <li>Core app features</li>
+        <li>iOS OR Android</li>
+        <li>Basic UI design</li>
+        <li>User authentication</li>
+        <li>API integration</li>
+        <li>8 week delivery</li>
+      </ul>
+      <button class="p-btn p-btn-outline">Get Started</button>
+    </div>
+    <div class="p-card featured">
+      <div class="p-badge">Most Popular</div>
+      <div class="p-tier">Scale</div>
+      <div class="p-price">$9,999</div>
+      <div class="p-desc">Full-featured app on both platforms with custom UI and backend API. Ship with confidence.</div>
+      <ul class="p-features">
+        <li>Full feature set</li>
+        <li>iOS + Android</li>
+        <li>Custom UI design</li>
+        <li>Backend API + DB</li>
+        <li>Push notifications</li>
+        <li>Analytics integration</li>
+        <li>12 week delivery</li>
+      </ul>
+      <button class="p-btn p-btn-lime">Get Started</button>
+    </div>
+    <div class="p-card">
+      <div class="p-tier">Enterprise</div>
+      <div class="p-price">$19,999<span style="font-size:1rem;font-weight:400;letter-spacing:0;">+</span></div>
+      <div class="p-desc">Multi-platform, custom backend, admin panel, dedicated team, and ongoing engineering partnership.</div>
+      <ul class="p-features">
+        <li>All Scale features</li>
+        <li>Admin dashboard</li>
+        <li>Custom backend infra</li>
+        <li>White-label option</li>
+        <li>Dedicated team</li>
+        <li>Ongoing retainer</li>
+      </ul>
+      <button class="p-btn p-btn-outline">Let's Talk</button>
+    </div>
+  </div>
+</div>
+
+<!-- TECH STACK -->
+<div class="tech-section" id="tech">
+  <div class="tech-inner">
+    <div class="section-tag">Our Arsenal</div>
+    <h2 class="section-title">The stack behind every great app.</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><div class="tech-icon">⚛️</div><div class="tech-name">React Native</div></div>
+      <div class="tech-item"><div class="tech-icon">🦋</div><div class="tech-name">Flutter</div></div>
+      <div class="tech-item"><div class="tech-icon">🍎</div><div class="tech-name">Swift</div></div>
+      <div class="tech-item"><div class="tech-icon">🤖</div><div class="tech-name">Kotlin</div></div>
+      <div class="tech-item"><div class="tech-icon">🟢</div><div class="tech-name">Node.js</div></div>
+      <div class="tech-item"><div class="tech-icon">🔥</div><div class="tech-name">Firebase</div></div>
+      <div class="tech-item"><div class="tech-icon">☁️</div><div class="tech-name">AWS</div></div>
+      <div class="tech-item"><div class="tech-icon">⚡</div><div class="tech-name">Supabase</div></div>
+      <div class="tech-item"><div class="tech-icon">🔷</div><div class="tech-name">GraphQL</div></div>
+      <div class="tech-item"><div class="tech-icon">🔗</div><div class="tech-name">REST API</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROCESS -->
+<div class="process-section">
+  <div class="section-tag">How We Build</div>
+  <h2 class="section-title">5 stages. Zero surprises.</h2>
+  <div class="process-steps">
+    <div class="ps-item">
+      <div class="ps-num">01</div>
+      <div class="ps-connector"></div>
+      <div class="ps-name">Spec</div>
+      <div class="ps-desc">Feature mapping, technical architecture, and project scoping.</div>
+    </div>
+    <div class="ps-item">
+      <div class="ps-num">02</div>
+      <div class="ps-connector"></div>
+      <div class="ps-name">Design</div>
+      <div class="ps-desc">Figma UI/UX design with platform guidelines. Your approval required.</div>
+    </div>
+    <div class="ps-item">
+      <div class="ps-num">03</div>
+      <div class="ps-connector"></div>
+      <div class="ps-name">Build</div>
+      <div class="ps-desc">Agile sprints with weekly demos and continuous delivery.</div>
+    </div>
+    <div class="ps-item">
+      <div class="ps-num">04</div>
+      <div class="ps-connector"></div>
+      <div class="ps-name">Test</div>
+      <div class="ps-desc">Real-device testing, performance profiling, and App Store review prep.</div>
+    </div>
+    <div class="ps-item">
+      <div class="ps-num">05</div>
+      <div class="ps-name">Launch</div>
+      <div class="ps-desc">App Store / Play Store submission, ASO, and post-launch monitoring.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div id="contact">
+  <div class="contact-inner">
+    <div class="section-tag" style="display:block;margin-bottom:0.5rem;">Start Building</div>
+    <h2 class="contact-title">Your app idea deserves<br>to be built right.</h2>
+    <p class="contact-sub">Tell us what you're building and we'll send you a no-obligation project estimate within 24 hours.</p>
+    <div class="contact-form">
+      <div class="contact-row">
+        <input class="c-input" type="email" placeholder="your@email.com">
+        <button class="c-btn">Ship My App →</button>
+      </div>
+      <p style="font-size:0.75rem;color:rgba(255,255,255,0.25);margin-top:1rem;text-align:left;">Free project estimate. No credit card required. We'll respond in less than 24 hours.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="logo">Designers<span>Meet</span></div>
+        <div class="footer-brand-text">A mobile-first development studio building apps that users love and businesses depend on. Based in Sydney, shipping globally.</div>
+      </div>
+      <div class="f-col">
+        <h5>Services</h5>
+        <a href="#">iOS Development</a>
+        <a href="#">Android Development</a>
+        <a href="#">React Native</a>
+        <a href="#">Flutter Apps</a>
+      </div>
+      <div class="f-col">
+        <h5>Company</h5>
+        <a href="#">About</a>
+        <a href="#">Case Studies</a>
+        <a href="#">Careers</a>
+        <a href="#">Blog</a>
+      </div>
+      <div class="f-col">
+        <h5>Work</h5>
+        <a href="#">Portfolio</a>
+        <a href="#">Client Stories</a>
+        <a href="#">Dribbble</a>
+        <a href="#">GitHub</a>
+      </div>
+      <div class="f-col">
+        <h5>Contact</h5>
+        <a href="#">Get Estimate</a>
+        <a href="#">apps@designersmeet.com</a>
+        <a href="#">Sydney, Australia</a>
+        <a href="#">+61 2 0000 0000</a>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <p>© 2024 DesignersMeet Mobile Lab. All rights reserved.</p>
+      <div class="socials">
+        <a href="#" class="soc">in</a>
+        <a href="#" class="soc">tw</a>
+        <a href="#" class="soc">gh</a>
+        <a href="#" class="soc">dr</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// --- THREE.JS FLOATING ICOSAHEDRONS ---
+const canvas = document.getElementById('three-bg');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.z = 20;
+
+const shapes = [];
+const colors = [0x10b981, 0xBFFF00, 0x059669, 0x84cc16];
+for (let i = 0; i < 18; i++) {
+  const geo = new THREE.IcosahedronGeometry(Math.random() * 0.6 + 0.3);
+  const mat = new THREE.MeshPhongMaterial({
+    color: colors[Math.floor(Math.random() * colors.length)],
+    wireframe: Math.random() > 0.5,
+    transparent: true,
+    opacity: 0.25 + Math.random() * 0.3
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 10);
+  mesh.userData = { rotX: (Math.random() - 0.5) * 0.02, rotY: (Math.random() - 0.5) * 0.02, floatSpeed: Math.random() * 0.005 + 0.002, floatOffset: Math.random() * Math.PI * 2 };
+  scene.add(mesh);
+  shapes.push(mesh);
+}
+
+const ambient = new THREE.AmbientLight(0x404040, 2);
+scene.add(ambient);
+const dirLight = new THREE.DirectionalLight(0x10b981, 3);
+dirLight.position.set(5, 5, 5);
+scene.add(dirLight);
+
+function resize() {
+  renderer.setSize(window.innerWidth, document.getElementById('hero').offsetHeight, false);
+  camera.aspect = window.innerWidth / document.getElementById('hero').offsetHeight;
+  camera.updateProjectionMatrix();
+}
+resize();
+window.addEventListener('resize', resize);
+
+let t = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  t += 0.01;
+  shapes.forEach(s => {
+    s.rotation.x += s.userData.rotX;
+    s.rotation.y += s.userData.rotY;
+    s.position.y += Math.sin(t + s.userData.floatOffset) * s.userData.floatSpeed;
+  });
+  renderer.render(scene, camera);
+}
+animate();
+
+// --- PHONE SLIDES ---
+const slides = document.querySelectorAll('.app-slide');
+let currentSlide = 0;
+function nextSlide() {
+  slides[currentSlide].classList.remove('active');
+  currentSlide = (currentSlide + 1) % slides.length;
+  slides[currentSlide].classList.add('active');
+}
+setInterval(nextSlide, 2800);
+
+// --- HERO UNDERLINE ANIMATION ---
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const el = document.querySelector('.green-underline::after');
+    document.querySelector('.green-underline').style.setProperty('--w', '100%');
+    const style = document.createElement('style');
+    style.textContent = '.green-underline::after { width: 100% !important; }';
+    document.head.appendChild(style);
+  }, 600);
+});
+
+// --- GSAP ANIMATIONS ---
+gsap.from('.hero-label', { y: -30, opacity: 0, duration: 0.8, delay: 0.2, ease: 'power2.out' });
+gsap.from('.hero-headline', { y: 60, opacity: 0, duration: 1, delay: 0.4, ease: 'power3.out' });
+gsap.from('.hero-sub', { y: 40, opacity: 0, duration: 0.8, delay: 0.6, ease: 'power2.out' });
+gsap.from('.hero-btns', { y: 30, opacity: 0, duration: 0.8, delay: 0.8, ease: 'power2.out' });
+gsap.from('.phone-mockup', { scale: 0.8, opacity: 0, duration: 1, delay: 0.5, ease: 'back.out(1.5)' });
+
+gsap.from('.app-card', {
+  scrollTrigger: { trigger: '.app-showcase', start: 'top 80%' },
+  x: 60, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out'
+});
+
+gsap.from('.p-card', {
+  scrollTrigger: { trigger: '.pricing-cards', start: 'top 80%' },
+  y: 50, opacity: 0, duration: 0.7, stagger: 0.15, ease: 'power2.out'
+});
+
+gsap.from('.tech-item', {
+  scrollTrigger: { trigger: '.tech-grid', start: 'top 80%' },
+  scale: 0.8, opacity: 0, duration: 0.5, stagger: 0.06, ease: 'back.out(1.3)'
+});
+
+gsap.from('.ps-item', {
+  scrollTrigger: { trigger: '.process-steps', start: 'top 80%' },
+  y: 40, opacity: 0, duration: 0.6, stagger: 0.12, ease: 'power2.out'
+});
+
+gsap.from('.contact-form', {
+  scrollTrigger: { trigger: '.contact-form', start: 'top 85%' },
+  y: 40, opacity: 0, duration: 0.8, ease: 'power2.out'
+});
+
+ScrollTrigger.create({
+  start: 'top -80',
+  onUpdate: (self) => {
+    document.querySelector('nav').style.background = self.progress > 0 ? 'rgba(5,5,5,0.96)' : 'rgba(5,5,5,0.75)';
+  }
+});
+</script>
+</body>
+</html>

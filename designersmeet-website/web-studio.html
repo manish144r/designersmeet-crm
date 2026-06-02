@@ -1,0 +1,720 @@
+<!-- GHL Compatible -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DesignersMeet Web Studio — Websites That Convert</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --navy: #0a0f1a;
+    --blue: #00d4ff;
+    --blue-dim: rgba(0,212,255,0.15);
+    --blue-mid: rgba(0,212,255,0.4);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--navy); color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+  h1,h2,h3,h4,h5 { font-family: 'Space Grotesk', sans-serif; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 1000;
+    background: rgba(10,15,26,0.7);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0,212,255,0.1);
+    padding: 1rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.25rem; color: #fff; }
+  .logo span { color: var(--blue); }
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; transition: color 0.3s; }
+  .nav-links a:hover { color: var(--blue); }
+  .nav-cta {
+    background: var(--blue); color: var(--navy); padding: 0.6rem 1.4rem;
+    border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-decoration: none;
+    transition: all 0.3s; font-family: 'Space Grotesk', sans-serif;
+  }
+  .nav-cta:hover { background: #fff; transform: translateY(-1px); }
+
+  /* HERO */
+  #hero {
+    position: relative; height: 100vh; min-height: 700px;
+    display: flex; align-items: center; overflow: hidden;
+  }
+  #grid-canvas { position: absolute; inset: 0; z-index: 0; }
+  #three-canvas { position: absolute; right: 0; top: 0; width: 50%; height: 100%; z-index: 1; pointer-events: none; }
+
+  .hero-content {
+    position: relative; z-index: 2;
+    max-width: 1200px; margin: 0 auto; padding: 0 2rem;
+    padding-top: 5rem;
+    width: 100%;
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--blue-dim); border: 1px solid rgba(0,212,255,0.3);
+    color: var(--blue); padding: 0.4rem 1rem; border-radius: 100px;
+    font-size: 0.8rem; font-weight: 500; margin-bottom: 1.5rem;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .hero-tag::before { content: ''; width: 6px; height: 6px; background: var(--blue); border-radius: 50%; display: inline-block; animation: pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+  .hero-headline { font-size: clamp(3rem, 6vw, 5.5rem); font-weight: 700; line-height: 1.05; margin-bottom: 1.5rem; max-width: 700px; }
+  .headline-word { display: block; overflow: hidden; }
+  .headline-word span { display: block; }
+  .blue-word { color: var(--blue); }
+
+  .hero-sub { font-size: 1.1rem; color: rgba(255,255,255,0.6); max-width: 500px; line-height: 1.7; margin-bottom: 2.5rem; }
+  .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-outline { border: 1.5px solid var(--blue); color: var(--blue); padding: 0.8rem 2rem; border-radius: 8px; font-weight: 600; text-decoration: none; font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem; transition: all 0.3s; display: inline-block; }
+  .btn-outline:hover { background: var(--blue-dim); }
+  .btn-fill { background: var(--blue); color: var(--navy); padding: 0.8rem 2rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem; transition: all 0.3s; display: inline-flex; align-items: center; gap: 0.5rem; }
+  .btn-fill:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,212,255,0.3); }
+
+  /* CODE BLOCK */
+  .code-block {
+    position: absolute; right: 4rem; top: 50%; transform: translateY(-50%);
+    z-index: 3; width: 380px;
+    background: rgba(10,20,40,0.9); border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 12px; padding: 1.5rem; font-family: 'Courier New', monospace;
+    font-size: 0.78rem; line-height: 1.8;
+    display: none;
+  }
+  @media (min-width: 1100px) { .code-block { display: block; } }
+  .code-header { display: flex; gap: 6px; margin-bottom: 1rem; }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-text { color: rgba(255,255,255,0.7); }
+  .code-blue { color: var(--blue); }
+  .code-green { color: #4ade80; }
+  .code-orange { color: #fb923c; }
+  .cursor { display: inline-block; width: 2px; height: 14px; background: var(--blue); animation: blink 1s infinite; vertical-align: middle; margin-left: 2px; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* TECH STRIP */
+  .tech-strip {
+    background: rgba(0,212,255,0.05); border-top: 1px solid rgba(0,212,255,0.1); border-bottom: 1px solid rgba(0,212,255,0.1);
+    padding: 1rem 0; overflow: hidden; position: relative;
+  }
+  .tech-track { display: flex; gap: 2rem; animation: scroll-left 25s linear infinite; width: max-content; }
+  @keyframes scroll-left { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  .tech-pill {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);
+    padding: 0.4rem 1.1rem; border-radius: 100px; white-space: nowrap;
+    font-size: 0.85rem; color: rgba(255,255,255,0.8); font-family: 'Space Grotesk', sans-serif; font-weight: 500;
+  }
+  .tech-pill-icon { width: 16px; height: 16px; border-radius: 3px; background: var(--blue-dim); display: flex; align-items: center; justify-content: center; font-size: 10px; }
+
+  /* STATS BAR */
+  .stats-bar {
+    background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,212,255,0.03));
+    border: 1px solid rgba(0,212,255,0.15); border-radius: 16px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    overflow: hidden; margin: 4rem auto; max-width: 1000px;
+  }
+  .stat-item { padding: 2rem; text-align: center; border-right: 1px solid rgba(0,212,255,0.1); }
+  .stat-item:last-child { border-right: none; }
+  .stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: var(--blue); display: block; }
+  .stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 0.3rem; display: block; }
+
+  /* SECTIONS */
+  section { padding: 6rem 2rem; max-width: 1200px; margin: 0 auto; }
+  .section-tag { font-size: 0.8rem; font-weight: 600; color: var(--blue); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; }
+  .section-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; margin-bottom: 1rem; }
+  .section-sub { color: rgba(255,255,255,0.5); font-size: 1rem; max-width: 600px; line-height: 1.7; margin-bottom: 3rem; }
+
+  /* SERVICE TILES */
+  .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  @media (max-width: 768px) { .services-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .services-grid { grid-template-columns: 1fr; } }
+  .service-tile {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px; padding: 2rem;
+    transition: all 0.3s; cursor: default;
+  }
+  .service-tile:hover { border-color: rgba(0,212,255,0.4); background: rgba(0,212,255,0.05); transform: translateY(-4px); }
+  .tile-icon { width: 44px; height: 44px; background: var(--blue-dim); border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+  .tile-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 1rem; margin-bottom: 0.5rem; }
+  .tile-desc { font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.6; }
+
+  /* PRICING */
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  @media (max-width: 900px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; } }
+  .price-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 2.5rem; transition: all 0.3s; position: relative;
+  }
+  .price-card.featured { border-color: var(--blue); background: rgba(0,212,255,0.07); }
+  .featured-badge {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: var(--blue); color: var(--navy); font-size: 0.75rem; font-weight: 700;
+    padding: 0.3rem 1rem; border-radius: 100px; font-family: 'Space Grotesk', sans-serif;
+    white-space: nowrap;
+  }
+  .price-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 1rem; color: rgba(255,255,255,0.7); margin-bottom: 0.5rem; }
+  .price-amount { font-family: 'Space Grotesk', sans-serif; font-size: 2.8rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .price-amount span { font-size: 1rem; color: rgba(255,255,255,0.4); }
+  .price-desc { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-bottom: 1.5rem; line-height: 1.6; }
+  .price-features { list-style: none; margin-bottom: 2rem; }
+  .price-features li { font-size: 0.875rem; color: rgba(255,255,255,0.7); padding: 0.4rem 0; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .price-features li::before { content: '✓'; color: var(--blue); font-weight: 700; flex-shrink: 0; }
+  .price-btn { width: 100%; padding: 0.9rem; border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.3s; border: none; }
+  .price-btn-outline { background: transparent; border: 1.5px solid rgba(0,212,255,0.4); color: var(--blue); }
+  .price-btn-outline:hover { background: var(--blue-dim); }
+  .price-btn-fill { background: var(--blue); color: var(--navy); }
+  .price-btn-fill:hover { background: #fff; }
+
+  /* PORTFOLIO */
+  .portfolio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  @media (max-width: 900px) { .portfolio-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .portfolio-grid { grid-template-columns: 1fr; } }
+  .portfolio-card {
+    border-radius: 16px; overflow: hidden; position: relative; cursor: pointer;
+    transition: transform 0.3s; height: 220px;
+  }
+  .portfolio-card:hover { transform: scale(1.02); }
+  .portfolio-bg { position: absolute; inset: 0; }
+  .portfolio-card-inner { position: absolute; bottom: 0; left: 0; right: 0; padding: 1.5rem; background: linear-gradient(transparent, rgba(0,0,0,0.8)); }
+  .portfolio-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 1rem; }
+  .portfolio-sub { font-size: 0.8rem; color: rgba(255,255,255,0.6); }
+  .grad-teal { background: linear-gradient(135deg, #0f766e, #06b6d4); }
+  .grad-green { background: linear-gradient(135deg, #166534, #22c55e); }
+  .grad-purple { background: linear-gradient(135deg, #581c87, #a855f7); }
+  .grad-pink { background: linear-gradient(135deg, #9d174d, #ec4899); }
+  .grad-orange { background: linear-gradient(135deg, #92400e, #f97316); }
+  .grad-darkblue { background: linear-gradient(135deg, #1e3a5f, #1e40af); }
+
+  /* PROCESS */
+  .process-line { display: flex; align-items: flex-start; gap: 0; position: relative; margin-top: 3rem; overflow-x: auto; padding-bottom: 1rem; }
+  .process-step { flex: 1; min-width: 160px; text-align: center; position: relative; }
+  .process-step::after { content: '→'; position: absolute; right: -12px; top: 24px; color: var(--blue); font-size: 1.2rem; font-weight: 700; z-index: 1; }
+  .process-step:last-child::after { display: none; }
+  .step-num { width: 52px; height: 52px; background: var(--blue-dim); border: 2px solid rgba(0,212,255,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--blue); font-size: 1.1rem; margin: 0 auto 1rem; position: relative; z-index: 2; }
+  .step-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .step-desc { font-size: 0.8rem; color: rgba(255,255,255,0.5); line-height: 1.5; padding: 0 0.5rem; }
+
+  /* CONTACT */
+  #contact { padding: 6rem 2rem; }
+  .contact-inner { max-width: 700px; margin: 0 auto; text-align: center; }
+  .contact-box { background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,212,255,0.03)); border: 1px solid rgba(0,212,255,0.2); border-radius: 24px; padding: 4rem 3rem; }
+  .contact-input-row { display: flex; gap: 1rem; margin-top: 2rem; }
+  .contact-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 1rem 1.2rem; color: #fff; font-size: 1rem; font-family: 'Inter', sans-serif; outline: none; transition: border 0.3s; }
+  .contact-input:focus { border-color: var(--blue); }
+  .contact-input::placeholder { color: rgba(255,255,255,0.3); }
+  .contact-submit { background: var(--blue); color: var(--navy); border: none; border-radius: 8px; padding: 1rem 2rem; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; cursor: pointer; white-space: nowrap; transition: all 0.3s; }
+  .contact-submit:hover { background: #fff; transform: translateY(-2px); }
+  @media (max-width: 600px) { .contact-input-row { flex-direction: column; } }
+
+  /* FOOTER */
+  footer { border-top: 1px solid rgba(255,255,255,0.07); padding: 4rem 2rem 2rem; }
+  .footer-inner { max-width: 1200px; margin: 0 auto; }
+  .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+  @media (max-width: 900px) { .footer-top { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .footer-top { grid-template-columns: 1fr; } }
+  .footer-brand p { font-size: 0.875rem; color: rgba(255,255,255,0.4); line-height: 1.7; margin-top: 0.75rem; max-width: 280px; }
+  .footer-col h5 { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.875rem; margin-bottom: 1rem; color: rgba(255,255,255,0.9); }
+  .footer-col a { display: block; font-size: 0.85rem; color: rgba(255,255,255,0.45); text-decoration: none; margin-bottom: 0.6rem; transition: color 0.3s; }
+  .footer-col a:hover { color: var(--blue); }
+  .footer-bottom { display: flex; align-items: center; justify-content: space-between; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; gap: 1rem; }
+  .footer-bottom p { font-size: 0.8rem; color: rgba(255,255,255,0.3); }
+  .socials { display: flex; gap: 1rem; }
+  .social-icon { width: 36px; height: 36px; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; color: rgba(255,255,255,0.5); font-size: 0.85rem; transition: all 0.3s; }
+  .social-icon:hover { border-color: var(--blue); color: var(--blue); }
+
+  .full-section { max-width: 100%; padding-left: 0; padding-right: 0; }
+  .constrained { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+
+  @media (max-width: 768px) {
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+    .stat-item:nth-child(2) { border-right: none; }
+    .stat-item { border-bottom: 1px solid rgba(0,212,255,0.1); }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Designers<span>Meet</span></div>
+  <div class="nav-links">
+    <a href="#services">Services</a>
+    <a href="#portfolio">Work</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#contact">Contact</a>
+    <a href="#contact" class="nav-cta">Get Quote</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <canvas id="grid-canvas"></canvas>
+  <canvas id="three-canvas"></canvas>
+
+  <div class="hero-content">
+    <div class="hero-tag">Web Design &amp; Development Studio</div>
+    <h1 class="hero-headline">
+      <div class="headline-word">
+        <span id="line1">Websites That</span>
+      </div>
+      <div class="headline-word">
+        <span id="line2" class="blue-word">Convert.</span>
+      </div>
+    </h1>
+    <p class="hero-sub">Custom web design and development for businesses that demand excellence.</p>
+    <div class="hero-btns">
+      <a href="#portfolio" class="btn-outline">See Our Work</a>
+      <a href="#contact" class="btn-fill">Start Project →</a>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dot" style="background:#ff5f57"></div>
+      <div class="code-dot" style="background:#febc2e"></div>
+      <div class="code-dot" style="background:#28c840"></div>
+    </div>
+    <div id="code-output" class="code-text"></div>
+    <span class="cursor"></span>
+  </div>
+</div>
+
+<!-- TECH STRIP -->
+<div class="tech-strip">
+  <div class="tech-track" id="tech-track">
+    <span class="tech-pill"><span class="tech-pill-icon">⚛</span>React</span>
+    <span class="tech-pill"><span class="tech-pill-icon">▲</span>Next.js</span>
+    <span class="tech-pill"><span class="tech-pill-icon">🛍</span>Shopify</span>
+    <span class="tech-pill"><span class="tech-pill-icon">🌊</span>Webflow</span>
+    <span class="tech-pill"><span class="tech-pill-icon">W</span>WordPress</span>
+    <span class="tech-pill"><span class="tech-pill-icon">⬡</span>Framer</span>
+    <span class="tech-pill"><span class="tech-pill-icon">V</span>Vue</span>
+    <span class="tech-pill"><span class="tech-pill-icon">TS</span>TypeScript</span>
+    <span class="tech-pill"><span class="tech-pill-icon">🔷</span>Tailwind</span>
+    <span class="tech-pill"><span class="tech-pill-icon">🔥</span>Firebase</span>
+    <!-- duplicate for loop -->
+    <span class="tech-pill"><span class="tech-pill-icon">⚛</span>React</span>
+    <span class="tech-pill"><span class="tech-pill-icon">▲</span>Next.js</span>
+    <span class="tech-pill"><span class="tech-pill-icon">🛍</span>Shopify</span>
+    <span class="tech-pill"><span class="tech-pill-icon">🌊</span>Webflow</span>
+    <span class="tech-pill"><span class="tech-pill-icon">W</span>WordPress</span>
+    <span class="tech-pill"><span class="tech-pill-icon">⬡</span>Framer</span>
+    <span class="tech-pill"><span class="tech-pill-icon">V</span>Vue</span>
+    <span class="tech-pill"><span class="tech-pill-icon">TS</span>TypeScript</span>
+    <span class="tech-pill"><span class="tech-pill-icon">🔷</span>Tailwind</span>
+    <span class="tech-pill"><span class="tech-pill-icon">🔥</span>Firebase</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div style="max-width:1200px;margin:0 auto;padding:0 2rem;">
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-item"><span class="stat-num" data-count="200">0</span><span class="stat-label">Sites Built</span></div>
+    <div class="stat-item"><span class="stat-num" data-prefix="$" data-count="2" data-suffix="M+">0</span><span class="stat-label">Revenue Generated</span></div>
+    <div class="stat-item"><span class="stat-num" data-count="48" data-suffix="hr">0</span><span class="stat-label">First Draft</span></div>
+    <div class="stat-item"><span class="stat-num" data-count="98" data-suffix="%">0</span><span class="stat-label">Client Retention</span></div>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="section-tag">What We Build</div>
+  <h2 class="section-title">Every type of web presence,<br>crafted to perfection.</h2>
+  <p class="section-sub">From high-converting landing pages to complex web applications — we build it all with precision and care.</p>
+  <div class="services-grid">
+    <div class="service-tile">
+      <div class="tile-icon">🚀</div>
+      <div class="tile-name">Landing Pages</div>
+      <div class="tile-desc">High-converting single pages built to drive signups, sales, and leads. A/B tested and analytics-ready.</div>
+    </div>
+    <div class="service-tile">
+      <div class="tile-icon">🛒</div>
+      <div class="tile-name">E-Commerce</div>
+      <div class="tile-desc">Shopify, WooCommerce, and custom stores built to maximise average order value and reduce cart abandonment.</div>
+    </div>
+    <div class="service-tile">
+      <div class="tile-icon">⚙️</div>
+      <div class="tile-name">Web Apps</div>
+      <div class="tile-desc">Full-stack React and Next.js applications with real-time data, authentication, and complex business logic.</div>
+    </div>
+    <div class="service-tile">
+      <div class="tile-icon">🏢</div>
+      <div class="tile-name">Corporate Sites</div>
+      <div class="tile-desc">Credibility-building multi-page sites for enterprises. SEO optimised, ADA compliant, CMS powered.</div>
+    </div>
+    <div class="service-tile">
+      <div class="tile-icon">🎨</div>
+      <div class="tile-name">Portfolio Sites</div>
+      <div class="tile-desc">Stunning portfolio websites for creatives, agencies, and professionals that make a lasting first impression.</div>
+    </div>
+    <div class="service-tile">
+      <div class="tile-icon">📝</div>
+      <div class="tile-name">Headless CMS</div>
+      <div class="tile-desc">Contentful, Sanity, and Strapi integrations giving your team full content control without touching code.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PORTFOLIO -->
+<section id="portfolio">
+  <div class="section-tag">Our Work</div>
+  <h2 class="section-title">Projects that move the needle.</h2>
+  <p class="section-sub">Every project is a story of strategy meeting craft. Here are a few we're proud of.</p>
+  <div class="portfolio-grid">
+    <div class="portfolio-card">
+      <div class="portfolio-bg grad-teal"></div>
+      <div class="portfolio-card-inner"><div class="portfolio-title">Nexus Banking Platform</div><div class="portfolio-sub">Fintech · Web App</div></div>
+    </div>
+    <div class="portfolio-card">
+      <div class="portfolio-bg grad-green"></div>
+      <div class="portfolio-card-inner"><div class="portfolio-title">Terra E-Commerce</div><div class="portfolio-sub">Retail · Shopify</div></div>
+    </div>
+    <div class="portfolio-card">
+      <div class="portfolio-bg grad-purple"></div>
+      <div class="portfolio-card-inner"><div class="portfolio-title">Orbit SaaS Dashboard</div><div class="portfolio-sub">Tech · React App</div></div>
+    </div>
+    <div class="portfolio-card">
+      <div class="portfolio-bg grad-pink"></div>
+      <div class="portfolio-card-inner"><div class="portfolio-title">PulseHealth Portal</div><div class="portfolio-sub">Healthcare · Web App</div></div>
+    </div>
+    <div class="portfolio-card">
+      <div class="portfolio-bg grad-orange"></div>
+      <div class="portfolio-card-inner"><div class="portfolio-title">Wavelength Agency</div><div class="portfolio-sub">Creative · Portfolio</div></div>
+    </div>
+    <div class="portfolio-card">
+      <div class="portfolio-bg grad-darkblue"></div>
+      <div class="portfolio-card-inner"><div class="portfolio-title">Summit Capital</div><div class="portfolio-sub">Finance · Corporate</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-tag">Transparent Pricing</div>
+  <h2 class="section-title">Clear packages, no surprises.</h2>
+  <p class="section-sub">Choose the package that fits your stage. All packages include mobile-responsive design, SEO foundations, and post-launch support.</p>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-name">Starter Site</div>
+      <div class="price-amount">$1,499 <span>/project</span></div>
+      <div class="price-desc">Perfect for new businesses needing a professional online presence fast.</div>
+      <ul class="price-features">
+        <li>Up to 5 pages</li>
+        <li>Mobile responsive design</li>
+        <li>SEO ready foundations</li>
+        <li>Contact form integration</li>
+        <li>2 revision rounds</li>
+        <li>14-day delivery</li>
+      </ul>
+      <button class="price-btn price-btn-outline">Get Started</button>
+    </div>
+    <div class="price-card featured">
+      <div class="featured-badge">Most Popular</div>
+      <div class="price-name">Growth</div>
+      <div class="price-amount">$3,499 <span>/project</span></div>
+      <div class="price-desc">For businesses ready to scale with content marketing and conversion optimisation.</div>
+      <ul class="price-features">
+        <li>Up to 10 pages</li>
+        <li>CMS integration (blog)</li>
+        <li>Custom GSAP animations</li>
+        <li>Analytics & tracking setup</li>
+        <li>3 revision rounds</li>
+        <li>21-day delivery</li>
+      </ul>
+      <button class="price-btn price-btn-fill">Get Started</button>
+    </div>
+    <div class="price-card">
+      <div class="price-name">Enterprise</div>
+      <div class="price-amount">$7,999 <span>/project</span></div>
+      <div class="price-desc">Full-custom solution for organisations with complex requirements and large teams.</div>
+      <ul class="price-features">
+        <li>Unlimited pages</li>
+        <li>E-commerce functionality</li>
+        <li>Third-party API integrations</li>
+        <li>Dedicated project manager</li>
+        <li>Ongoing support plan</li>
+        <li>Custom timeline</li>
+      </ul>
+      <button class="price-btn price-btn-outline">Let's Talk</button>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section>
+  <div class="section-tag">How It Works</div>
+  <h2 class="section-title">From brief to live in 4 steps.</h2>
+  <p class="section-sub">A streamlined process designed to eliminate back-and-forth and get you live faster.</p>
+  <div class="process-line">
+    <div class="process-step">
+      <div class="step-num">01</div>
+      <div class="step-name">Discovery</div>
+      <div class="step-desc">Deep-dive call to understand your goals, audience, and competitive landscape.</div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">02</div>
+      <div class="step-name">Wireframe</div>
+      <div class="step-desc">Interactive wireframes showing page structure and user flows before design begins.</div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">03</div>
+      <div class="step-name">Design</div>
+      <div class="step-desc">High-fidelity Figma mockups brought to life with pixel-perfect development.</div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">04</div>
+      <div class="step-name">Launch</div>
+      <div class="step-desc">Thorough QA, performance tuning, and a smooth handover with full documentation.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<div id="contact" style="padding: 6rem 2rem; background: linear-gradient(180deg, var(--navy) 0%, rgba(0,20,40,0.8) 100%);">
+  <div class="contact-inner">
+    <div class="contact-box">
+      <div class="section-tag" style="text-align:center;margin-bottom:0.5rem;">Start A Project</div>
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:clamp(1.8rem,4vw,2.5rem);font-weight:700;margin-bottom:0.75rem;">Ready to build something great?</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.95rem;line-height:1.7;">Drop your email and we'll send you a custom project brief template to get started.</p>
+      <div class="contact-input-row">
+        <input class="contact-input" type="email" placeholder="your@email.com">
+        <button class="contact-submit">Get Quote →</button>
+      </div>
+      <p style="font-size:0.78rem;color:rgba(255,255,255,0.3);margin-top:1rem;">We typically respond within 2 business hours. No spam, ever.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo">Designers<span>Meet</span></div>
+        <p>A premium web design studio building high-performance websites for ambitious businesses across Australia and beyond.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Services</h5>
+        <a href="#">Landing Pages</a>
+        <a href="#">E-Commerce</a>
+        <a href="#">Web Apps</a>
+        <a href="#">Corporate Sites</a>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <a href="#">About Us</a>
+        <a href="#">Our Process</a>
+        <a href="#">Case Studies</a>
+        <a href="#">Blog</a>
+      </div>
+      <div class="footer-col">
+        <h5>Work</h5>
+        <a href="#">Portfolio</a>
+        <a href="#">Testimonials</a>
+        <a href="#">Awards</a>
+        <a href="#">Press</a>
+      </div>
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <a href="#">Get a Quote</a>
+        <a href="#">hello@designersmeet.com</a>
+        <a href="#">Sydney, Australia</a>
+        <a href="#">+61 2 0000 0000</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 DesignersMeet Web Studio. All rights reserved.</p>
+      <div class="socials">
+        <a href="#" class="social-icon">in</a>
+        <a href="#" class="social-icon">tw</a>
+        <a href="#" class="social-icon">ig</a>
+        <a href="#" class="social-icon">be</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// --- GRID CANVAS ---
+const gridCanvas = document.getElementById('grid-canvas');
+const gCtx = gridCanvas.getContext('2d');
+let offset = 0;
+function resizeGrid() {
+  gridCanvas.width = window.innerWidth;
+  gridCanvas.height = document.getElementById('hero').offsetHeight;
+}
+resizeGrid();
+window.addEventListener('resize', resizeGrid);
+
+function drawGrid() {
+  gCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+  const size = 60;
+  gCtx.strokeStyle = 'rgba(0,212,255,0.06)';
+  gCtx.lineWidth = 1;
+  offset = (offset + 0.15) % size;
+  for (let x = -size + (offset % size); x < gridCanvas.width + size; x += size) {
+    gCtx.beginPath(); gCtx.moveTo(x, 0); gCtx.lineTo(x, gridCanvas.height); gCtx.stroke();
+  }
+  for (let y = -size + (offset * 0.5 % size); y < gridCanvas.height + size; y += size) {
+    gCtx.beginPath(); gCtx.moveTo(0, y); gCtx.lineTo(gridCanvas.width, y); gCtx.stroke();
+  }
+  requestAnimationFrame(drawGrid);
+}
+drawGrid();
+
+// --- THREE.JS PARTICLE SPHERE ---
+const threeCanvas = document.getElementById('three-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, alpha: true, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, threeCanvas.offsetWidth / threeCanvas.offsetHeight, 0.1, 100);
+camera.position.z = 4.5;
+
+const geometry = new THREE.BufferGeometry();
+const count = 900;
+const positions = new Float32Array(count * 3);
+const sphereRadius = 2;
+for (let i = 0; i < count; i++) {
+  const phi = Math.acos(-1 + (2 * i) / count);
+  const theta = Math.sqrt(count * Math.PI) * phi;
+  positions[i*3] = sphereRadius * Math.cos(theta) * Math.sin(phi);
+  positions[i*3+1] = sphereRadius * Math.sin(theta) * Math.sin(phi);
+  positions[i*3+2] = sphereRadius * Math.cos(phi);
+}
+geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+const material = new THREE.PointsMaterial({ color: 0x00d4ff, size: 0.04, transparent: true, opacity: 0.8 });
+const sphere = new THREE.Points(geometry, material);
+scene.add(sphere);
+
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', e => {
+  mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+  mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+function resizeThree() {
+  const w = threeCanvas.offsetWidth, h = threeCanvas.offsetHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+resizeThree();
+window.addEventListener('resize', resizeThree);
+
+function animateThree() {
+  requestAnimationFrame(animateThree);
+  sphere.rotation.y += 0.003;
+  sphere.rotation.x += 0.001;
+  sphere.rotation.y += mouseX * 0.001;
+  sphere.rotation.x += mouseY * 0.001;
+  renderer.render(scene, camera);
+}
+animateThree();
+
+// --- TYPEWRITER CODE ---
+const codeLines = [
+  '<span class="code-blue">&lt;section</span> <span class="code-green">class</span>=<span class="code-orange">"hero"</span><span class="code-blue">&gt;</span>',
+  '  <span class="code-blue">&lt;h1</span> <span class="code-green">class</span>=<span class="code-orange">"headline"</span><span class="code-blue">&gt;</span>',
+  '    Websites That Convert',
+  '  <span class="code-blue">&lt;/h1&gt;</span>',
+  '  <span class="code-blue">&lt;p</span> <span class="code-green">class</span>=<span class="code-orange">"sub"</span><span class="code-blue">&gt;</span>',
+  '    Custom web design...',
+  '  <span class="code-blue">&lt;/p&gt;</span>',
+  '<span class="code-blue">&lt;/section&gt;</span>',
+  '',
+  '.hero { <span class="code-green">background</span>: <span class="code-orange">#0a0f1a</span>; }',
+  '.headline { <span class="code-green">color</span>: <span class="code-orange">#00d4ff</span>; }',
+  '<span class="code-blue">const</span> animate = () => {',
+  '  gsap.from(<span class="code-orange">".hero"</span>, {',
+  '    <span class="code-green">opacity</span>: 0, <span class="code-green">y</span>: 30 });',
+  '};',
+];
+const codeEl = document.getElementById('code-output');
+let lineIdx = 0;
+function nextLine() {
+  if (lineIdx >= codeLines.length) { lineIdx = 0; codeEl.innerHTML = ''; }
+  codeEl.innerHTML += codeLines[lineIdx] + '\n';
+  lineIdx++;
+  setTimeout(nextLine, 350);
+}
+nextLine();
+
+// --- GSAP ANIMATIONS ---
+// Hero entrance
+gsap.from('#line1', { y: 80, opacity: 0, duration: 1, delay: 0.3, ease: 'power3.out' });
+gsap.from('#line2', { y: 80, opacity: 0, duration: 1, delay: 0.5, ease: 'power3.out' });
+gsap.from('.hero-tag', { y: -20, opacity: 0, duration: 0.7, delay: 0.1, ease: 'power2.out' });
+gsap.from('.hero-sub', { y: 30, opacity: 0, duration: 0.8, delay: 0.7, ease: 'power2.out' });
+gsap.from('.hero-btns', { y: 30, opacity: 0, duration: 0.8, delay: 0.9, ease: 'power2.out' });
+gsap.from('.code-block', { x: 60, opacity: 0, duration: 1, delay: 1.2, ease: 'power3.out' });
+
+// Stats counter
+ScrollTrigger.create({
+  trigger: '#stats-bar',
+  start: 'top 80%',
+  once: true,
+  onEnter: () => {
+    document.querySelectorAll('[data-count]').forEach(el => {
+      const end = parseInt(el.dataset.count);
+      const prefix = el.dataset.prefix || '';
+      const suffix = el.dataset.suffix || '+';
+      gsap.fromTo({ val: 0 }, { val: end }, {
+        duration: 1.5, ease: 'power2.out',
+        onUpdate() { el.textContent = prefix + Math.round(this.targets()[0].val) + suffix; }
+      });
+    });
+  }
+});
+
+// Service tiles stagger
+gsap.from('.service-tile', {
+  scrollTrigger: { trigger: '.services-grid', start: 'top 80%' },
+  y: 40, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out'
+});
+
+// Portfolio cards stagger
+gsap.from('.portfolio-card', {
+  scrollTrigger: { trigger: '.portfolio-grid', start: 'top 80%' },
+  y: 40, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out'
+});
+
+// Pricing cards
+gsap.from('.price-card', {
+  scrollTrigger: { trigger: '.pricing-grid', start: 'top 80%' },
+  y: 50, opacity: 0, duration: 0.7, stagger: 0.15, ease: 'power2.out'
+});
+
+// Process steps
+gsap.from('.process-step', {
+  scrollTrigger: { trigger: '.process-line', start: 'top 80%' },
+  x: -30, opacity: 0, duration: 0.6, stagger: 0.15, ease: 'power2.out'
+});
+
+// Contact box
+gsap.from('.contact-box', {
+  scrollTrigger: { trigger: '.contact-box', start: 'top 85%' },
+  y: 40, opacity: 0, duration: 0.8, ease: 'power2.out'
+});
+
+// Nav scroll effect
+ScrollTrigger.create({
+  start: 'top -80',
+  onUpdate: (self) => {
+    document.querySelector('nav').style.background = self.progress > 0 ? 'rgba(10,15,26,0.95)' : 'rgba(10,15,26,0.7)';
+  }
+});
+</script>
+</body>
+</html>
