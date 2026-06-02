@@ -1,0 +1,864 @@
+<!-- GHL Compatible -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI/UX Design & Research — DesignersMeet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --bg: #160b2e;
+    --primary: #8B5CF6;
+    --accent: #DDD6FE;
+    --glow: rgba(139,92,246,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+  h1,h2,h3,h4,h5 { font-family: 'Space Grotesk', sans-serif; }
+
+  /* MESH GRADIENT BACKGROUND */
+  .mesh-bg {
+    position: absolute; inset: 0; overflow: hidden; z-index: 0;
+  }
+  .mesh-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.25;
+    animation: blobDrift 18s ease-in-out infinite alternate;
+  }
+  .blob1 { width: 600px; height: 600px; background: #8B5CF6; top: -100px; left: -100px; animation-duration: 20s; }
+  .blob2 { width: 500px; height: 500px; background: #6D28D9; top: 40%; right: -150px; animation-duration: 25s; animation-delay: -8s; }
+  .blob3 { width: 400px; height: 400px; background: #DDD6FE; bottom: 0; left: 30%; animation-duration: 22s; animation-delay: -4s; }
+  @keyframes blobDrift {
+    0% { transform: translate(0,0) scale(1); }
+    33% { transform: translate(40px,-30px) scale(1.05); }
+    66% { transform: translate(-30px,50px) scale(0.97); }
+    100% { transform: translate(20px,20px) scale(1.03); }
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(22,11,46,0.75);
+    border-bottom: 1px solid rgba(139,92,246,0.2);
+    padding: 0 5%;
+    height: 68px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.15rem; color: #fff; text-decoration: none; }
+  .nav-logo span { color: var(--primary); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--accent); }
+  .btn-quote {
+    background: var(--primary); color: #fff;
+    padding: 0.5rem 1.25rem; border-radius: 8px;
+    font-size: 0.875rem; font-weight: 600; text-decoration: none;
+    transition: background 0.2s, box-shadow 0.2s;
+    white-space: nowrap;
+  }
+  .btn-quote:hover { background: #7C3AED; box-shadow: 0 0 20px rgba(139,92,246,0.5); }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+  .hamburger span { display: block; width: 24px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.3s; }
+  .mobile-menu {
+    display: none; position: fixed; top: 68px; left: 0; right: 0;
+    background: rgba(22,11,46,0.98); backdrop-filter: blur(20px);
+    padding: 1.5rem 5%; z-index: 99; border-bottom: 1px solid rgba(139,92,246,0.2);
+  }
+  .mobile-menu.open { display: block; }
+  .mobile-menu a { display: block; padding: 0.75rem 0; color: rgba(255,255,255,0.8); text-decoration: none; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+
+  /* HERO */
+  #hero {
+    position: relative; min-height: 100vh;
+    display: flex; align-items: center;
+    padding: 100px 5% 60px;
+  }
+  #three-canvas {
+    position: absolute; inset: 0; z-index: 1; opacity: 0.6;
+  }
+  .hero-content { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; width: 100%; max-width: 1300px; margin: 0 auto; }
+  .hero-headline { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.8rem, 5.5vw, 5rem); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; }
+  .headline-glow {
+    display: inline-block;
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(139,92,246,0.8), 0 0 80px rgba(139,92,246,0.4);
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+  @keyframes pulseGlow {
+    0%,100% { text-shadow: 0 0 40px rgba(139,92,246,0.8), 0 0 80px rgba(139,92,246,0.4); }
+    50% { text-shadow: 0 0 60px rgba(139,92,246,1), 0 0 120px rgba(139,92,246,0.6), 0 0 200px rgba(139,92,246,0.2); }
+  }
+  .hero-sub { margin-top: 1.25rem; color: rgba(255,255,255,0.65); font-size: 1.1rem; line-height: 1.7; max-width: 480px; }
+  .hero-ctas { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
+  .btn-outline { border: 1.5px solid var(--accent); color: var(--accent); padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; text-decoration: none; transition: all 0.2s; }
+  .btn-outline:hover { background: rgba(221,214,254,0.1); box-shadow: 0 0 20px rgba(221,214,254,0.2); }
+  .btn-primary { background: var(--primary); color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; text-decoration: none; transition: all 0.2s; }
+  .btn-primary:hover { background: #7C3AED; box-shadow: 0 0 24px rgba(139,92,246,0.6); transform: translateY(-1px); }
+
+  /* WIREFRAME MOCKUP */
+  .wireframe-stack { position: relative; height: 380px; }
+  .wire-card {
+    position: absolute; background: rgba(139,92,246,0.06);
+    border: 1px solid rgba(139,92,246,0.25); border-radius: 12px;
+    padding: 1.25rem; backdrop-filter: blur(4px);
+  }
+  .wire-card-1 { width: 280px; top: 0; right: 0; animation: floatA 5s ease-in-out infinite; }
+  .wire-card-2 { width: 240px; top: 130px; right: 60px; animation: floatB 6s ease-in-out infinite; opacity: 0.75; }
+  .wire-card-3 { width: 220px; top: 250px; right: 20px; animation: floatC 7s ease-in-out infinite; opacity: 0.55; }
+  @keyframes floatA { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+  @keyframes floatB { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes floatC { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+  .wire-titlebar { display: flex; gap: 6px; margin-bottom: 10px; }
+  .wire-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .wire-dot-r { background: rgba(255,100,100,0.6); }
+  .wire-dot-y { background: rgba(255,200,0,0.6); }
+  .wire-dot-g { background: rgba(0,200,100,0.6); }
+  .wire-line { height: 8px; background: rgba(221,214,254,0.15); border-radius: 4px; margin-bottom: 8px; }
+  .wire-line-full { width: 100%; }
+  .wire-line-75 { width: 75%; }
+  .wire-line-50 { width: 50%; }
+  .wire-line-90 { width: 90%; }
+  .wire-boxes { display: flex; gap: 6px; margin-top: 10px; }
+  .wire-box { flex: 1; height: 48px; background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.2); border-radius: 6px; }
+  .wire-box-tall { height: 64px; }
+
+  /* STATS BAR */
+  .stats-bar {
+    position: relative; z-index: 2;
+    background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25);
+    border-radius: 12px; padding: 1.25rem 2rem;
+    display: flex; gap: 2rem; flex-wrap: wrap;
+    max-width: 1300px; margin: 2rem auto 0;
+  }
+  .stat-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; color: rgba(255,255,255,0.7); }
+  .stat-item::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+  .stat-num { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--accent); font-size: 1rem; }
+
+  /* SECTIONS */
+  section { padding: 100px 5%; }
+  .section-max { max-width: 1300px; margin: 0 auto; }
+  .section-label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--primary); margin-bottom: 1rem; }
+  .section-title { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 700; line-height: 1.1; }
+  .section-sub { color: rgba(255,255,255,0.55); font-size: 1rem; line-height: 1.7; max-width: 580px; margin-top: 0.75rem; }
+
+  /* SERVICES GRID */
+  .services-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-top: 3rem; }
+  .service-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 16px; padding: 2rem; position: relative; overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  }
+  .service-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .service-card:hover { border-color: rgba(139,92,246,0.5); transform: translateY(-4px); box-shadow: 0 16px 40px rgba(139,92,246,0.15); }
+  .service-card:hover::before { opacity: 1; }
+  .service-icon { width: 44px; height: 44px; background: rgba(139,92,246,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; font-size: 1.25rem; }
+  .service-price { font-family: 'Space Grotesk', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--accent); margin: 0.5rem 0; }
+  .service-name { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .service-desc { font-size: 0.875rem; color: rgba(255,255,255,0.55); line-height: 1.6; margin-bottom: 1rem; }
+  .service-time { font-size: 0.8rem; color: rgba(139,92,246,0.8); font-weight: 500; }
+
+  /* PROCESS */
+  #process { background: rgba(139,92,246,0.04); border-top: 1px solid rgba(139,92,246,0.1); border-bottom: 1px solid rgba(139,92,246,0.1); }
+  .process-steps { display: flex; gap: 0; margin-top: 3rem; position: relative; }
+  .process-steps::before {
+    content: ''; position: absolute; top: 22px; left: 22px; right: 22px; height: 2px;
+    background: linear-gradient(90deg, var(--primary), transparent);
+    z-index: 0;
+  }
+  .process-step { flex: 1; position: relative; z-index: 1; padding: 0 1rem; }
+  .step-num {
+    width: 44px; height: 44px; border-radius: 50%; background: var(--bg);
+    border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--primary); font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .step-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 1rem; margin-bottom: 0.5rem; }
+  .step-desc { font-size: 0.8rem; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+  /* CASE STUDIES */
+  .case-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-top: 3rem; }
+  .case-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(139,92,246,0.15);
+    border-radius: 16px; padding: 2rem; transition: all 0.3s;
+  }
+  .case-card:hover { background: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.4); transform: translateY(-4px); }
+  .case-metric { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700; color: var(--accent); line-height: 1; margin: 0.75rem 0; }
+  .case-name { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--primary); }
+  .case-desc { font-size: 0.875rem; color: rgba(255,255,255,0.55); line-height: 1.6; margin-top: 0.5rem; }
+
+  /* BEFORE/AFTER */
+  .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem; }
+  .ba-card { border-radius: 16px; padding: 2rem; position: relative; overflow: hidden; }
+  .ba-before { background: rgba(255,60,60,0.05); border: 1px solid rgba(255,60,60,0.2); }
+  .ba-after { background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.35); }
+  .ba-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.5rem; }
+  .ba-label-before { color: rgba(255,100,100,0.8); }
+  .ba-label-after { color: var(--primary); }
+  .ba-ui-cluttered { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .ba-el { background: rgba(255,255,255,0.08); border-radius: 3px; }
+  .ba-el-sm { height: 16px; }
+  .ba-el-md { height: 32px; }
+  .ba-el-lg { height: 56px; grid-column: span 2; }
+  .ba-el-xl { height: 80px; grid-column: span 3; background: rgba(255,60,60,0.08); }
+  .ba-el-clean { height: 20px; border-radius: 4px; margin-bottom: 10px; background: rgba(139,92,246,0.12); }
+  .ba-spacer { height: 24px; }
+  .ba-row { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 8px; }
+  .ba-row-el { height: 36px; background: rgba(139,92,246,0.12); border-radius: 6px; }
+
+  /* TOOLS */
+  .tools-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
+  .tool-badge {
+    background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25);
+    border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 500;
+    color: rgba(255,255,255,0.8); transition: all 0.2s;
+  }
+  .tool-badge:hover { background: rgba(139,92,246,0.2); border-color: var(--primary); color: #fff; }
+
+  /* TESTIMONIALS */
+  .testimonials-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem; }
+  .testimonial-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 16px; padding: 2.5rem; position: relative;
+  }
+  .testimonial-card::before { content: '"'; position: absolute; top: 1.5rem; right: 1.5rem; font-size: 5rem; line-height: 1; color: rgba(139,92,246,0.15); font-family: 'Space Grotesk', sans-serif; }
+  .testimonial-text { font-size: 1rem; line-height: 1.75; color: rgba(255,255,255,0.8); font-style: italic; margin-bottom: 1.5rem; }
+  .testimonial-author { font-weight: 600; font-size: 0.9rem; }
+  .testimonial-role { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin-top: 0.25rem; }
+  .stars { color: var(--primary); font-size: 0.85rem; margin-bottom: 1rem; letter-spacing: 2px; }
+
+  /* CTA SECTION */
+  #cta { background: linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(109,40,217,0.1) 100%); border-top: 1px solid rgba(139,92,246,0.2); }
+  .cta-inner { text-align: center; max-width: 640px; margin: 0 auto; }
+  .cta-title { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 700; margin-bottom: 1rem; }
+  .cta-sub { color: rgba(255,255,255,0.6); font-size: 1rem; margin-bottom: 2.5rem; line-height: 1.7; }
+  .cta-form { display: flex; gap: 0.75rem; max-width: 480px; margin: 0 auto; }
+  .cta-input {
+    flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 10px; padding: 0.85rem 1.25rem; color: #fff; font-size: 0.95rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .cta-input::placeholder { color: rgba(255,255,255,0.35); }
+  .cta-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+  .cta-btn {
+    background: var(--primary); color: #fff; border: none;
+    padding: 0.85rem 1.5rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .cta-btn:hover { background: #7C3AED; box-shadow: 0 0 24px rgba(139,92,246,0.5); }
+
+  /* FOOTER */
+  footer { background: rgba(0,0,0,0.3); border-top: 1px solid rgba(139,92,246,0.15); padding: 60px 5% 30px; }
+  .footer-inner { max-width: 1300px; margin: 0 auto; }
+  .footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr; gap: 2rem; margin-bottom: 3rem; }
+  .footer-brand-name { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .footer-brand-name span { color: var(--primary); }
+  .footer-brand-desc { font-size: 0.85rem; color: rgba(255,255,255,0.45); line-height: 1.6; margin-bottom: 1.25rem; }
+  .footer-col-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem; color: rgba(255,255,255,0.9); }
+  .footer-col ul { list-style: none; }
+  .footer-col ul li { margin-bottom: 0.6rem; }
+  .footer-col ul li a { font-size: 0.8rem; color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
+  .footer-col ul li a:hover { color: var(--accent); }
+  .social-links { display: flex; gap: 0.75rem; }
+  .social-link {
+    width: 36px; height: 36px; background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.2); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none; font-size: 0.9rem; transition: all 0.2s;
+  }
+  .social-link:hover { background: rgba(139,92,246,0.25); border-color: var(--primary); }
+  .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.06); }
+  .footer-copy { font-size: 0.8rem; color: rgba(255,255,255,0.3); }
+  .footer-legal { display: flex; gap: 1.5rem; }
+  .footer-legal a { font-size: 0.8rem; color: rgba(255,255,255,0.3); text-decoration: none; }
+  .footer-legal a:hover { color: rgba(255,255,255,0.6); }
+
+  /* REVEAL ANIMATION STUBS */
+  .reveal { opacity: 0; transform: translateY(30px); }
+  .reveal-left { opacity: 0; transform: translateX(-40px); }
+  .reveal-right { opacity: 0; transform: translateX(40px); }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .services-grid { grid-template-columns: repeat(2, 1fr); }
+    .case-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-content { grid-template-columns: 1fr; }
+    .wireframe-stack { display: none; }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+    .process-steps { flex-wrap: wrap; }
+    .process-steps::before { display: none; }
+    .process-step { width: 50%; padding: 1rem; }
+  }
+  @media (max-width: 768px) {
+    section { padding: 70px 5%; }
+    .nav-links, .btn-quote { display: none; }
+    .hamburger { display: flex; }
+    .services-grid { grid-template-columns: 1fr; }
+    .case-grid { grid-template-columns: 1fr; }
+    .ba-grid { grid-template-columns: 1fr; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    .footer-top { grid-template-columns: 1fr; }
+    .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
+    .cta-form { flex-direction: column; }
+    .stats-bar { flex-direction: column; gap: 0.75rem; }
+    .process-step { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">Designers<span>Meet</span></a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#process">Process</a></li>
+    <li><a href="#work">Work</a></li>
+    <li><a href="#testimonials">Reviews</a></li>
+  </ul>
+  <a href="#cta" class="btn-quote">Get Quote</a>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#services" onclick="toggleMenu()">Services</a>
+  <a href="#process" onclick="toggleMenu()">Process</a>
+  <a href="#work" onclick="toggleMenu()">Work</a>
+  <a href="#testimonials" onclick="toggleMenu()">Reviews</a>
+  <a href="#cta" onclick="toggleMenu()" style="color:var(--accent);font-weight:600;">Get Quote →</a>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="mesh-bg">
+    <div class="mesh-blob blob1"></div>
+    <div class="mesh-blob blob2"></div>
+    <div class="mesh-blob blob3"></div>
+  </div>
+  <canvas id="three-canvas"></canvas>
+  <div style="width:100%;position:relative;z-index:2;">
+    <div class="hero-content">
+      <div>
+        <div class="section-label">UI/UX Design & Research</div>
+        <h1 class="hero-headline">
+          Design That<br>
+          <span class="headline-glow">Thinks First.</span>
+        </h1>
+        <p class="hero-sub">User research, information architecture, interaction design, and design systems. We solve the hard problems first.</p>
+        <div class="hero-ctas">
+          <a href="#work" class="btn-outline">See Case Studies</a>
+          <a href="#cta" class="btn-primary">Audit My UX →</a>
+        </div>
+      </div>
+      <div class="wireframe-stack">
+        <div class="wire-card wire-card-1">
+          <div class="wire-titlebar">
+            <div class="wire-dot wire-dot-r"></div>
+            <div class="wire-dot wire-dot-y"></div>
+            <div class="wire-dot wire-dot-g"></div>
+          </div>
+          <div class="wire-line wire-line-75"></div>
+          <div class="wire-line wire-line-full"></div>
+          <div class="wire-line wire-line-50"></div>
+          <div class="wire-boxes">
+            <div class="wire-box"></div>
+            <div class="wire-box"></div>
+            <div class="wire-box wire-box-tall"></div>
+          </div>
+        </div>
+        <div class="wire-card wire-card-2">
+          <div class="wire-titlebar">
+            <div class="wire-dot wire-dot-r"></div>
+            <div class="wire-dot wire-dot-y"></div>
+            <div class="wire-dot wire-dot-g"></div>
+          </div>
+          <div class="wire-line wire-line-90"></div>
+          <div class="wire-line wire-line-full"></div>
+          <div class="wire-boxes">
+            <div class="wire-box"></div>
+            <div class="wire-box"></div>
+          </div>
+        </div>
+        <div class="wire-card wire-card-3">
+          <div class="wire-line wire-line-75"></div>
+          <div class="wire-line wire-line-50"></div>
+          <div class="wire-boxes">
+            <div class="wire-box"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-item"><span class="stat-num">84%</span> Average Conversion Lift</div>
+      <div class="stat-item"><span class="stat-num">40+</span> Design Systems Built</div>
+      <div class="stat-item"><span class="stat-num">3.2×</span> User Retention Increase</div>
+      <div class="stat-item"><span class="stat-num">12-Week</span> Avg. Project Engagement</div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="section-max">
+    <div class="reveal">
+      <div class="section-label">What We Offer</div>
+      <h2 class="section-title">Every UX Service,<br>Priced Transparently.</h2>
+      <p class="section-sub">Fixed-price engagements with clear deliverables. No surprises, no scope creep.</p>
+    </div>
+    <div class="services-grid">
+      <div class="service-card reveal">
+        <div class="service-icon">🔍</div>
+        <div class="service-name">UX Audit</div>
+        <div class="service-price">$999</div>
+        <div class="service-desc">Heuristic evaluation, user flow analysis, and a prioritized improvement report with actionable findings.</div>
+        <div class="service-time">⏱ 5–7 Business Days</div>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-icon">🎨</div>
+        <div class="service-name">Full UX Design</div>
+        <div class="service-price">$2,499</div>
+        <div class="service-desc">Wireframes, interactive prototypes, user testing sessions, and developer-ready Figma handoff.</div>
+        <div class="service-time">⏱ 3–4 Weeks</div>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-icon">🏗️</div>
+        <div class="service-name">Design System</div>
+        <div class="service-price">$3,999</div>
+        <div class="service-desc">Full component library, design tokens, documentation, and Storybook integration for your engineering team.</div>
+        <div class="service-time">⏱ 4–6 Weeks</div>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-icon">🧪</div>
+        <div class="service-name">Research + Design</div>
+        <div class="service-price">$4,999</div>
+        <div class="service-desc">User research, journey mapping, full Figma design, and moderated usability testing with a written report.</div>
+        <div class="service-time">⏱ 6–8 Weeks</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="section-max">
+    <div class="reveal">
+      <div class="section-label">How We Work</div>
+      <h2 class="section-title">A Process Built on Evidence.</h2>
+      <p class="section-sub">Every design decision is backed by research, validated by users, and documented for your team.</p>
+    </div>
+    <div class="process-steps">
+      <div class="process-step reveal">
+        <div class="step-num">01</div>
+        <div class="step-title">Research</div>
+        <div class="step-desc">User interviews, surveys, analytics deep-dives, and competitive analysis to understand the real problem.</div>
+      </div>
+      <div class="process-step reveal">
+        <div class="step-num">02</div>
+        <div class="step-title">Architecture</div>
+        <div class="step-desc">Defining the information structure, user flows, and site maps that serve your users' mental models.</div>
+      </div>
+      <div class="process-step reveal">
+        <div class="step-num">03</div>
+        <div class="step-title">Wireframes</div>
+        <div class="step-desc">Low-fidelity layouts focused purely on function — structure over aesthetics, tested early and often.</div>
+      </div>
+      <div class="process-step reveal">
+        <div class="step-num">04</div>
+        <div class="step-title">Prototype</div>
+        <div class="step-desc">Interactive Figma prototype connected to real user flows, ready for moderated usability testing.</div>
+      </div>
+      <div class="process-step reveal">
+        <div class="step-num">05</div>
+        <div class="step-title">Handoff</div>
+        <div class="step-desc">Developer-ready specs, exported assets, and a living design system your team can maintain.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CASE STUDIES -->
+<section id="work">
+  <div class="section-max">
+    <div class="reveal">
+      <div class="section-label">Case Studies</div>
+      <h2 class="section-title">Results, Not Just Deliverables.</h2>
+      <p class="section-sub">Every engagement is measured against real business outcomes. Here's what we've shipped.</p>
+    </div>
+    <div class="case-grid">
+      <div class="case-card reveal">
+        <div class="case-name">CloudOps</div>
+        <div class="case-metric">340%</div>
+        <div style="font-size:0.8rem;color:var(--accent);font-weight:600;margin-bottom:0.75rem;">Faster Onboarding</div>
+        <div class="case-desc">Redesigned the complete new user experience for a B2B cloud infrastructure platform. Reduced time-to-value from 14 days to 3.</div>
+      </div>
+      <div class="case-card reveal">
+        <div class="case-name">RetailIQ</div>
+        <div class="case-metric">2.1×</div>
+        <div style="font-size:0.8rem;color:var(--accent);font-weight:600;margin-bottom:0.75rem;">Purchase Completion</div>
+        <div class="case-desc">E-commerce checkout UX overhaul that reduced cart abandonment and doubled purchase completion rates in 6 weeks.</div>
+      </div>
+      <div class="case-card reveal">
+        <div class="case-name">HealthTrack</div>
+        <div class="case-metric">4.8★</div>
+        <div style="font-size:0.8rem;color:var(--accent);font-weight:600;margin-bottom:0.75rem;">App Store Rating</div>
+        <div class="case-desc">Mobile health app UX overhaul lifted App Store rating from 3.1 to 4.8 stars. Monthly active users grew 140%.</div>
+      </div>
+      <div class="case-card reveal">
+        <div class="case-name">NexusPay</div>
+        <div class="case-metric">67%</div>
+        <div style="font-size:0.8rem;color:var(--accent);font-weight:600;margin-bottom:0.75rem;">Support Ticket Reduction</div>
+        <div class="case-desc">Payment flow redesign eliminated the top 12 confusion points. Support tickets dropped 67% in the first month post-launch.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BEFORE AFTER -->
+<section id="beforeafter" style="padding-top:0;">
+  <div class="section-max">
+    <div class="reveal">
+      <div class="section-label">The Transformation</div>
+      <h2 class="section-title">Before vs. After.</h2>
+      <p class="section-sub">A good UX audit doesn't just find problems — it shows you exactly what needs to change.</p>
+    </div>
+    <div class="ba-grid">
+      <div class="ba-card ba-before reveal-left">
+        <div class="ba-label ba-label-before">⚠ Before</div>
+        <div class="ba-ui-cluttered">
+          <div class="ba-el ba-el-xl"></div>
+          <div class="ba-el ba-el-sm"></div>
+          <div class="ba-el ba-el-sm"></div>
+          <div class="ba-el ba-el-sm"></div>
+          <div class="ba-el ba-el-lg"></div>
+          <div class="ba-el ba-el-sm"></div>
+          <div class="ba-el ba-el-md"></div>
+          <div class="ba-el ba-el-md"></div>
+          <div class="ba-el ba-el-sm"></div>
+          <div class="ba-el ba-el-sm"></div>
+          <div class="ba-el ba-el-md"></div>
+          <div class="ba-el ba-el-sm"></div>
+          <div class="ba-el ba-el-md"></div>
+          <div class="ba-el ba-el-sm"></div>
+          <div class="ba-el ba-el-sm"></div>
+        </div>
+        <p style="font-size:0.8rem;color:rgba(255,100,100,0.7);margin-top:1.25rem;">Cluttered layout, competing hierarchies, no clear next action. Users don't know where to look.</p>
+      </div>
+      <div class="ba-card ba-after reveal-right">
+        <div class="ba-label ba-label-after">✓ After</div>
+        <div>
+          <div class="ba-el-clean" style="width:60%;height:10px;"></div>
+          <div class="ba-el-clean" style="width:40%;height:26px;background:rgba(139,92,246,0.2);"></div>
+          <div class="ba-spacer"></div>
+          <div class="ba-row">
+            <div class="ba-row-el"></div>
+            <div class="ba-row-el"></div>
+          </div>
+          <div class="ba-row">
+            <div class="ba-row-el"></div>
+            <div class="ba-row-el"></div>
+          </div>
+          <div class="ba-spacer"></div>
+          <div class="ba-el-clean" style="width:50%;height:36px;background:rgba(139,92,246,0.25);border-radius:8px;"></div>
+        </div>
+        <p style="font-size:0.8rem;color:rgba(139,92,246,0.8);margin-top:1.25rem;">Clear hierarchy, generous whitespace, single primary action. Users convert 84% more often.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOLS -->
+<section id="tools" style="padding-top:0;">
+  <div class="section-max">
+    <div class="reveal">
+      <div class="section-label">Our Stack</div>
+      <h2 class="section-title">Tools We Master.</h2>
+    </div>
+    <div class="tools-grid">
+      <div class="tool-badge reveal">Figma</div>
+      <div class="tool-badge reveal">FigJam</div>
+      <div class="tool-badge reveal">Maze</div>
+      <div class="tool-badge reveal">Hotjar</div>
+      <div class="tool-badge reveal">FullStory</div>
+      <div class="tool-badge reveal">Miro</div>
+      <div class="tool-badge reveal">Notion</div>
+      <div class="tool-badge reveal">Zeplin</div>
+      <div class="tool-badge reveal">Storybook</div>
+      <div class="tool-badge reveal">Lottie</div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials" style="background:rgba(139,92,246,0.04);border-top:1px solid rgba(139,92,246,0.1);">
+  <div class="section-max">
+    <div class="reveal">
+      <div class="section-label">Client Reviews</div>
+      <h2 class="section-title">What Our Clients Say.</h2>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal-left">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"Working with DesignersMeet transformed how our users experienced our platform. The UX audit alone saved us 6 months of guesswork and immediately identified our top three conversion killers."</p>
+        <div class="testimonial-author">Sarah Chen</div>
+        <div class="testimonial-role">CPO at CloudOps</div>
+      </div>
+      <div class="testimonial-card reveal-right">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"They don't just design screens, they design outcomes. Our conversion rate is up 40% since the redesign, and users keep telling us the new flow 'just makes sense.' Exactly what we needed."</p>
+        <div class="testimonial-author">James Okafor</div>
+        <div class="testimonial-role">Founder at RetailIQ</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="section-max">
+    <div class="cta-inner reveal">
+      <div class="section-label" style="text-align:center;justify-content:center;display:flex;">Start Your Project</div>
+      <h2 class="cta-title">Ready for a UX<br>That Actually Works?</h2>
+      <p class="cta-sub">Start with a free 30-minute UX discovery call. We'll identify your top three friction points and tell you exactly how to fix them.</p>
+      <form class="cta-form" onsubmit="handleSubmit(event)">
+        <input type="email" class="cta-input" placeholder="Your work email address" required>
+        <button type="submit" class="cta-btn">Audit My UX →</button>
+      </form>
+      <p style="font-size:0.78rem;color:rgba(255,255,255,0.35);margin-top:1rem;">No commitment. No credit card. Free 30-min call.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand-name">Designers<span>Meet</span></div>
+        <p class="footer-brand-desc">Product design, UX research, and AI creative solutions for ambitious teams. We design outcomes, not just screens.</p>
+        <div class="social-links">
+          <a href="#" class="social-link" title="LinkedIn">in</a>
+          <a href="#" class="social-link" title="Instagram">ig</a>
+          <a href="#" class="social-link" title="Behance">Be</a>
+          <a href="#" class="social-link" title="GitHub">gh</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Services</div>
+        <ul>
+          <li><a href="#">UX Audit</a></li>
+          <li><a href="#">Full UX Design</a></li>
+          <li><a href="#">Design Systems</a></li>
+          <li><a href="#">User Research</a></li>
+          <li><a href="#">AI Creative</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Company</div>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Our Work</a></li>
+          <li><a href="#">Process</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Blog</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Resources</div>
+        <ul>
+          <li><a href="#">UX Checklist</a></li>
+          <li><a href="#">Design System Guide</a></li>
+          <li><a href="#">Case Studies</a></li>
+          <li><a href="#">Free Audit Template</a></li>
+          <li><a href="#">Newsletter</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Contact</div>
+        <ul>
+          <li><a href="#">hello@designersmeet.io</a></li>
+          <li><a href="#">Book a Call</a></li>
+          <li><a href="#">Get a Quote</a></li>
+          <li><a href="#">Partner With Us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 DesignersMeet. All rights reserved.</div>
+      <div class="footer-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Cookie Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// MOBILE MENU
+function toggleMenu() {
+  const m = document.getElementById('mobileMenu');
+  m.classList.toggle('open');
+}
+
+// FORM SUBMIT
+function handleSubmit(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('.cta-btn');
+  btn.textContent = '✓ We\'ll be in touch!';
+  btn.style.background = '#059669';
+  btn.disabled = true;
+}
+
+// THREE.JS — Connected Graph Nodes
+(function() {
+  const canvas = document.getElementById('three-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 80;
+
+  const nodeCount = 50;
+  const nodes = [];
+  const nodeGeo = new THREE.SphereGeometry(0.6, 8, 8);
+  const colors = [0x8B5CF6, 0x7C3AED, 0xDDD6FE, 0xC4B5FD, 0x6D28D9];
+
+  for (let i = 0; i < nodeCount; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: colors[i % colors.length], transparent: true, opacity: 0.8 });
+    const mesh = new THREE.Mesh(nodeGeo, mat);
+    mesh.position.set(
+      (Math.random() - 0.5) * 120,
+      (Math.random() - 0.5) * 80,
+      (Math.random() - 0.5) * 40
+    );
+    mesh.userData.vel = new THREE.Vector3(
+      (Math.random() - 0.5) * 0.04,
+      (Math.random() - 0.5) * 0.04,
+      (Math.random() - 0.5) * 0.02
+    );
+    scene.add(mesh);
+    nodes.push(mesh);
+  }
+
+  const lineMat = new THREE.LineBasicMaterial({ color: 0x8B5CF6, transparent: true, opacity: 0.18 });
+  let lineGroup = new THREE.Group();
+  scene.add(lineGroup);
+
+  function updateLines() {
+    scene.remove(lineGroup);
+    lineGroup = new THREE.Group();
+    const thresh = 28;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const d = nodes[i].position.distanceTo(nodes[j].position);
+        if (d < thresh) {
+          const pts = [nodes[i].position.clone(), nodes[j].position.clone()];
+          const geo = new THREE.BufferGeometry().setFromPoints(pts);
+          const line = new THREE.Line(geo, lineMat);
+          lineGroup.add(line);
+        }
+      }
+    }
+    scene.add(lineGroup);
+  }
+
+  let frame = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    frame++;
+    nodes.forEach(n => {
+      n.position.add(n.userData.vel);
+      if (Math.abs(n.position.x) > 65) n.userData.vel.x *= -1;
+      if (Math.abs(n.position.y) > 45) n.userData.vel.y *= -1;
+      if (Math.abs(n.position.z) > 25) n.userData.vel.z *= -1;
+    });
+    if (frame % 3 === 0) updateLines();
+    scene.rotation.y += 0.0008;
+    renderer.render(scene, camera);
+  }
+  updateLines();
+  animate();
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  });
+})();
+
+// GSAP SCROLL ANIMATIONS
+gsap.registerPlugin(ScrollTrigger);
+
+gsap.utils.toArray('.reveal').forEach(el => {
+  gsap.fromTo(el, { opacity: 0, y: 36 }, {
+    opacity: 1, y: 0, duration: 0.8, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+  });
+});
+
+gsap.utils.toArray('.reveal-left').forEach(el => {
+  gsap.fromTo(el, { opacity: 0, x: -40 }, {
+    opacity: 1, x: 0, duration: 0.8, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+  });
+});
+
+gsap.utils.toArray('.reveal-right').forEach(el => {
+  gsap.fromTo(el, { opacity: 0, x: 40 }, {
+    opacity: 1, x: 0, duration: 0.8, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+  });
+});
+
+// Stats bar stagger
+gsap.fromTo('.stat-item', { opacity: 0, y: 20 }, {
+  opacity: 1, y: 0, stagger: 0.12, duration: 0.6, ease: 'power2.out',
+  scrollTrigger: { trigger: '.stats-bar', start: 'top 90%' }
+});
+
+// Service cards stagger
+gsap.fromTo('.service-card', { opacity: 0, y: 30 }, {
+  opacity: 1, y: 0, stagger: 0.1, duration: 0.7, ease: 'power2.out',
+  scrollTrigger: { trigger: '.services-grid', start: 'top 85%' }
+});
+
+// Case cards stagger
+gsap.fromTo('.case-card', { opacity: 0, scale: 0.96 }, {
+  opacity: 1, scale: 1, stagger: 0.1, duration: 0.65, ease: 'power2.out',
+  scrollTrigger: { trigger: '.case-grid', start: 'top 85%' }
+});
+
+// Tool badges stagger
+gsap.fromTo('.tool-badge', { opacity: 0, scale: 0.9 }, {
+  opacity: 1, scale: 1, stagger: 0.05, duration: 0.4, ease: 'back.out(1.4)',
+  scrollTrigger: { trigger: '.tools-grid', start: 'top 88%' }
+});
+
+// Hero entrance
+gsap.fromTo('.hero-content', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.1, ease: 'power3.out', delay: 0.2 });
+gsap.fromTo('.stats-bar', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out', delay: 0.8 });
+</script>
+</body>
+</html>
