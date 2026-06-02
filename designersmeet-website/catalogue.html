@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DesignersMeet — Website Catalogue</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#060614;color:#e2e8f0;font-family:'Inter',sans-serif;min-height:100vh;padding:40px 20px}
+    .logo{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,#E94560,#7B61FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;margin-bottom:8px}
+    .sub{text-align:center;color:#64748b;margin-bottom:50px;font-size:14px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1100px;margin:0 auto}
+    .card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;transition:all 0.3s;text-decoration:none;color:inherit;display:block}
+    .card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+    .badge{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;border-radius:20px;display:inline-block;margin-bottom:16px}
+    .card h3{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px}
+    .card p{color:#94a3b8;font-size:13px;line-height:1.6;margin-bottom:16px}
+    .arrow{color:#64748b;font-size:13px}
+    .card:hover .arrow{color:var(--accent)}
+    .main-badge{background:rgba(233,69,96,0.15);color:#E94560;--accent:#E94560}
+    .web-badge{background:rgba(0,212,255,0.12);color:#00d4ff;--accent:#00d4ff}
+    .mobile-badge{background:rgba(16,185,129,0.12);color:#10b981;--accent:#10b981}
+    .brand-badge{background:rgba(245,158,11,0.12);color:#F59E0B;--accent:#F59E0B}
+    .ux-badge{background:rgba(139,92,246,0.12);color:#8B5CF6;--accent:#8B5CF6}
+    .ai-badge{background:rgba(236,72,153,0.12);color:#EC4899;--accent:#EC4899}
+  </style>
+</head>
+<body>
+  <div class="logo">DesignersMeet</div>
+  <p class="sub">Website Catalogue — 6 versions · GitHub Pages · GHL Compatible</p>
+  <div class="grid">
+    <a href="index.html" class="card main-badge" style="--accent:#E94560">
+      <span class="badge main-badge">Complete Site</span>
+      <h3>Full DesignersMeet Website</h3>
+      <p>All 5 service catalogs in one site. Three.js hero, GSAP scroll animations, portfolio grid, pricing packages.</p>
+      <span class="arrow">View site →</span>
+    </a>
+    <a href="web-studio.html" class="card" style="--accent:#00d4ff;border-color:rgba(0,212,255,0.1)">
+      <span class="badge web-badge">Web Design</span>
+      <h3>Web Design Studio</h3>
+      <p>Electric blue + dark navy. Technical, minimal aesthetic. Animated code block + particle sphere. From $1,499.</p>
+      <span class="arrow">View site →</span>
+    </a>
+    <a href="mobile-lab.html" class="card" style="--accent:#10b981;border-color:rgba(16,185,129,0.1)">
+      <span class="badge mobile-badge">Mobile Apps</span>
+      <h3>Mobile App Lab</h3>
+      <p>Pure black + neon green. Bold energetic startup feel. CSS phone mockups, app showcase. From $4,999.</p>
+      <span class="arrow">View site →</span>
+    </a>
+    <a href="brand-identity.html" class="card" style="--accent:#F59E0B;border-color:rgba(245,158,11,0.1)">
+      <span class="badge brand-badge">Branding</span>
+      <h3>Brand & Identity</h3>
+      <p>Warm dark + gold. Luxury editorial, Playfair serif. Color palette cards, brand showcase. From $799.</p>
+      <span class="arrow">View site →</span>
+    </a>
+    <a href="ui-ux-design.html" class="card" style="--accent:#8B5CF6;border-color:rgba(139,92,246,0.1)">
+      <span class="badge ux-badge">UI/UX Design</span>
+      <h3>UI/UX Design Studio</h3>
+      <p>Deep purple + lavender. Systematic, research-focused. Graph nodes, before/after section. From $999.</p>
+      <span class="arrow">View site →</span>
+    </a>
+    <a href="ai-creative.html" class="card" style="--accent:#EC4899;border-color:rgba(236,72,153,0.1)">
+      <span class="badge ai-badge">AI Creative</span>
+      <h3>AI Creative Suite</h3>
+      <p>Near-black + hot pink/cyan. Futuristic generative aesthetic. Morphing particle torus. From $599/mo.</p>
+      <span class="arrow">View site →</span>
+    </a>
+  </div>
+</body>
+</html>
