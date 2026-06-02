@@ -1,0 +1,1473 @@
+<!-- GHL Compatible: paste full file into GHL Custom Code page OR use GitHub Pages URL -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DesignersMeet — Where Vision Meets Execution</title>
+<meta name="description" content="AI-augmented design & development marketplace. Premium freelance design studios for web, mobile, brand, UI/UX, and AI creative work.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#0a0a14',
+        'bg-2': '#0d0d1e',
+        'bg-3': '#111128',
+        primary: '#E94560',
+        purple: '#7B61FF',
+        blue: '#00d4ff',
+      },
+      fontFamily: {
+        heading: ['Space Grotesk', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a14;
+    --bg2: #0d0d1e;
+    --bg3: #111128;
+    --primary: #E94560;
+    --purple: #7B61FF;
+    --blue: #00d4ff;
+    --white: #ffffff;
+    --gray: rgba(255,255,255,0.5);
+    --glass: rgba(255,255,255,0.04);
+    --glass-border: rgba(255,255,255,0.08);
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+  h1,h2,h3,h4,h5,h6 { font-family: 'Space Grotesk', sans-serif; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 2px; }
+
+  /* NAV */
+  #nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    padding: 0 2rem;
+    height: 70px;
+    display: flex; align-items: center; justify-content: space-between;
+    backdrop-filter: blur(20px);
+    background: rgba(10,10,20,0.8);
+    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.3s;
+  }
+  #nav.scrolled { background: rgba(10,10,20,0.95); }
+  .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.4rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .nav-links { display: flex; gap: 2.5rem; align-items: center; }
+  .nav-links a {
+    color: rgba(255,255,255,0.7); text-decoration: none;
+    font-size: 0.9rem; font-weight: 500; letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: #fff; }
+  .btn-quote {
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    color: #fff; border: none; padding: 0.55rem 1.4rem;
+    border-radius: 8px; font-size: 0.875rem; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+    transition: opacity 0.2s, transform 0.2s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .btn-quote:hover { opacity: 0.9; transform: translateY(-1px); }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+  .hamburger span { width: 24px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.3s; }
+  .mobile-menu {
+    display: none; position: fixed; top: 70px; left: 0; right: 0;
+    background: rgba(10,10,20,0.98); backdrop-filter: blur(20px);
+    padding: 2rem; flex-direction: column; gap: 1.5rem; z-index: 999;
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 1.1rem; font-weight: 500; }
+
+  /* HERO */
+  #hero {
+    position: relative; min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    overflow: hidden; padding-top: 70px;
+  }
+  #hero-canvas {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0;
+  }
+  .hero-content { position: relative; z-index: 2; text-align: center; padding: 2rem; max-width: 900px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(123,97,255,0.15); border: 1px solid rgba(123,97,255,0.3);
+    padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: 500;
+    color: var(--purple); margin-bottom: 1.5rem;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .hero-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--purple); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.5)} }
+  .hero-title { font-size: clamp(3rem, 7vw, 6rem); font-weight: 700; line-height: 1.05; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
+  .hero-title .line1 { display: block; color: #fff; }
+  .hero-title .line2 { display: block; background: linear-gradient(135deg, var(--primary) 0%, var(--purple) 50%, var(--blue) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-sub { font-size: clamp(1rem, 2vw, 1.2rem); color: rgba(255,255,255,0.6); margin-bottom: 2.5rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 4rem; }
+  .btn-outline {
+    background: transparent; color: #fff;
+    border: 1px solid rgba(255,255,255,0.25); padding: 0.8rem 2rem;
+    border-radius: 10px; font-size: 1rem; font-weight: 500;
+    cursor: pointer; text-decoration: none; font-family: 'Space Grotesk', sans-serif;
+    transition: all 0.3s; backdrop-filter: blur(10px);
+  }
+  .btn-outline:hover { border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.05); }
+  .btn-filled {
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    color: #fff; border: none; padding: 0.8rem 2rem;
+    border-radius: 10px; font-size: 1rem; font-weight: 600;
+    cursor: pointer; text-decoration: none; font-family: 'Space Grotesk', sans-serif;
+    transition: all 0.3s; box-shadow: 0 0 30px rgba(233,69,96,0.4);
+  }
+  .btn-filled:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(233,69,96,0.6); }
+  .logo-strip {
+    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3rem;
+  }
+  .logo-pill {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: 500;
+    color: rgba(255,255,255,0.5); letter-spacing: 0.03em;
+  }
+  .hero-stats { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; }
+  .stat-badge {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(20px); padding: 0.6rem 1.4rem; border-radius: 50px;
+    font-size: 0.875rem; font-weight: 600;
+  }
+  .stat-badge span { color: var(--blue); }
+
+  /* SECTIONS COMMON */
+  section { padding: 6rem 2rem; }
+  .section-label {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--primary); margin-bottom: 1rem;
+  }
+  .section-title { font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 700; line-height: 1.1; margin-bottom: 1.5rem; }
+  .section-sub { font-size: 1.1rem; color: rgba(255,255,255,0.55); max-width: 600px; }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* SERVICES OVERVIEW */
+  #services { background: var(--bg); }
+  .services-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 4rem; }
+  .service-card {
+    background: var(--glass); border: 1px solid var(--glass-border);
+    border-radius: 20px; padding: 2.5rem;
+    cursor: pointer; text-decoration: none;
+    transition: all 0.4s; position: relative; overflow: hidden;
+    transform-style: preserve-3d;
+  }
+  .service-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: 20px;
+    background: linear-gradient(135deg, rgba(233,69,96,0.05), rgba(123,97,255,0.05));
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .service-card:hover::before { opacity: 1; }
+  .service-card:hover { border-color: rgba(233,69,96,0.4); transform: translateY(-4px); }
+  .service-card:last-child { grid-column: 1 / -1; max-width: 50%; margin: 0 auto; }
+  .service-icon { width: 60px; height: 60px; margin-bottom: 1.5rem; }
+  .service-card h3 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .service-card p { color: rgba(255,255,255,0.55); font-size: 0.95rem; margin-bottom: 1.25rem; }
+  .price-range { font-size: 0.875rem; color: var(--blue); font-weight: 600; margin-bottom: 1.25rem; }
+  .view-link { color: var(--primary); font-size: 0.875rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
+  .view-link:hover { gap: 0.7rem; }
+
+  /* CATALOG SECTION SHARED */
+  .catalog-section {
+    background: var(--bg2);
+    position: relative; overflow: hidden;
+  }
+  .catalog-section::before {
+    content: ''; position: absolute; top: -200px; right: -200px;
+    width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(123,97,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .catalog-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start; }
+  .catalog-copy h2 { font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 700; margin-bottom: 1.5rem; }
+  .catalog-copy p { color: rgba(255,255,255,0.6); margin-bottom: 1rem; font-size: 1rem; line-height: 1.8; }
+  .tech-badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+  .tech-badge {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.35rem 0.85rem; border-radius: 6px; font-size: 0.78rem; font-weight: 500;
+    color: rgba(255,255,255,0.7);
+  }
+  .pricing-cards { display: flex; flex-direction: column; gap: 1.25rem; }
+  .pricing-card {
+    background: var(--glass); border: 1px solid var(--glass-border);
+    border-radius: 16px; padding: 1.75rem; position: relative; overflow: hidden;
+    transition: all 0.3s;
+  }
+  .pricing-card.featured {
+    border-color: rgba(233,69,96,0.5);
+    background: rgba(233,69,96,0.05);
+  }
+  .pricing-card.featured::after {
+    content: 'Most Popular'; position: absolute; top: 1rem; right: 1rem;
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.7rem;
+    border-radius: 50px; letter-spacing: 0.05em;
+  }
+  .pricing-card:hover { transform: translateY(-2px); border-color: rgba(233,69,96,0.3); }
+  .pricing-tier { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); margin-bottom: 0.5rem; }
+  .pricing-price { font-size: 2rem; font-weight: 700; font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.3rem; }
+  .pricing-name { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+  .pricing-features { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+  .pricing-features li { font-size: 0.875rem; color: rgba(255,255,255,0.65); display: flex; align-items: center; gap: 0.6rem; }
+  .pricing-features li::before { content: '✓'; color: var(--blue); font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+  .catalog-cta {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    color: #fff; text-decoration: none; padding: 0.7rem 1.5rem;
+    border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+    transition: all 0.3s; font-family: 'Space Grotesk', sans-serif;
+    margin-top: 0.75rem; border: none; cursor: pointer; width: 100%;
+    justify-content: center;
+  }
+  .catalog-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  /* PORTFOLIO */
+  #portfolio { background: var(--bg); }
+  .filter-tabs { display: flex; gap: 0.75rem; flex-wrap: wrap; margin: 3rem 0 2rem; }
+  .filter-tab {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.5rem 1.25rem; border-radius: 50px; font-size: 0.875rem; font-weight: 500;
+    cursor: pointer; transition: all 0.3s; color: rgba(255,255,255,0.6);
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .filter-tab.active, .filter-tab:hover {
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    border-color: transparent; color: #fff;
+  }
+  .portfolio-grid {
+    columns: 3; column-gap: 1.25rem;
+  }
+  .portfolio-card {
+    break-inside: avoid; margin-bottom: 1.25rem;
+    border-radius: 16px; overflow: hidden; position: relative;
+    cursor: pointer; transition: transform 0.3s;
+  }
+  .portfolio-card:hover { transform: translateY(-4px); }
+  .portfolio-img {
+    width: 100%; display: block;
+    border-radius: 16px;
+  }
+  .portfolio-overlay {
+    position: absolute; inset: 0; background: rgba(10,10,20,0.85);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 1.5rem; opacity: 0; transition: opacity 0.3s;
+    border-radius: 16px;
+  }
+  .portfolio-card:hover .portfolio-overlay { opacity: 1; }
+  .portfolio-cat { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); margin-bottom: 0.3rem; }
+  .portfolio-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .portfolio-cta-link { font-size: 0.8rem; color: var(--blue); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
+
+  /* PROCESS */
+  #process { background: var(--bg2); }
+  .process-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 4rem; position: relative; }
+  .process-steps::before {
+    content: ''; position: absolute; top: 40px; left: 10%; right: 10%;
+    height: 2px; background: linear-gradient(90deg, var(--primary), var(--purple), var(--blue));
+    z-index: 0; transform: scaleX(0); transform-origin: left;
+  }
+  .process-step { text-align: center; padding: 0 1rem; position: relative; z-index: 1; }
+  .step-num {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--bg3); border: 2px solid var(--glass-border);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 1.4rem; font-weight: 700; font-family: 'Space Grotesk', sans-serif;
+    transition: all 0.5s; position: relative;
+  }
+  .step-num.active { border-color: var(--primary); box-shadow: 0 0 30px rgba(233,69,96,0.4); }
+  .step-num span { background: linear-gradient(135deg, var(--primary), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .process-step h4 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .process-step p { font-size: 0.875rem; color: rgba(255,255,255,0.55); line-height: 1.7; }
+
+  /* WHY */
+  #why { background: var(--bg); }
+  .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 4rem; }
+  .why-card {
+    background: var(--glass); border: 1px solid var(--glass-border);
+    border-radius: 20px; padding: 2.5rem; text-align: center; position: relative;
+    overflow: hidden; transition: all 0.3s;
+  }
+  .why-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--purple));
+    transform: scaleX(0); transition: transform 0.4s;
+  }
+  .why-card:hover::before { transform: scaleX(1); }
+  .why-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.15); }
+  .why-stat { font-size: 3.5rem; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 0.5rem; }
+  .why-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .why-card p { font-size: 0.9rem; color: rgba(255,255,255,0.55); line-height: 1.7; }
+
+  /* TESTIMONIALS */
+  #testimonials { background: var(--bg2); }
+  .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 4rem; }
+  .testimonial-card {
+    background: var(--glass); border: 1px solid var(--glass-border);
+    border-radius: 20px; padding: 2rem; position: relative;
+    transition: all 0.3s;
+  }
+  .testimonial-card:hover { border-color: rgba(123,97,255,0.3); transform: translateY(-3px); }
+  .quote-icon { font-size: 3rem; line-height: 1; color: var(--purple); opacity: 0.4; margin-bottom: 1rem; font-family: Georgia, serif; }
+  .testimonial-card blockquote { font-size: 0.95rem; color: rgba(255,255,255,0.75); line-height: 1.8; margin-bottom: 1.5rem; font-style: italic; }
+  .testimonial-author { display: flex; align-items: center; gap: 1rem; }
+  .author-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--purple)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; }
+  .author-name { font-weight: 600; font-size: 0.9rem; }
+  .author-company { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+
+  /* CTA BANNER */
+  #cta-banner {
+    background: linear-gradient(135deg, rgba(233,69,96,0.15) 0%, rgba(123,97,255,0.15) 100%);
+    border-top: 1px solid rgba(233,69,96,0.2); border-bottom: 1px solid rgba(123,97,255,0.2);
+    text-align: center;
+  }
+  .email-form { display: flex; gap: 1rem; justify-content: center; margin-top: 2.5rem; flex-wrap: wrap; }
+  .email-input {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; padding: 0.85rem 1.5rem; border-radius: 10px;
+    font-size: 1rem; width: 340px; max-width: 100%;
+    font-family: 'Inter', sans-serif; outline: none;
+    transition: border-color 0.3s;
+  }
+  .email-input::placeholder { color: rgba(255,255,255,0.35); }
+  .email-input:focus { border-color: var(--purple); }
+
+  /* FOOTER */
+  #footer { background: var(--bg); border-top: 1px solid var(--glass-border); padding: 4rem 2rem 2rem; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+  .footer-logo { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1rem; }
+  .footer-tagline { color: rgba(255,255,255,0.45); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .social-links { display: flex; gap: 0.75rem; }
+  .social-link {
+    width: 38px; height: 38px; border-radius: 8px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none; color: rgba(255,255,255,0.6);
+    transition: all 0.3s; font-size: 0.9rem;
+  }
+  .social-link:hover { background: rgba(233,69,96,0.15); border-color: var(--primary); color: var(--primary); }
+  .footer-col h5 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 1.25rem; }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+  .footer-col ul li a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+  .footer-col ul li a:hover { color: #fff; }
+  .footer-bottom { border-top: 1px solid var(--glass-border); padding-top: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: gap; }
+  .footer-copy { color: rgba(255,255,255,0.35); font-size: 0.8rem; }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .services-grid { grid-template-columns: 1fr 1fr; }
+    .service-card:last-child { grid-column: auto; max-width: 100%; }
+    .catalog-inner { grid-template-columns: 1fr; gap: 3rem; }
+    .portfolio-grid { columns: 2; }
+    .why-grid { grid-template-columns: 1fr 1fr 1fr; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    section { padding: 4rem 1.25rem; }
+    .services-grid { grid-template-columns: 1fr; }
+    .service-card:last-child { grid-column: auto; max-width: 100%; }
+    .process-steps { grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .process-steps::before { display: none; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    .why-grid { grid-template-columns: 1fr; }
+    .portfolio-grid { columns: 1; }
+    .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .hero-stats { flex-direction: column; align-items: center; gap: 0.75rem; }
+  }
+  @media (max-width: 480px) {
+    .hero-ctas { flex-direction: column; align-items: center; }
+    .email-form { flex-direction: column; align-items: center; }
+    .email-input { width: 100%; max-width: 380px; }
+    .filter-tabs { gap: 0.5rem; }
+    .process-steps { grid-template-columns: 1fr; }
+  }
+
+  /* GRADIENT PORTFOLIO IMAGES */
+  .pimg-1 { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #E94560 100%); }
+  .pimg-2 { background: linear-gradient(135deg, #0d0d1e 0%, #1a0533 50%, #7B61FF 100%); }
+  .pimg-3 { background: linear-gradient(135deg, #001a33 0%, #00d4ff22 50%, #0d2137 100%); }
+  .pimg-4 { background: linear-gradient(135deg, #0a0a14 0%, #1a0a2e 50%, #E94560 100%); }
+  .pimg-5 { background: linear-gradient(135deg, #111128 0%, #7B61FF33 50%, #2d1b69 100%); }
+  .pimg-6 { background: linear-gradient(135deg, #001429 0%, #00d4ff 100%); }
+  .pimg-7 { background: linear-gradient(135deg, #0a0014 0%, #3d0037 50%, #E94560 100%); }
+  .pimg-8 { background: linear-gradient(135deg, #001a00 0%, #004d00 50%, #00d4ff 100%); }
+  .pimg-9 { background: linear-gradient(135deg, #14001a 0%, #5a0066 50%, #7B61FF 100%); }
+  .pimg-10 { background: linear-gradient(135deg, #001a1a 0%, #00d4ff 100%); }
+  .pimg-11 { background: linear-gradient(135deg, #1a0014 0%, #E94560 100%); }
+  .pimg-12 { background: linear-gradient(135deg, #0a0a14 0%, #7B61FF 50%, #00d4ff 100%); }
+
+  /* GLOW EFFECTS */
+  .glow-red { box-shadow: 0 0 60px rgba(233,69,96,0.15); }
+  .glow-purple { box-shadow: 0 0 60px rgba(123,97,255,0.15); }
+
+  /* SCROLL REVEAL */
+  .reveal { opacity: 0; transform: translateY(40px); }
+  .reveal-left { opacity: 0; transform: translateX(-40px); }
+  .reveal-right { opacity: 0; transform: translateX(40px); }
+  .reveal-scale { opacity: 0; transform: scale(0.9); }
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav id="nav">
+  <a href="#" class="nav-logo">DesignersMeet</a>
+  <div class="nav-links">
+    <a href="#services">Services</a>
+    <a href="#portfolio">Portfolio</a>
+    <a href="#process">Process</a>
+    <a href="#why">Why Us</a>
+    <a href="#testimonials">Clients</a>
+    <a href="#cta-banner" class="btn-quote">Get Quote</a>
+  </div>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#services" onclick="toggleMenu()">Services</a>
+  <a href="#portfolio" onclick="toggleMenu()">Portfolio</a>
+  <a href="#process" onclick="toggleMenu()">Process</a>
+  <a href="#why" onclick="toggleMenu()">Why Us</a>
+  <a href="#testimonials" onclick="toggleMenu()">Clients</a>
+  <a href="#cta-banner" onclick="toggleMenu()" class="btn-filled" style="text-align:center">Get Free Quote</a>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-badge">AI-Augmented Design Studio</div>
+    <h1 class="hero-title">
+      <span class="line1" id="hero-line1">Where Vision</span>
+      <span class="line2" id="hero-line2">Meets Execution</span>
+    </h1>
+    <p class="hero-sub" id="hero-sub">AI-augmented design &amp; development. From concept to deployed product — faster, sharper, better.</p>
+    <div class="hero-ctas" id="hero-ctas">
+      <a href="#portfolio" class="btn-outline">View Our Work</a>
+      <a href="#cta-banner" class="btn-filled">Start a Project</a>
+    </div>
+    <div class="logo-strip" id="logo-strip">
+      <span class="logo-pill">React</span>
+      <span class="logo-pill">Next.js</span>
+      <span class="logo-pill">Figma</span>
+      <span class="logo-pill">Flutter</span>
+      <span class="logo-pill">Shopify</span>
+      <span class="logo-pill">Adobe CC</span>
+      <span class="logo-pill">AWS</span>
+    </div>
+    <div class="hero-stats" id="hero-stats">
+      <div class="stat-badge"><span>200+</span> Projects Delivered</div>
+      <div class="stat-badge"><span>98%</span> Client Satisfaction</div>
+      <div class="stat-badge"><span>15+</span> Countries Served</div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES OVERVIEW -->
+<section id="services">
+  <div class="container">
+    <div class="section-label">Our Studios</div>
+    <h2 class="section-title">Five Studios, One Team</h2>
+    <p class="section-sub">End-to-end creative and technical delivery from senior designers and developers, augmented by AI.</p>
+    <div class="services-grid" id="services-grid">
+
+      <a href="#web-studio" class="service-card reveal" id="sc-1">
+        <svg class="service-icon" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="10" width="52" height="36" rx="4" stroke="#E94560" stroke-width="2"/>
+          <path d="M4 18h52" stroke="#E94560" stroke-width="2"/>
+          <circle cx="12" cy="14" r="2" fill="#E94560"/>
+          <circle cx="20" cy="14" r="2" fill="#7B61FF"/>
+          <circle cx="28" cy="14" r="2" fill="#00d4ff"/>
+          <path d="M14 28l8 8-8 8" stroke="#7B61FF" stroke-width="2" stroke-linecap="round"/>
+          <path d="M34 44h12" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+          <rect x="24" y="46" width="12" height="4" rx="2" fill="#E94560" opacity="0.5"/>
+        </svg>
+        <h3>Web Design Studio</h3>
+        <p>Pixel-perfect websites built on modern stacks. From landing pages to full-scale e-commerce platforms.</p>
+        <div class="price-range">From $1,499 — up to $7,999+</div>
+        <span class="view-link">View Packages →</span>
+      </a>
+
+      <a href="#mobile-lab" class="service-card reveal" id="sc-2">
+        <svg class="service-icon" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="16" y="4" width="28" height="52" rx="5" stroke="#7B61FF" stroke-width="2"/>
+          <path d="M16 14h28M16 46h28" stroke="#7B61FF" stroke-width="2"/>
+          <circle cx="30" cy="51" r="2" fill="#7B61FF"/>
+          <rect x="23" y="8" width="14" height="2" rx="1" fill="#7B61FF" opacity="0.5"/>
+          <rect x="22" y="20" width="16" height="10" rx="3" fill="#E94560" opacity="0.3"/>
+          <rect x="22" y="34" width="7" height="7" rx="2" fill="#00d4ff" opacity="0.4"/>
+          <rect x="31" y="34" width="7" height="7" rx="2" fill="#7B61FF" opacity="0.4"/>
+        </svg>
+        <h3>Mobile App Lab</h3>
+        <p>Cross-platform mobile applications that users love. Native performance, beautiful interfaces.</p>
+        <div class="price-range">From $4,999 — up to $19,999+</div>
+        <span class="view-link">View Packages →</span>
+      </a>
+
+      <a href="#brand-identity" class="service-card reveal" id="sc-3">
+        <svg class="service-icon" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="30,4 56,46 4,46" stroke="#00d4ff" stroke-width="2" fill="none"/>
+          <polygon points="30,14 46,40 14,40" stroke="#00d4ff" stroke-width="1" fill="none" opacity="0.4"/>
+          <circle cx="30" cy="26" r="5" fill="#00d4ff" opacity="0.7"/>
+          <circle cx="30" cy="4" r="3" fill="#00d4ff"/>
+          <circle cx="56" cy="46" r="3" fill="#E94560"/>
+          <circle cx="4" cy="46" r="3" fill="#7B61FF"/>
+        </svg>
+        <h3>Brand &amp; Identity</h3>
+        <p>Logos, visual systems, and brand guidelines that position you as the leader in your market.</p>
+        <div class="price-range">From $799 — up to $3,499+</div>
+        <span class="view-link">View Packages →</span>
+      </a>
+
+      <a href="#ui-ux" class="service-card reveal" id="sc-4">
+        <svg class="service-icon" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="10" width="22" height="22" rx="3" stroke="#E94560" stroke-width="2"/>
+          <rect x="32" y="10" width="22" height="10" rx="3" stroke="#7B61FF" stroke-width="2"/>
+          <rect x="32" y="24" width="22" height="8" rx="3" stroke="#7B61FF" stroke-width="2"/>
+          <rect x="6" y="36" width="48" height="14" rx="3" stroke="#00d4ff" stroke-width="2"/>
+          <path d="M12 43h10M12 47h20" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <h3>UI/UX Design</h3>
+        <p>Research-driven user experience design. Wireframes, prototypes, and Figma systems that convert.</p>
+        <div class="price-range">From $999 — up to $4,999+</div>
+        <span class="view-link">View Packages →</span>
+      </a>
+
+      <a href="#ai-creative" class="service-card reveal" id="sc-5">
+        <svg class="service-icon" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="30" cy="30" r="14" stroke="#7B61FF" stroke-width="2"/>
+          <path d="M30 10 L30 4M30 56 L30 50M10 30 L4 30M56 30 L50 30" stroke="#E94560" stroke-width="2" stroke-linecap="round"/>
+          <path d="M18 18 L14 14M46 14 L42 18M42 42 L46 46M14 46 L18 42" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="30" cy="30" r="6" fill="#7B61FF" opacity="0.6"/>
+          <path d="M27 30 L29 32 L34 27" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <h3>AI Creative Suite</h3>
+        <p>AI-generated visuals, videos, and creative campaigns powered by Midjourney, Runway, and ComfyUI.</p>
+        <div class="price-range">From $599/mo — up to $2,499/mo</div>
+        <span class="view-link">View Packages →</span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- WEB DESIGN STUDIO CATALOG -->
+<section id="web-studio" class="catalog-section">
+  <div class="container">
+    <div class="catalog-inner">
+      <div class="catalog-copy reveal-left">
+        <div class="section-label">Studio 01</div>
+        <h2>Web Design Studio</h2>
+        <p>We build websites that do more than look good — they perform. Every project begins with deep discovery: understanding your audience, mapping conversion flows, and defining the visual language that separates you from the noise.</p>
+        <p>Our senior team builds on React, Next.js, Webflow, and Shopify — always choosing the right tool for the job. We ship fast without cutting corners, using our AI-augmented workflow to compress timelines without sacrificing craft.</p>
+        <p>Whether you need a high-converting SaaS landing page or a full enterprise platform, we bring the same standard of excellence: obsessive attention to detail, performance-first engineering, and design that earns trust on first sight.</p>
+        <div class="tech-badges">
+          <span class="tech-badge">React</span>
+          <span class="tech-badge">Next.js</span>
+          <span class="tech-badge">Webflow</span>
+          <span class="tech-badge">WordPress</span>
+          <span class="tech-badge">Shopify</span>
+          <span class="tech-badge">Framer</span>
+          <span class="tech-badge">TypeScript</span>
+          <span class="tech-badge">Tailwind CSS</span>
+        </div>
+      </div>
+      <div class="pricing-cards reveal-right">
+        <div class="pricing-card">
+          <div class="pricing-tier">Starter</div>
+          <div class="pricing-price">$1,499</div>
+          <div class="pricing-name">The Starter Site</div>
+          <ul class="pricing-features">
+            <li>5-page responsive website</li>
+            <li>Mobile-first design</li>
+            <li>Contact form &amp; Google Analytics</li>
+            <li>SEO foundation setup</li>
+            <li>2 revision rounds</li>
+            <li>2-week delivery</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-tier">Growth</div>
+          <div class="pricing-price">$3,499</div>
+          <div class="pricing-name">Growth Platform</div>
+          <ul class="pricing-features">
+            <li>Up to 10-page website</li>
+            <li>CMS integration (blog/case studies)</li>
+            <li>Custom animations &amp; interactions</li>
+            <li>A/B testing setup</li>
+            <li>Performance optimization</li>
+            <li>4 revision rounds</li>
+            <li>3-week delivery</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-tier">Enterprise</div>
+          <div class="pricing-price">$7,999+</div>
+          <div class="pricing-name">Enterprise Build</div>
+          <ul class="pricing-features">
+            <li>Custom scope, unlimited pages</li>
+            <li>E-commerce &amp; payment integration</li>
+            <li>Custom back-end &amp; API work</li>
+            <li>Advanced analytics dashboard</li>
+            <li>Dedicated project manager</li>
+            <li>12-month support included</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOBILE APP LAB CATALOG -->
+<section id="mobile-lab" class="catalog-section" style="background: var(--bg3);">
+  <div class="container">
+    <div class="catalog-inner">
+      <div class="pricing-cards reveal-left">
+        <div class="pricing-card">
+          <div class="pricing-tier">MVP</div>
+          <div class="pricing-price">$4,999</div>
+          <div class="pricing-name">MVP Launch</div>
+          <ul class="pricing-features">
+            <li>Core feature set (5-8 screens)</li>
+            <li>iOS or Android (React Native)</li>
+            <li>User auth &amp; onboarding</li>
+            <li>REST API integration</li>
+            <li>App store submission</li>
+            <li>6-week delivery</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-tier">Scale</div>
+          <div class="pricing-price">$9,999</div>
+          <div class="pricing-name">Full App Build</div>
+          <ul class="pricing-features">
+            <li>iOS + Android (cross-platform)</li>
+            <li>Custom back-end &amp; database</li>
+            <li>Push notifications &amp; analytics</li>
+            <li>Payment gateway integration</li>
+            <li>Admin dashboard included</li>
+            <li>10-week delivery</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-tier">Enterprise</div>
+          <div class="pricing-price">$19,999+</div>
+          <div class="pricing-name">Enterprise Multi-Platform</div>
+          <ul class="pricing-features">
+            <li>iOS + Android + Web (Flutter)</li>
+            <li>Microservices architecture</li>
+            <li>Real-time features &amp; chat</li>
+            <li>Enterprise auth (SSO/SAML)</li>
+            <li>Scalable cloud infrastructure</li>
+            <li>Dedicated team, flexible timeline</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+      </div>
+      <div class="catalog-copy reveal-right">
+        <div class="section-label">Studio 02</div>
+        <h2>Mobile App Lab</h2>
+        <p>Mobile is no longer a nice-to-have — it's where your users live. Our Mobile App Lab builds apps that feel native, perform flawlessly, and ship on schedule. We've delivered everything from fintech wallets to health tracking platforms.</p>
+        <p>We choose the right technology for your context — React Native for speed-to-market, Flutter for pixel-perfect cross-platform fidelity, Swift or Kotlin when native performance is non-negotiable. Every decision is intentional.</p>
+        <p>Our AI-augmented process accelerates the repetitive: boilerplate, component libraries, testing scaffolds. That freed time goes into what matters: the interactions, the edge cases, the performance that users notice and remember.</p>
+        <div class="tech-badges">
+          <span class="tech-badge">React Native</span>
+          <span class="tech-badge">Flutter</span>
+          <span class="tech-badge">Swift</span>
+          <span class="tech-badge">Kotlin</span>
+          <span class="tech-badge">Firebase</span>
+          <span class="tech-badge">Supabase</span>
+          <span class="tech-badge">Node.js</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BRAND IDENTITY CATALOG -->
+<section id="brand-identity" class="catalog-section">
+  <div class="container">
+    <div class="catalog-inner">
+      <div class="catalog-copy reveal-left">
+        <div class="section-label">Studio 03</div>
+        <h2>Brand &amp; Identity</h2>
+        <p>A brand is a promise made visual. It's the difference between being remembered and being forgotten, between charging premium prices and competing on cost. We build brands that lead their categories.</p>
+        <p>Our brand process starts with strategic positioning — defining the unique ground you own in your market. From there, we translate strategy into visual language: mark, wordmark, color, typography, motion, and voice working as one coherent system.</p>
+        <p>AI-enhanced ideation means we explore more directions faster, presenting you with stronger starting points. Human senior designers then refine, pressure-test, and perfect — delivering brand systems that scale from business cards to billboards without compromise.</p>
+        <div class="tech-badges">
+          <span class="tech-badge">Figma</span>
+          <span class="tech-badge">Adobe Illustrator</span>
+          <span class="tech-badge">Adobe Photoshop</span>
+          <span class="tech-badge">AI-Enhanced</span>
+          <span class="tech-badge">After Effects</span>
+          <span class="tech-badge">Midjourney</span>
+        </div>
+      </div>
+      <div class="pricing-cards reveal-right">
+        <div class="pricing-card">
+          <div class="pricing-tier">Essential</div>
+          <div class="pricing-price">$799</div>
+          <div class="pricing-name">Brand Essentials</div>
+          <ul class="pricing-features">
+            <li>Primary logo (3 concepts)</li>
+            <li>Color palette &amp; typography</li>
+            <li>Business card design</li>
+            <li>SVG/PNG/PDF file delivery</li>
+            <li>2 revision rounds</li>
+            <li>7-day delivery</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-tier">Premium</div>
+          <div class="pricing-price">$1,799</div>
+          <div class="pricing-name">Full Brand Guide</div>
+          <ul class="pricing-features">
+            <li>Logo suite (primary + variations)</li>
+            <li>Complete brand style guide</li>
+            <li>Social media template kit</li>
+            <li>Email signature + letterhead</li>
+            <li>Brand voice guidelines</li>
+            <li>4 revision rounds</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-tier">Elite</div>
+          <div class="pricing-price">$3,499+</div>
+          <div class="pricing-name">Complete Identity System</div>
+          <ul class="pricing-features">
+            <li>Full brand strategy document</li>
+            <li>Motion logo &amp; animation kit</li>
+            <li>Website &amp; app design tokens</li>
+            <li>Packaging &amp; print design</li>
+            <li>Photography style guide</li>
+            <li>Unlimited revisions</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- UI/UX DESIGN CATALOG -->
+<section id="ui-ux" class="catalog-section" style="background: var(--bg3);">
+  <div class="container">
+    <div class="catalog-inner">
+      <div class="pricing-cards reveal-left">
+        <div class="pricing-card">
+          <div class="pricing-tier">Audit</div>
+          <div class="pricing-price">$999</div>
+          <div class="pricing-name">UX Audit</div>
+          <ul class="pricing-features">
+            <li>Heuristic evaluation (Nielsen's 10)</li>
+            <li>User flow analysis</li>
+            <li>Conversion bottleneck report</li>
+            <li>Prioritized fix list</li>
+            <li>30-min debrief call</li>
+            <li>5-day turnaround</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-tier">Design</div>
+          <div class="pricing-price">$2,499</div>
+          <div class="pricing-name">Full Figma Design</div>
+          <ul class="pricing-features">
+            <li>Up to 20 screens in Figma</li>
+            <li>Component library &amp; design system</li>
+            <li>Interactive prototype</li>
+            <li>Mobile + desktop variants</li>
+            <li>Developer handoff specs</li>
+            <li>3 revision rounds</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-tier">Research + Design</div>
+          <div class="pricing-price">$4,999+</div>
+          <div class="pricing-name">Full UX Research + Prototype</div>
+          <ul class="pricing-features">
+            <li>User interviews (5 participants)</li>
+            <li>Journey mapping &amp; personas</li>
+            <li>Information architecture</li>
+            <li>Full Figma prototype (40+ screens)</li>
+            <li>Usability testing report</li>
+            <li>Handoff to development</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+      </div>
+      <div class="catalog-copy reveal-right">
+        <div class="section-label">Studio 04</div>
+        <h2>UI/UX Design</h2>
+        <p>Great design is invisible — users just feel it. They find what they need without thinking, complete tasks without friction, and leave with a positive impression they can't quite explain. That's what we engineer.</p>
+        <p>Our UX process is research-led. We validate assumptions with real users before a single pixel is placed, map the emotional journey from awareness to action, and build information architectures that make complexity feel simple.</p>
+        <p>In Figma, we build design systems — not just screens. Atomic components, token-based theming, and interaction states that developers can implement without guesswork. The handoff is the beginning of a conversation, not the end of one.</p>
+        <div class="tech-badges">
+          <span class="tech-badge">Figma</span>
+          <span class="tech-badge">FigJam</span>
+          <span class="tech-badge">Maze</span>
+          <span class="tech-badge">Hotjar</span>
+          <span class="tech-badge">FullStory</span>
+          <span class="tech-badge">UserTesting</span>
+          <span class="tech-badge">Protopie</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI CREATIVE SUITE CATALOG -->
+<section id="ai-creative" class="catalog-section">
+  <div class="container">
+    <div class="catalog-inner">
+      <div class="catalog-copy reveal-left">
+        <div class="section-label">Studio 05</div>
+        <h2>AI Creative Suite</h2>
+        <p>The creative industry has entered a new era. AI doesn't replace great creative judgment — it multiplies it. Our AI Creative Suite puts the world's most powerful generative tools in the hands of senior art directors who know exactly what to do with them.</p>
+        <p>We produce campaign visuals, product imagery, video content, and social assets at a scale and speed that would be impossible with traditional methods. A shoot that once took weeks and $20,000 now takes days and a fraction of the budget.</p>
+        <p>But we never sacrifice quality for speed. Every AI output is reviewed, curated, retouched, and approved by human creatives before it reaches you. The result: premium-quality visual content, produced continuously, at a price point that makes traditional agencies obsolete.</p>
+        <div class="tech-badges">
+          <span class="tech-badge">Midjourney</span>
+          <span class="tech-badge">Runway ML</span>
+          <span class="tech-badge">Higgsfield</span>
+          <span class="tech-badge">DALL-E 3</span>
+          <span class="tech-badge">Claude</span>
+          <span class="tech-badge">ComfyUI</span>
+          <span class="tech-badge">Kling AI</span>
+          <span class="tech-badge">Sora</span>
+        </div>
+      </div>
+      <div class="pricing-cards reveal-right">
+        <div class="pricing-card">
+          <div class="pricing-tier">Starter</div>
+          <div class="pricing-price">$599<span style="font-size:1rem;font-weight:400">/mo</span></div>
+          <div class="pricing-name">AI Creative Starter</div>
+          <ul class="pricing-features">
+            <li>10 AI-generated assets/month</li>
+            <li>Social media image posts</li>
+            <li>2 brand style variations</li>
+            <li>48-hour turnaround</li>
+            <li>Commercial license included</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-tier">Growth</div>
+          <div class="pricing-price">$1,299<span style="font-size:1rem;font-weight:400">/mo</span></div>
+          <div class="pricing-name">Unlimited AI Creative</div>
+          <ul class="pricing-features">
+            <li>Unlimited assets per month</li>
+            <li>Video reels (up to 30s each)</li>
+            <li>Campaign concept development</li>
+            <li>24-hour turnaround</li>
+            <li>Dedicated creative director</li>
+            <li>Monthly strategy call</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-tier">Agency</div>
+          <div class="pricing-price">$2,499<span style="font-size:1rem;font-weight:400">/mo</span></div>
+          <div class="pricing-name">White-Label Agency</div>
+          <ul class="pricing-features">
+            <li>Resell under your brand</li>
+            <li>Unlimited clients supported</li>
+            <li>Priority 12-hour turnaround</li>
+            <li>API access + webhook delivery</li>
+            <li>Dedicated Slack workspace</li>
+            <li>Custom AI model fine-tuning</li>
+          </ul>
+          <a href="#cta-banner" class="catalog-cta">Start This Project</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PORTFOLIO -->
+<section id="portfolio">
+  <div class="container">
+    <div class="section-label">Selected Work</div>
+    <h2 class="section-title reveal">Crafted with Intent</h2>
+    <p class="section-sub reveal">A curated selection of our most impactful work across all five studios.</p>
+    <div class="filter-tabs" id="filter-tabs">
+      <button class="filter-tab active" data-filter="all">All</button>
+      <button class="filter-tab" data-filter="web">Web</button>
+      <button class="filter-tab" data-filter="mobile">Mobile</button>
+      <button class="filter-tab" data-filter="brand">Brand</button>
+      <button class="filter-tab" data-filter="uiux">UI/UX</button>
+      <button class="filter-tab" data-filter="ai">AI</button>
+    </div>
+    <div class="portfolio-grid" id="portfolio-grid">
+      <div class="portfolio-card reveal-scale" data-cat="web">
+        <div class="portfolio-img pimg-1" style="height:280px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">Web Design</div>
+          <div class="portfolio-title">Nexus Banking Platform</div>
+          <a href="#cta-banner" class="portfolio-cta-link">Nexus Financial · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="mobile">
+        <div class="portfolio-img pimg-2" style="height:340px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">Mobile App</div>
+          <div class="portfolio-title">SwiftPay Wallet App</div>
+          <a href="#cta-banner" class="portfolio-cta-link">SwiftPay Inc · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="brand">
+        <div class="portfolio-img pimg-3" style="height:220px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">Brand Identity</div>
+          <div class="portfolio-title">Axiom Fintech Rebrand</div>
+          <a href="#cta-banner" class="portfolio-cta-link">Axiom Capital · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="web">
+        <div class="portfolio-img pimg-4" style="height:300px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">Web Design</div>
+          <div class="portfolio-title">Terra E-commerce</div>
+          <a href="#cta-banner" class="portfolio-cta-link">Terra Living · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="uiux">
+        <div class="portfolio-img pimg-5" style="height:360px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">UI/UX Design</div>
+          <div class="portfolio-title">CloudOps Design System</div>
+          <a href="#cta-banner" class="portfolio-cta-link">CloudOps Inc · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="mobile">
+        <div class="portfolio-img pimg-6" style="height:260px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">Mobile App</div>
+          <div class="portfolio-title">FitFlow Training App</div>
+          <a href="#cta-banner" class="portfolio-cta-link">FitFlow Health · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="web">
+        <div class="portfolio-img pimg-7" style="height:240px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">Web Design</div>
+          <div class="portfolio-title">PulseHealth Dashboard</div>
+          <a href="#cta-banner" class="portfolio-cta-link">PulseHealth · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="brand">
+        <div class="portfolio-img pimg-8" style="height:320px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">Brand Identity</div>
+          <div class="portfolio-title">Bloom Wellness Identity</div>
+          <a href="#cta-banner" class="portfolio-cta-link">Bloom Wellness Co · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="mobile">
+        <div class="portfolio-img pimg-9" style="height:290px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">Mobile App</div>
+          <div class="portfolio-title">MediTrack Patient App</div>
+          <a href="#cta-banner" class="portfolio-cta-link">MediTrack Systems · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="web">
+        <div class="portfolio-img pimg-10" style="height:270px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">Web Design</div>
+          <div class="portfolio-title">Orbit SaaS Platform</div>
+          <a href="#cta-banner" class="portfolio-cta-link">Orbit Software · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="uiux">
+        <div class="portfolio-img pimg-11" style="height:240px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">UI/UX Design</div>
+          <div class="portfolio-title">RetailIQ Dashboard UX</div>
+          <a href="#cta-banner" class="portfolio-cta-link">RetailIQ Analytics · View Case Study →</a>
+        </div>
+      </div>
+      <div class="portfolio-card reveal-scale" data-cat="ai">
+        <div class="portfolio-img pimg-12" style="height:310px;"></div>
+        <div class="portfolio-overlay">
+          <div class="portfolio-cat">AI Creative</div>
+          <div class="portfolio-title">Lumina AI Visuals Campaign</div>
+          <a href="#cta-banner" class="portfolio-cta-link">Lumina Cosmetics · View Case Study →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="container">
+    <div style="text-align:center; margin-bottom: 1rem;">
+      <div class="section-label" style="display:inline-block">How We Work</div>
+    </div>
+    <h2 class="section-title reveal" style="text-align:center">From Brief to Launch<br>in Four Phases</h2>
+    <div class="process-steps" id="process-steps">
+      <div class="process-step reveal">
+        <div class="step-num" id="step-1"><span>01</span></div>
+        <h4>Discovery</h4>
+        <p>Deep dive into your goals, audience, and competitive landscape. We define success before we design anything.</p>
+      </div>
+      <div class="process-step reveal">
+        <div class="step-num" id="step-2"><span>02</span></div>
+        <h4>Design</h4>
+        <p>AI-accelerated concepting with senior creative direction. You see strong, considered directions — not half-baked ideas.</p>
+      </div>
+      <div class="process-step reveal">
+        <div class="step-num" id="step-3"><span>03</span></div>
+        <h4>Build</h4>
+        <p>Clean, maintainable code built on modern stacks. Automated testing, performance optimization, accessibility compliance.</p>
+      </div>
+      <div class="process-step reveal">
+        <div class="step-num" id="step-4"><span>04</span></div>
+        <h4>Launch</h4>
+        <p>Deployment, QA, and handoff with documentation. Post-launch monitoring and iterative improvement built in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY DESIGNERSMEET -->
+<section id="why">
+  <div class="container">
+    <div style="text-align:center; margin-bottom:1rem;">
+      <div class="section-label" style="display:inline-block">The Difference</div>
+    </div>
+    <h2 class="section-title reveal" style="text-align:center">Why DesignersMeet</h2>
+    <p class="section-sub reveal" style="text-align:center; margin:0 auto 1rem;">We're not an agency — we're a studio built for the speed of modern business.</p>
+    <div class="why-grid">
+      <div class="why-card reveal">
+        <div class="why-stat" id="stat-1">3x</div>
+        <h3>AI-Augmented Speed</h3>
+        <p>Our AI-powered workflow delivers first drafts 3x faster than traditional agencies — without cutting corners on quality. More time for refinement, fewer billable hours wasted.</p>
+      </div>
+      <div class="why-card reveal">
+        <div class="why-stat" id="stat-2">$2M+</div>
+        <h3>Senior-Only Team</h3>
+        <p>Every project is led by a senior designer or developer with 5+ years of professional experience. No juniors. No outsourcing. No surprises. Just quality you can rely on.</p>
+      </div>
+      <div class="why-card reveal">
+        <div class="why-stat" id="stat-3">48hr</div>
+        <h3>End-to-End Delivery</h3>
+        <p>From first brief to first draft in 48 hours. We run strategy, design, and engineering under one roof — no handoff delays, no agency-speak, just work that ships.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div class="container">
+    <div class="section-label">Client Stories</div>
+    <h2 class="section-title reveal">What Our Clients Say</h2>
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal">
+        <div class="quote-icon">"</div>
+        <blockquote>DesignersMeet didn't just build our app — they challenged our thinking. The discovery phase alone revealed three critical UX assumptions we had wrong. The final product exceeded every metric we set. We hit 10,000 users in the first month.</blockquote>
+        <div class="testimonial-author">
+          <div class="author-avatar">JW</div>
+          <div>
+            <div class="author-name">James Whitfield</div>
+            <div class="author-company">CEO, SwiftPay Financial</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="quote-icon">"</div>
+        <blockquote>The rebrand transformed how the market perceives us. We went from being seen as a startup to being seen as the category leader — just from the visual identity work. Our Series A valuation jumped accordingly. Worth every dollar.</blockquote>
+        <div class="testimonial-author">
+          <div class="author-avatar">SC</div>
+          <div>
+            <div class="author-name">Sofia Chen</div>
+            <div class="author-company">Founder, Axiom Capital</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="quote-icon">"</div>
+        <blockquote>The AI Creative Suite has replaced our entire in-house content team for social media production. We get better visuals, faster, at a third of the cost. The quality is indistinguishable from traditional photography — honestly better for some campaigns.</blockquote>
+        <div class="testimonial-author">
+          <div class="author-avatar">MR</div>
+          <div>
+            <div class="author-name">Marcus Reid</div>
+            <div class="author-company">CMO, Terra Living</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<section id="cta-banner">
+  <div class="container" style="text-align:center; max-width:700px;">
+    <div class="section-label" style="display:inline-block">Let's Build Together</div>
+    <h2 class="section-title reveal" style="font-size: clamp(2rem, 4vw, 3.2rem);">Ready to Build Something<br>Remarkable?</h2>
+    <p class="section-sub reveal" style="margin: 0 auto 2rem;">Tell us what you're building and we'll respond within 4 hours with a clear proposal, realistic timeline, and no-obligation quote.</p>
+    <div class="email-form reveal">
+      <input type="email" class="email-input" placeholder="you@company.com" id="email-input">
+      <button class="btn-filled" onclick="handleEmailSubmit()" style="font-size:1rem; padding: 0.85rem 2rem;">Get Free Consultation</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.3); font-size:0.8rem; margin-top:1rem;">No spam. No commitment. Just a conversation.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">DesignersMeet</div>
+        <div class="footer-tagline">Where Vision Meets Execution.<br>AI-augmented design &amp; development for teams that ship.</div>
+        <div class="social-links">
+          <a href="#" class="social-link" title="LinkedIn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          </a>
+          <a href="#" class="social-link" title="Instagram">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+          </a>
+          <a href="#" class="social-link" title="Behance">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 7h-7V5h7v2zm1.726 10c-.442 1.297-2.029 3-5.101 3-3.074 0-5.564-1.729-5.564-5.675 0-3.91 2.325-5.92 5.466-5.92 3.082 0 4.964 1.782 5.375 4.426.078.506.109 1.188.095 2.14H15.97c.13 3.211 3.483 3.312 4.588 2.029h3.168zm-7.686-4h4.965c-.105-1.547-1.136-2.219-2.477-2.219-1.466 0-2.277.768-2.488 2.219zm-9.574 6.988H0V5.021h6.953c5.476.081 5.58 5.444 2.72 6.906 3.461 1.26 3.577 8.061-3.207 8.061zM3 11h3.584c2.508 0 2.906-3-.312-3H3v3zm3.391 3H3v3.016h3.341c3.055 0 2.868-3.016.05-3.016z"/></svg>
+          </a>
+          <a href="#" class="social-link" title="GitHub">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Services</h5>
+        <ul>
+          <li><a href="#web-studio">Web Design Studio</a></li>
+          <li><a href="#mobile-lab">Mobile App Lab</a></li>
+          <li><a href="#brand-identity">Brand &amp; Identity</a></li>
+          <li><a href="#ui-ux">UI/UX Design</a></li>
+          <li><a href="#ai-creative">AI Creative Suite</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#why">About Us</a></li>
+          <li><a href="#process">Our Process</a></li>
+          <li><a href="#portfolio">Portfolio</a></li>
+          <li><a href="#testimonials">Case Studies</a></li>
+          <li><a href="#cta-banner">Careers</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Connect</h5>
+        <ul>
+          <li><a href="#cta-banner">Get a Quote</a></li>
+          <li><a href="mailto:hello@designersmeet.com">hello@designersmeet.com</a></li>
+          <li><a href="#testimonials">Partner Program</a></li>
+          <li><a href="#cta-banner">Press Kit</a></li>
+          <li><a href="#cta-banner">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 DesignersMeet. All rights reserved. Where Vision Meets Execution.</div>
+      <div class="footer-copy">Built with AI. Refined by humans.</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ─── MOBILE MENU ───────────────────────────────────────────────────────────
+function toggleMenu() {
+  document.getElementById('mobile-menu').classList.toggle('open');
+}
+
+// ─── NAV SCROLL ────────────────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('nav');
+  if (window.scrollY > 50) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+});
+
+// ─── THREE.JS HERO PARTICLE FIELD ──────────────────────────────────────────
+(function initThree() {
+  const canvas = document.getElementById('hero-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x0a0a14, 1);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 80;
+
+  // Particles
+  const count = 2000;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const colorOptions = [
+    new THREE.Color('#E94560'),
+    new THREE.Color('#7B61FF'),
+    new THREE.Color('#00d4ff'),
+    new THREE.Color('#ffffff'),
+  ];
+
+  for (let i = 0; i < count; i++) {
+    positions[i * 3]     = (Math.random() - 0.5) * 200;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+    const c = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+    colors[i * 3]     = c.r;
+    colors[i * 3 + 1] = c.g;
+    colors[i * 3 + 2] = c.b;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const mat = new THREE.PointsMaterial({ size: 0.5, vertexColors: true, transparent: true, opacity: 0.7 });
+  const particles = new THREE.Points(geo, mat);
+  scene.add(particles);
+
+  // Mouse parallax
+  let mx = 0, my = 0;
+  document.addEventListener('mousemove', e => {
+    mx = (e.clientX / window.innerWidth  - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.001;
+    particles.rotation.y = t + mx * 0.05;
+    particles.rotation.x = t * 0.3 + my * 0.05;
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+// ─── GSAP SCROLL ANIMATIONS ────────────────────────────────────────────────
+gsap.registerPlugin(ScrollTrigger);
+
+// Hero entrance
+gsap.fromTo('#hero-line1', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 1, delay: 0.3, ease: 'power3.out' });
+gsap.fromTo('#hero-line2', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 1, delay: 0.5, ease: 'power3.out' });
+gsap.fromTo('#hero-sub',   { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, delay: 0.8, ease: 'power3.out' });
+gsap.fromTo('#hero-ctas',  { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, delay: 1.0, ease: 'power3.out' });
+gsap.fromTo('#logo-strip', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, delay: 1.2, ease: 'power3.out' });
+gsap.fromTo('#hero-stats', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, delay: 1.4, ease: 'power3.out' });
+
+// Reveal on scroll — generic
+document.querySelectorAll('.reveal').forEach((el, i) => {
+  gsap.fromTo(el,
+    { opacity: 0, y: 50 },
+    { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out',
+      scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' },
+      delay: (i % 4) * 0.1
+    }
+  );
+});
+
+document.querySelectorAll('.reveal-left').forEach(el => {
+  gsap.fromTo(el,
+    { opacity: 0, x: -60 },
+    { opacity: 1, x: 0, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' }
+    }
+  );
+});
+
+document.querySelectorAll('.reveal-right').forEach(el => {
+  gsap.fromTo(el,
+    { opacity: 0, x: 60 },
+    { opacity: 1, x: 0, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' }
+    }
+  );
+});
+
+document.querySelectorAll('.reveal-scale').forEach((el, i) => {
+  gsap.fromTo(el,
+    { opacity: 0, scale: 0.85 },
+    { opacity: 1, scale: 1, duration: 0.7, ease: 'back.out(1.5)',
+      scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none none' },
+      delay: (i % 3) * 0.08
+    }
+  );
+});
+
+// Service cards stagger
+gsap.fromTo('#services-grid .service-card',
+  { opacity: 0, y: 60 },
+  { opacity: 1, y: 0, duration: 0.7, stagger: 0.12, ease: 'power3.out',
+    scrollTrigger: { trigger: '#services-grid', start: 'top 85%' }
+  }
+);
+
+// Process timeline line draw
+gsap.fromTo('#process-steps::before', { scaleX: 0 }, {
+  scaleX: 1, duration: 1.5, ease: 'power2.inOut',
+  scrollTrigger: { trigger: '#process-steps', start: 'top 75%' }
+});
+
+// Step numbers
+['step-1','step-2','step-3','step-4'].forEach((id, i) => {
+  const el = document.getElementById(id);
+  if (el) {
+    gsap.fromTo(el,
+      { opacity: 0, scale: 0.5 },
+      { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(2)',
+        scrollTrigger: { trigger: el, start: 'top 85%' },
+        delay: i * 0.15,
+        onComplete: () => el.classList.add('active')
+      }
+    );
+  }
+});
+
+// Count-up stats
+function countUp(el, target, suffix, duration) {
+  const start = performance.now();
+  function update(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const val = Math.floor(progress * target);
+    el.textContent = val + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+    else el.textContent = target + suffix;
+  }
+  requestAnimationFrame(update);
+}
+
+ScrollTrigger.create({
+  trigger: '#why',
+  start: 'top 75%',
+  onEnter: () => {
+    const s1 = document.getElementById('stat-1');
+    const s2 = document.getElementById('stat-2');
+    const s3 = document.getElementById('stat-3');
+    if (s1) { s1.textContent = '0x'; setTimeout(() => countUp(s1, 3, 'x', 1200), 100); }
+    if (s2) { s2.textContent = '$0+'; setTimeout(() => { countUp({ textContent: '' }, 2, '', 0); s2.textContent = '$2M+'; }, 800); }
+    if (s3) { s3.textContent = '0hr'; setTimeout(() => countUp(s3, 48, 'hr', 1000), 200); }
+  },
+  once: true
+});
+
+// ─── 3D TILT ON CARDS ──────────────────────────────────────────────────────
+document.querySelectorAll('.service-card, .why-card, .testimonial-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width  - 0.5;
+    const y = (e.clientY - rect.top)  / rect.height - 0.5;
+    card.style.transform = `perspective(1000px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg) translateY(-4px)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+});
+
+// ─── PORTFOLIO FILTER ──────────────────────────────────────────────────────
+document.querySelectorAll('.filter-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    const filter = this.dataset.filter;
+    document.querySelectorAll('.portfolio-card').forEach(card => {
+      if (filter === 'all' || card.dataset.cat === filter) {
+        gsap.to(card, { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out', display: 'block' });
+        card.style.display = 'block';
+      } else {
+        gsap.to(card, { opacity: 0, scale: 0.9, duration: 0.3, ease: 'power2.in', onComplete: () => { card.style.display = 'none'; } });
+      }
+    });
+  });
+});
+
+// ─── EMAIL FORM ────────────────────────────────────────────────────────────
+function handleEmailSubmit() {
+  const input = document.getElementById('email-input');
+  const email = input.value.trim();
+  if (!email || !email.includes('@')) {
+    input.style.borderColor = 'var(--primary)';
+    input.focus();
+    return;
+  }
+  input.style.borderColor = '#00d4ff';
+  const btn = event.target;
+  btn.textContent = '✓ We\'ll be in touch!';
+  btn.style.background = 'linear-gradient(135deg, #00d4ff, #7B61FF)';
+  input.value = '';
+  setTimeout(() => {
+    btn.textContent = 'Get Free Consultation';
+    btn.style.background = '';
+    input.style.borderColor = '';
+  }, 4000);
+}
+
+// ─── SMOOTH SCROLL OFFSET FOR FIXED NAV ────────────────────────────────────
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      const offset = 80;
+      const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  });
+});
+</script>
+</body>
+</html>
